@@ -233,6 +233,11 @@ body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);ov
 .mf{font-size:var(--fs-mf);color:var(--txt-mf);margin-top:1px;line-height:var(--lh-c);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .mr2{font-size:var(--fs-mr2);color:var(--txt-mr2);white-space:nowrap;flex-shrink:0;line-height:var(--lh-c);}
 .ma{font-size:var(--fs-ma);color:var(--txt-ma);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:var(--lh-c);margin-top:1px;}
+/* Member row drag-and-drop (move between teams) */
+.mr[draggable="true"]{cursor:grab;}
+.mr[draggable="true"]:active{cursor:grabbing;}
+.mr.mr-dragging{opacity:.35;background:#FFF4ED!important;}
+.nb.mr-drop-target{background:rgba(64,210,167,.10);box-shadow:inset 0 0 0 2px var(--mint);}
 
 /* ── Modal ───────────────────────────────────────── */
 #ov{
@@ -947,15 +952,67 @@ function bindNode(el,nd) {
   else el.style.removeProperty('--band-color');
   el.querySelector('.nh').onmousedown=e=>startDrag(e,nd.id);
   el.onclick=e=>nodeClick(e,nd.id);
+  // Member-row drag (move between teams)
+  el.querySelectorAll('.mr').forEach((mr,i)=>{
+    mr.ondragstart=e=>mrDragStart(e,nd.id,i);
+    mr.ondragend  =e=>mrDragEnd(e);
+  });
+  const _nb=el.querySelector('.nb');
+  if(_nb){
+    _nb.ondragover =e=>mrDragOver(e,nd.id);
+    _nb.ondragleave=e=>mrDragLeave(e);
+    _nb.ondrop     =e=>mrDrop(e,nd.id);
+  }
 }
 
 function statusColor(s){
   const item=OPT.statusItems.find(x=>x.key===s);
   return item ? `var(--st-${item.key})` : (OPT.statusItems[0]?`var(--st-${OPT.statusItems[0].key})`:'#999');
 }
+
+// ─── Member-row drag-and-drop between teams ─────────────
+let _mrDrag = null;
+function mrDragStart(e,nid,idx){
+  e.stopPropagation();
+  _mrDrag = { fromNid: nid, fromIdx: idx };
+  try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', JSON.stringify(_mrDrag)); } catch(_){}
+  e.currentTarget.classList.add('mr-dragging');
+}
+function mrDragEnd(e){
+  e.currentTarget.classList.remove('mr-dragging');
+  document.querySelectorAll('.nb.mr-drop-target').forEach(n=>n.classList.remove('mr-drop-target'));
+  _mrDrag = null;
+}
+function mrDragOver(e,toNid){
+  if(!_mrDrag) return;
+  e.preventDefault();
+  e.stopPropagation();
+  e.dataTransfer.dropEffect = 'move';
+  e.currentTarget.classList.add('mr-drop-target');
+}
+function mrDragLeave(e){
+  // Only clear when leaving the .nb itself (not bubbling out of a child)
+  if(e.currentTarget === e.target) e.currentTarget.classList.remove('mr-drop-target');
+}
+function mrDrop(e,toNid){
+  if(!_mrDrag){ return; }
+  e.preventDefault();
+  e.stopPropagation();
+  e.currentTarget.classList.remove('mr-drop-target');
+  const { fromNid, fromIdx } = _mrDrag;
+  _mrDrag = null;
+  if(fromNid === toNid) return;            // same card — no-op
+  const fromN = S.nodes.find(n=>n.id===fromNid);
+  const toN   = S.nodes.find(n=>n.id===toNid);
+  if(!fromN || !toN || !Array.isArray(fromN.m) || fromN.m[fromIdx]==null) return;
+  const [member] = fromN.m.splice(fromIdx,1);
+  if(!Array.isArray(toN.m)) toN.m = [];
+  toN.m.push(member);
+  render();
+}
 function nodeHTML(nd) {
   const av=nd.m.map((m,i)=>`
-    <div class="mr">
+    <div class="mr" draggable="true" data-nid="${nd.id}" data-mi="${i}">
       <div class="mband" style="background:${statusColor(m.s)}"></div>
       <div class="mi">
         <div class="mn-row">
