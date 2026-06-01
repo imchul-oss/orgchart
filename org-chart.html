@@ -1859,9 +1859,44 @@ function autoLayout(){
     }
     // 깊이별 자연스러운 감쇠: top 1.5x, l1 1.3x, l2 1.1x, l3+ 1.0x
     const grpGap=COL_GAP*Math.max(1, 1.5 - 0.2 * nd._d);
+    // ─── Leaf 형제 슬롯 부풀림 ────────────────────────
+    // 자식 없는 형제(leaf)와 자식 많은 형제(subtree)가 섞여 있을 때,
+    // leaf의 슬롯을 비-leaf 형제 평균 서브트리 너비의 45%로 확장하여 시각 균형 개선.
+    // 모든 형제가 leaf면 기본 NW 유지.
+    function _subtreeW(cid){
+      const cn=S.nodes.find(n=>n.id===cid);
+      if(!cn||sideIds.has(cid)) return 0;
+      const cch=(kids[cid]||[]).filter(k=>!sideIds.has(k)&&pars[k]===cid);
+      if(!cch.length) return NW;
+      let total=0;
+      for(let j=0;j<cch.length;j++){
+        total+=_subtreeW(cch[j]);
+        if(j<cch.length-1) total+=COL_GAP;
+      }
+      return Math.max(NW, total);
+    }
+    const isLeafArr=ch.map(cid=>(kids[cid]||[]).filter(k=>!sideIds.has(k)&&pars[k]===cid).length===0);
+    let leafSlotW=NW;
+    if(isLeafArr.some(v=>v) && isLeafArr.some(v=>!v)){
+      const treeWs=ch.filter((_,i)=>!isLeafArr[i]).map(cid=>_subtreeW(cid));
+      const avg=treeWs.reduce((a,b)=>a+b,0)/treeWs.length;
+      leafSlotW=Math.max(NW, Math.round(avg*0.45));
+    }
     let x=L, lastR=L;
     for(let i=0;i<ch.length;i++){
-      lastR=place(ch[i],x,nd._d);
+      if(isLeafArr[i] && leafSlotW > NW){
+        // Leaf — center the card within its expanded slot
+        const cid=ch[i];
+        const cn=S.nodes.find(n=>n.id===cid);
+        if(cn){
+          const typeD=TYPE_LV[cn.type]??0;
+          cn._d=Math.max(typeD, nd._d+1);
+          cn._lx=Math.round((x + leafSlotW/2 - NW/2)/20)*20;
+        }
+        lastR = x + leafSlotW;
+      } else {
+        lastR=place(ch[i],x,nd._d);
+      }
       x=lastR+(i<ch.length-1?grpGap:0);
     }
     const clxs=ch.map(k=>{const n=S.nodes.find(n=>n.id===k);return n?n._lx:Math.round(L/20)*20;});
@@ -1869,6 +1904,73 @@ function autoLayout(){
     return lastR;
   }
   place(root.id,PAD_X,undefined);
+
+  // ─── 형제 간격 균등화 (Post-pass) ─────────────────────
+  // 같은 부모의 자식들 간 gap을 균등화하고, 서브트리를 함께 이동시킴.
+  // 자식 없는 leaf 형제와 자식 많은 형제가 섞여 있을 때 시각적 균형 개선.
+  (function equalizeSiblingGaps(){
+    function getSubtreeBounds(id){
+      const n=S.nodes.find(x=>x.id===id);
+      if(!n||n._lx===undefined) return null;
+      let left=n._lx, right=n._lx+NW;
+      (kids[id]||[]).forEach(cid=>{
+        if(sideIds.has(cid)||pars[cid]!==id) return;
+        const b=getSubtreeBounds(cid);
+        if(b){ left=Math.min(left,b.left); right=Math.max(right,b.right); }
+      });
+      return {left,right};
+    }
+    function moveSubtree(id,dx){
+      const n=S.nodes.find(x=>x.id===id);
+      if(!n||n._lx===undefined) return;
+      n._lx+=dx;
+      (kids[id]||[]).forEach(cid=>{
+        if(sideIds.has(cid)||pars[cid]!==id) return;
+        moveSubtree(cid,dx);
+      });
+    }
+    // 모든 부모 (top-down 깊이 순으로 처리: 위에서부터 균등화)
+    const allParents=[...new Set(Object.values(pars))].filter(p=>p!=null);
+    allParents.sort((a,b)=>{
+      const da=(S.nodes.find(n=>n.id===a)||{})._d??0;
+      const db=(S.nodes.find(n=>n.id===b)||{})._d??0;
+      return da-db; // shallow first
+    });
+    // 두 번 반복: 한 번으로는 깊이 간 전파 완전치 않을 수 있어 안정화 위해
+    for(let pass=0; pass<2; pass++){
+      allParents.forEach(pid=>{
+        const children=(kids[pid]||[]).filter(k=>!sideIds.has(k)&&pars[k]===pid);
+        if(children.length<3) return; // 2개 이하는 균등화 의미 없음
+        children.sort((a,b)=>{
+          const na=S.nodes.find(n=>n.id===a), nb=S.nodes.find(n=>n.id===b);
+          return ((na&&na._lx)||0)-((nb&&nb._lx)||0);
+        });
+        const bounds=children.map(id=>getSubtreeBounds(id));
+        if(bounds.some(b=>!b)) return;
+        // 인접 형제 서브트리 간 gap 측정
+        const gaps=[];
+        for(let i=0;i<bounds.length-1;i++) gaps.push(bounds[i+1].left-bounds[i].right);
+        if(gaps.length===0) return;
+        // 목표: 가장 큰 gap으로 통일 (음수 gap은 0으로 클램프 — 겹쳤다면 정상화)
+        const targetGap=Math.max(COL_GAP, ...gaps.map(g=>Math.max(g,0)));
+        for(let i=0;i<gaps.length;i++){
+          const dx=targetGap-gaps[i];
+          if(dx>0){
+            for(let j=i+1;j<children.length;j++){
+              moveSubtree(children[j],dx);
+              bounds[j].left+=dx; bounds[j].right+=dx;
+            }
+          }
+        }
+        // 부모를 자식 중심으로 재정렬
+        const parent=S.nodes.find(n=>n.id===pid);
+        if(parent&&parent._lx!==undefined){
+          const clxs=children.map(id=>S.nodes.find(n=>n.id===id)._lx);
+          parent._lx=(Math.min(...clxs)+Math.max(...clxs)+NW)/2-NW/2;
+        }
+      });
+    }
+  })();
 
   // 고아 노드: 타입 레벨로 _d 설정 (depH에 포함시켜 행 높이 반영)
   const orphans=S.nodes.filter(n=>n._d===undefined&&!sideIds.has(n.id));
