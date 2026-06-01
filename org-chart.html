@@ -416,6 +416,7 @@ body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);ov
     </div>
   </div>
   <div class="tdv"></div>
+  <button id="btn-save" class="tb tb-g" onclick="manualSave()" title="지금 저장 (자동 저장: 0.8초 후)">💾 저장</button>
   <button id="btn-cloud" class="tb tb-cloud" onclick="openCloudModal()">☁ Cloud<span class="cloud-dot"></span></button>
 </div>
 
@@ -2527,6 +2528,25 @@ let _saveTimer=null, _saving=false;
 function scheduleSave(){
   clearTimeout(_saveTimer);
   _saveTimer=setTimeout(saveDataToSupabase,800);
+}
+// 수동 저장 — debounce 무시하고 즉시 실행
+async function manualSave(){
+  clearTimeout(_saveTimer);
+  const btn=document.getElementById('btn-save');
+  const ss=document.getElementById('ssave');
+  if(btn) btn.disabled=true;
+  if(ss) ss.textContent='⏳ 저장 중...';
+  try{
+    await saveDataToSupabase();
+    if(ss){
+      ss.textContent = SB_CONNECTED ? '✓ 클라우드 저장 완료 ('+new Date().toLocaleTimeString()+')' : '✓ 로컬 저장 완료 ('+new Date().toLocaleTimeString()+')';
+      setTimeout(()=>{ if(ss.textContent.startsWith('✓')) ss.textContent=''; }, 3000);
+    }
+  }catch(e){
+    if(ss){ ss.textContent='✕ 저장 실패: '+(e.message||e); setTimeout(()=>ss.textContent='', 4000); }
+  }finally{
+    if(btn) btn.disabled=false;
+  }
 }
 function _saveLocalFallback(){
   try{ localStorage.setItem(SB_LS_KEY, JSON.stringify({nodes:S.nodes,conns:S.conns})); }catch(e){}
