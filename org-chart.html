@@ -766,11 +766,35 @@ body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);ov
 // ═══ Supabase (configurable)
 const _DFLT_SB_URL = '';
 const _DFLT_SB_KEY = '';
-let SB_URL = localStorage.getItem('aim-sb-url') || _DFLT_SB_URL;
-let SB_KEY  = localStorage.getItem('aim-sb-key') || _DFLT_SB_KEY;
+// ─── Per-file localStorage namespace ─────────────────
+// 파일명을 네임스페이스로 써서, 파일을 복사·이름변경한 사본이 원본과 데이터를 공유하지 않게 한다.
+// (file:// 환경에서도 동일 origin을 공유하지만, 키 자체가 분리되므로 안전)
+const _LS_NS = ((typeof location!=='undefined' && location.pathname) ? location.pathname.split('/').pop() : '').replace(/[^a-zA-Z0-9._-]/g,'_') || 'default';
+const _NS_SB_URL = 'aim-sb-url__' + _LS_NS;
+const _NS_SB_KEY = 'aim-sb-key__' + _LS_NS;
+const SB_LS_KEY  = 'aim-org-chart-sb__' + _LS_NS + '-v1';
+const SB_OPT_LS  = 'aim-org-chart-sb-opt__' + _LS_NS + '-v1';
+// One-time migration from legacy unnamespaced keys (only if new key is empty)
+(function _migrateLegacyLS(){
+  const pairs = [
+    ['aim-sb-url',              _NS_SB_URL],
+    ['aim-sb-key',              _NS_SB_KEY],
+    ['aim-org-chart-sb-v1',     SB_LS_KEY],
+    ['aim-org-chart-sb-opt-v1', SB_OPT_LS],
+  ];
+  for(const [oldK,newK] of pairs){
+    if(oldK===newK) continue;
+    try{
+      const old = localStorage.getItem(oldK);
+      if(old!=null && localStorage.getItem(newK)==null){
+        localStorage.setItem(newK, old);
+      }
+    }catch(_){}
+  }
+})();
+let SB_URL = localStorage.getItem(_NS_SB_URL) || _DFLT_SB_URL;
+let SB_KEY = localStorage.getItem(_NS_SB_KEY) || _DFLT_SB_KEY;
 let _sb = null, SB_CONNECTED = false;
-const SB_LS_KEY = 'aim-org-chart-sb-v1';
-const SB_OPT_LS = 'aim-org-chart-sb-opt-v1';
 (function _initSb(){
   if(SB_URL && SB_KEY){ try{ _sb = supabase.createClient(SB_URL, SB_KEY); }catch(e){} }
 })();
@@ -2332,8 +2356,8 @@ async function connectSupabase(){
     // 테이블 없음(42P01)은 첫 실행이므로 OK — 인증/네트워크 오류만 진짜 실패
     if(_isSbAuthErr(error)) throw new Error(error.message||'인증 실패');
     _sb=client; SB_URL=url; SB_KEY=key; SB_CONNECTED=true;
-    localStorage.setItem('aim-sb-url',url);
-    localStorage.setItem('aim-sb-key',key);
+    localStorage.setItem(_NS_SB_URL,url);
+    localStorage.setItem(_NS_SB_KEY,key);
     _updateCloudBtn();
     closeCloudModal();
     await loadFromSupabase();
@@ -2343,8 +2367,8 @@ async function connectSupabase(){
 }
 function disconnectSupabase(){
   SB_CONNECTED=false;
-  localStorage.removeItem('aim-sb-url');
-  localStorage.removeItem('aim-sb-key');
+  localStorage.removeItem(_NS_SB_URL);
+  localStorage.removeItem(_NS_SB_KEY);
   _updateCloudBtn();
   const st=document.getElementById('cm-status');
   if(st) st.innerHTML='<span style="color:#999">○ 미연결 (로컬 저장 모드)</span>';
