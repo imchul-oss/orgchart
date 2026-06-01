@@ -238,6 +238,8 @@ body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);ov
 .mr[draggable="true"]:active{cursor:grabbing;}
 .mr.mr-dragging{opacity:.35;background:#FFF4ED!important;}
 .nb.mr-drop-target{background:rgba(64,210,167,.10);box-shadow:inset 0 0 0 2px var(--mint);}
+.mr.mr-drop-before{box-shadow:inset 0 2px 0 0 var(--mint)!important;}
+.mr.mr-drop-after{box-shadow:inset 0 -2px 0 0 var(--mint)!important;}
 
 /* ── Modal ───────────────────────────────────────── */
 #ov{
@@ -994,7 +996,7 @@ function statusColor(s){
   return item ? `var(--st-${item.key})` : (OPT.statusItems[0]?`var(--st-${OPT.statusItems[0].key})`:'#999');
 }
 
-// ─── Member-row drag-and-drop between teams ─────────────
+// ─── Member-row drag-and-drop: 팀 간 이동 + 팀 내 순서 변경 ─────────────
 let _mrDrag = null;
 function mrDragStart(e,nid,idx){
   e.stopPropagation();
@@ -1002,36 +1004,74 @@ function mrDragStart(e,nid,idx){
   try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', JSON.stringify(_mrDrag)); } catch(_){}
   e.currentTarget.classList.add('mr-dragging');
 }
+function _mrClearIndicators(){
+  document.querySelectorAll('.nb.mr-drop-target').forEach(n=>{ n.classList.remove('mr-drop-target'); delete n.dataset.dropIdx; });
+  document.querySelectorAll('.mr-drop-before,.mr-drop-after').forEach(r=>r.classList.remove('mr-drop-before','mr-drop-after'));
+}
 function mrDragEnd(e){
   e.currentTarget.classList.remove('mr-dragging');
-  document.querySelectorAll('.nb.mr-drop-target').forEach(n=>n.classList.remove('mr-drop-target'));
+  _mrClearIndicators();
   _mrDrag = null;
+}
+// Compute insert index inside this .nb based on mouse Y
+function _mrComputeIdx(nb, clientY){
+  const rows = [...nb.querySelectorAll('.mr')];
+  let idx = rows.length;
+  for(let i=0; i<rows.length; i++){
+    const r = rows[i].getBoundingClientRect();
+    if(clientY < r.top + r.height/2){ idx = i; break; }
+  }
+  return { idx, rows };
 }
 function mrDragOver(e,toNid){
   if(!_mrDrag) return;
   e.preventDefault();
   e.stopPropagation();
   e.dataTransfer.dropEffect = 'move';
-  e.currentTarget.classList.add('mr-drop-target');
+  const nb = e.currentTarget;
+  nb.classList.add('mr-drop-target');
+  const { idx, rows } = _mrComputeIdx(nb, e.clientY);
+  nb.dataset.dropIdx = String(idx);
+  // refresh row indicators
+  rows.forEach(r=>r.classList.remove('mr-drop-before','mr-drop-after'));
+  if(rows.length===0){ /* empty card — drop-target outline only */ }
+  else if(idx < rows.length){ rows[idx].classList.add('mr-drop-before'); }
+  else                      { rows[rows.length-1].classList.add('mr-drop-after'); }
 }
 function mrDragLeave(e){
-  // Only clear when leaving the .nb itself (not bubbling out of a child)
-  if(e.currentTarget === e.target) e.currentTarget.classList.remove('mr-drop-target');
+  // Only clear when truly leaving the .nb (avoid flicker from child enter/leave)
+  if(e.currentTarget === e.target){
+    e.currentTarget.classList.remove('mr-drop-target');
+    e.currentTarget.querySelectorAll('.mr').forEach(r=>r.classList.remove('mr-drop-before','mr-drop-after'));
+    delete e.currentTarget.dataset.dropIdx;
+  }
 }
 function mrDrop(e,toNid){
   if(!_mrDrag){ return; }
   e.preventDefault();
   e.stopPropagation();
-  e.currentTarget.classList.remove('mr-drop-target');
+  const nb = e.currentTarget;
+  let toIdx = parseInt(nb.dataset.dropIdx);
+  if(!Number.isFinite(toIdx)){
+    // Fallback: recompute from cursor
+    toIdx = _mrComputeIdx(nb, e.clientY).idx;
+  }
+  _mrClearIndicators();
   const { fromNid, fromIdx } = _mrDrag;
   _mrDrag = null;
-  if(fromNid === toNid) return;            // same card — no-op
   const fromN = S.nodes.find(n=>n.id===fromNid);
   const toN   = S.nodes.find(n=>n.id===toNid);
   if(!fromN || !toN || !Array.isArray(fromN.m) || fromN.m[fromIdx]==null) return;
+  // Same-array reorder: removing the source shifts indices down by 1 if before target
+  const sameNode = (fromN === toN);
+  if(sameNode && fromIdx === toIdx) return;               // dropped on itself — no-op
+  if(sameNode && fromIdx + 1 === toIdx) return;           // dropped just below itself — no-op
   const [member] = fromN.m.splice(fromIdx,1);
+  if(sameNode && fromIdx < toIdx) toIdx--;
   if(!Array.isArray(toN.m)) toN.m = [];
-  toN.m.push(member);
+  if(toIdx < 0) toIdx = 0;
+  if(toIdx > toN.m.length) toIdx = toN.m.length;
+  toN.m.splice(toIdx, 0, member);
   render();
 }
 function nodeHTML(nd) {
