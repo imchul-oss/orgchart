@@ -193,6 +193,10 @@ body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);ov
   overflow:hidden;transition:box-shadow .2s;
 }
 .nd:hover{box-shadow:0 6px 20px rgba(0,0,0,var(--shadow-a));}
+.nd{cursor:move;}
+.nd .mr{cursor:grab;}
+.nd .mr:active{cursor:grabbing;}
+.nd .nact button{cursor:pointer;}
 .nd.sel{outline:2.5px solid var(--sky);outline-offset:2px;}
 .nd.csrc{outline:2.5px solid var(--coral);outline-offset:2px;}
 
@@ -841,6 +845,10 @@ const OPT = {
     {key:'needed', label:'채용필요',color:'#FFB347'},
     {key:'hiring', label:'채용 중', color:'#A78BFA'}
   ],
+  // 로고 (좌상단)
+  logoText: 'AIM',
+  logoSub : '조직도 · Org Chart',
+  logoColor: '#40D2A7',
   // 드롭다운 카테고리
   jobCats:['개발','디자인','마케팅','PM','영업','CS','운영','기타'],
   roleCats:['대표이사','부문장','팀장','파트장','시니어','주니어','인턴','계약직'],
@@ -977,7 +985,12 @@ function bindNode(el,nd) {
   el.className='nd t-'+nd.type;
   if(nd.color) el.style.setProperty('--band-color',nd.color);
   else el.style.removeProperty('--band-color');
-  el.querySelector('.nh').onmousedown=e=>startDrag(e,nd.id);
+  // 카드 전체에서 드래그 가능 — 단, 멤버 행(.mr)·액션 버튼(.nact) 위는 각자 핸들러로 양보
+  // 빈 카드(멤버 0)도 본문 영역에서 드래그 시작 가능
+  el.onmousedown=e=>{
+    if(e.target.closest('.mr')||e.target.closest('.nact')) return;
+    startDrag(e,nd.id);
+  };
   el.onclick=e=>nodeClick(e,nd.id);
   // Member-row drag (move between teams)
   el.querySelectorAll('.mr').forEach((mr,i)=>{
@@ -2458,6 +2471,11 @@ function openOptions(){
     {lbl:'현황 패널 배경',   key:'statsBg',  cssVar:'--stats-bg',  val:OPT.statsBg},
     {lbl:'상태바 배경',      key:'stbarBg',  cssVar:'--stbar-bg',  val:OPT.stbarBg},
   ]);
+  // 로고 input 값 sync
+  const lt=document.getElementById('opt-logo-txt'); if(lt) lt.value = OPT.logoText || 'AIM';
+  const ls=document.getElementById('opt-logo-sub'); if(ls) ls.value = OPT.logoSub || '';
+  const lc=document.getElementById('opt-logo-col'); if(lc){ lc.value = OPT.logoColor || '#40D2A7'; }
+  const lcv=document.getElementById('opt-logo-col-v'); if(lcv) lcv.textContent = (OPT.logoColor||'#40D2A7').toUpperCase();
   document.getElementById('optov').classList.add('show');
 }
 function closeOptions(){
@@ -3104,6 +3122,7 @@ document.addEventListener('keydown',e=>{
   _updateCloudBtn();
   if(SB_CONNECTED) await loadFromSupabase();
   else loadFromLocal();
+  applyLogo();
 })();
 </script>
 </body>
