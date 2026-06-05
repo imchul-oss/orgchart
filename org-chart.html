@@ -71,7 +71,7 @@ body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);ov
 #topbar{
   position:fixed;top:0;left:0;right:0;height:50px;z-index:1000;
   background:var(--dark);color:#fff;
-  display:flex;align-items:center;padding:0 18px;gap:10px;
+  display:flex;align-items:center;padding:0 18px;gap:9px;
   box-shadow:0 2px 10px rgba(0,0,0,.4);
 }
 .tl{font-size:15px;font-weight:800;letter-spacing:2px;color:var(--mint);}
@@ -82,11 +82,11 @@ body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);ov
 .tb-m{background:var(--mint);color:var(--dark);}
 .tb-m:hover{filter:brightness(1.1);}
 .tb.act{background:var(--coral)!important;color:#fff!important;}
-.tdv{width:1px;height:22px;background:rgba(255,255,255,.15);margin:0 4px;}
+.tdv{width:1px;height:22px;background:rgba(255,255,255,.15);margin:0 3px;}
 #topbar.tb-hidden{display:none;}
 .tb-arrow{background:transparent;border:none;color:#fff;cursor:pointer;font-size:12px;line-height:1;padding:5px 7px;border-radius:5px;transition:.15s;}
 .tb-arrow:hover{background:rgba(255,255,255,.15);}
-#tb-reveal{position:fixed;top:11px;right:14px;z-index:1100;display:none;align-items:center;justify-content:center;width:30px;height:26px;border-radius:6px;background:var(--dark);color:#fff;border:1px solid rgba(255,255,255,.2);cursor:pointer;font-size:12px;box-shadow:0 2px 8px rgba(0,0,0,.3);}
+#tb-reveal{position:fixed;top:11px;right:14px;z-index:1100;display:none;align-items:center;justify-content:center;width:30px;height:26px;border-radius:6px;background:var(--dark);color:var(--mint);border:1px solid rgba(255,255,255,.2);cursor:pointer;font-size:12px;box-shadow:0 2px 8px rgba(0,0,0,.3);}
 #tb-reveal:hover{background:var(--mint);color:var(--dark);}
 /* Cloud sync button */
 .tb-cloud{background:rgba(255,255,255,.08);color:#666;border:1px solid rgba(255,255,255,.15);position:relative;}
@@ -400,19 +400,18 @@ body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);ov
 <div id="topbar">
   <span class="tl">AIM</span>
   <span class="tsub">조직도 · Org Chart</span>
+  <div class="tdv"></div>
+  <button class="tb tb-g" onclick="autoLayout()">⟳ 자동 배치</button>
   <div id="zctrl">
     <span id="zpct">100%</span>
     <input type="range" id="zslider" min="15" max="300" value="100" step="1" oninput="doZoomAbs(this.value)">
     <button class="zb" onclick="doZoomAbs(Math.round(S.scale*100)-1)" title="축소 (-1%)">－</button>
-    <button class="zb" onclick="fitScreen()" title="화면 맞춤 (Ctrl+0)">⊡</button>
     <button class="zb" onclick="doZoomAbs(Math.round(S.scale*100)+1)" title="확대 (+1%)">＋</button>
   </div>
+  <button class="tb tb-g" onclick="fitScreen()">⊡ 화면 맞춤</button>
   <div class="tdv"></div>
   <button class="tb tb-g" onclick="openAddModal()">＋ 조직 추가</button>
   <button class="tb tb-g" id="btnconn" onclick="toggleConnect()">🔗 연결선 추가</button>
-  <div class="tdv"></div>
-  <button class="tb tb-g" onclick="autoLayout()">⟳ 자동 배치</button>
-  <button class="tb tb-g" onclick="fitScreen()">⊡ 화면 맞춤</button>
   <div class="tdv"></div>
   <button class="tb tb-g" onclick="openOptions()">⚙ 옵션</button>
   <button class="tb tb-g" id="btn-data" onclick="openData()">◈ 데이터</button>
@@ -708,7 +707,7 @@ body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);ov
         </div>
         <div class="opt-row">
           <span class="opt-lbl">상단 여백</span>
-          <input type="range" class="opt-slider" id="opt-py" min="20" max="120" step="10"
+          <input type="range" class="opt-slider" id="opt-py" min="20" max="250" step="10"
             oninput="OPT.padY=+this.value;document.getElementById('opt-py-v').textContent=this.value+'px';scheduleOptLayout()">
           <span class="opt-val" id="opt-py-v">60px</span>
         </div>
