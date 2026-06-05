@@ -2555,7 +2555,7 @@ async function saveDataToSupabase(){
   // Always keep local backup
   _saveLocalFallback();
   if(!SB_CONNECTED){ const ss=document.getElementById('ssave'); if(ss){ ss.textContent='💾 로컬 저장됨'; setTimeout(()=>ss.textContent='',1500); } return; }
-  if(_saving||!S.nodes.length) return; // 중복 저장 방지 & 빈 데이터 저장 방지
+  if(_saving) return; // 중복 저장만 방지 (빈 데이터도 동기화 허용)
   _saving=true;
   const ss=document.getElementById('ssave');
   try{
@@ -2597,12 +2597,20 @@ async function saveDataToSupabase(){
       if(delC.length) await _sb.from('conns').delete().in('id',delC);
     }
 
-    if(ss){ ss.textContent='✓ 저장됨'; setTimeout(()=>ss.textContent='',2000); }
+    // RLS silent-fail 감지: 저장 직후 row count로 검증
+    const {count:rowCount, error:vErr} = await _sb.from('nodes').select('id', {count:'exact', head:true});
+    if(!vErr && rowCount === 0 && S.nodes.length > 0){
+      throw new Error('Silent fail 감지 — RLS 정책이 anon write를 차단했을 가능성. SQL Editor에서 supabase-schema.sql 의 anon 정책 부분을 실행하세요.');
+    }
+    if(ss){ ss.textContent='✓ 저장됨 ('+new Date().toLocaleTimeString()+')'; setTimeout(()=>{if(ss.textContent.startsWith('✓'))ss.textContent='';},2500); }
   }catch(e){
-    console.error('save error:',e);
-    if(ss){ ss.textContent='⚠ 저장 실패'; setTimeout(()=>ss.textContent='',3000); }
+    console.error('save error:', e);
+    const msg = e&&e.message ? e.message : String(e);
+    if(ss){ ss.textContent='⚠ 저장 실패: '+msg.slice(0,80); setTimeout(()=>ss.textContent='',5000); }
+    throw e; // manualSave 등 상위 호출에 전파
+  }finally{
+    _saving=false;
   }
-  _saving=false;
 }
 
 // ═══ Supabase 불러오기
