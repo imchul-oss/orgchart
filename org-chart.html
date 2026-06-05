@@ -1008,12 +1008,19 @@ function mrDragStart(e,nid,idx){
 function _mrClearIndicators(){
   document.querySelectorAll('.nb.mr-drop-target').forEach(n=>{ n.classList.remove('mr-drop-target'); delete n.dataset.dropIdx; });
   document.querySelectorAll('.mr-drop-before,.mr-drop-after').forEach(r=>r.classList.remove('mr-drop-before','mr-drop-after'));
+  // 안전망: 잔존하는 .mr-dragging도 강제 정리
+  document.querySelectorAll('.mr-dragging').forEach(r=>r.classList.remove('mr-dragging'));
 }
 function mrDragEnd(e){
-  e.currentTarget.classList.remove('mr-dragging');
+  if(e&&e.currentTarget&&e.currentTarget.classList) e.currentTarget.classList.remove('mr-dragging');
   _mrClearIndicators();
   _mrDrag = null;
 }
+// ─── 글로벌 안전망 ──────────────────────────────────────
+// 드래그가 캔버스 밖에서 끝나거나 dragend가 누락된 경우 대비
+document.addEventListener('dragend', _mrClearIndicators, true);
+document.addEventListener('drop',    _mrClearIndicators, true);
+document.addEventListener('keydown', e=>{ if(e.key==='Escape' && _mrDrag){ _mrClearIndicators(); _mrDrag=null; } });
 // Compute insert index inside this .nb based on mouse Y
 function _mrComputeIdx(nb, clientY){
   const rows = [...nb.querySelectorAll('.mr')];
