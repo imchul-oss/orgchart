@@ -83,6 +83,11 @@ body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);ov
 .tb-m:hover{filter:brightness(1.1);}
 .tb.act{background:var(--coral)!important;color:#fff!important;}
 .tdv{width:1px;height:22px;background:rgba(255,255,255,.15);margin:0 4px;}
+#topbar.tb-hidden{display:none;}
+.tb-arrow{background:transparent;border:none;color:#fff;cursor:pointer;font-size:12px;line-height:1;padding:5px 7px;border-radius:5px;transition:.15s;}
+.tb-arrow:hover{background:rgba(255,255,255,.15);}
+#tb-reveal{position:fixed;top:11px;right:14px;z-index:1100;display:none;align-items:center;justify-content:center;width:30px;height:26px;border-radius:6px;background:var(--dark);color:#fff;border:1px solid rgba(255,255,255,.2);cursor:pointer;font-size:12px;box-shadow:0 2px 8px rgba(0,0,0,.3);}
+#tb-reveal:hover{background:var(--mint);color:var(--dark);}
 /* Cloud sync button */
 .tb-cloud{background:rgba(255,255,255,.08);color:#666;border:1px solid rgba(255,255,255,.15);position:relative;}
 .tb-cloud.conn{color:#fff;border-color:rgba(64,210,167,.5);background:rgba(64,210,167,.12);}
@@ -375,22 +380,16 @@ body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);ov
 }
 #zhint.show{display:block;}
 #zctrl{
-  position:fixed;bottom:46px;right:18px;z-index:500;
-  display:flex;flex-direction:column;align-items:center;gap:3px;
-  background:rgba(255,255,255,.92);border:1px solid #DDD;border-radius:9px;
-  padding:7px;box-shadow:0 3px 12px rgba(0,0,0,.13);
+  display:flex;flex-direction:row;align-items:center;gap:6px;margin-left:4px;
 }
-#zctrl-btns{display:flex;align-items:center;gap:2px;}
-.zb{width:22px;height:22px;border-radius:5px;border:none;background:transparent;
+.zb{width:22px;height:22px;border-radius:5px;border:none;background:rgba(255,255,255,.1);
     cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;
-    color:#444;transition:.12s;font-weight:700;}
-.zb:hover{background:var(--mint);color:#fff;}
-#zpct{font-size:9px;font-weight:700;color:#666;min-width:28px;text-align:center;
+    color:#fff;transition:.12s;font-weight:700;}
+.zb:hover{background:var(--mint);color:var(--dark);}
+#zpct{font-size:10px;font-weight:700;color:rgba(255,255,255,.7);min-width:30px;text-align:center;
       letter-spacing:.3px;}
-#zslider-wrap{height:85px;display:flex;align-items:center;justify-content:center;}
 #zslider{
-  width:77px;cursor:pointer;accent-color:var(--mint);
-  transform:rotate(-90deg);
+  width:100px;cursor:pointer;accent-color:var(--mint);
 }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -401,6 +400,14 @@ body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);ov
 <div id="topbar">
   <span class="tl">AIM</span>
   <span class="tsub">조직도 · Org Chart</span>
+  <div id="zctrl">
+    <span id="zpct">100%</span>
+    <input type="range" id="zslider" min="15" max="300" value="100" step="1" oninput="doZoomAbs(this.value)">
+    <button class="zb" onclick="doZoomAbs(Math.round(S.scale*100)-1)" title="축소 (-1%)">－</button>
+    <button class="zb" onclick="fitScreen()" title="화면 맞춤 (Ctrl+0)">⊡</button>
+    <button class="zb" onclick="doZoomAbs(Math.round(S.scale*100)+1)" title="확대 (+1%)">＋</button>
+  </div>
+  <div class="tdv"></div>
   <button class="tb tb-g" onclick="openAddModal()">＋ 조직 추가</button>
   <button class="tb tb-g" id="btnconn" onclick="toggleConnect()">🔗 연결선 추가</button>
   <div class="tdv"></div>
@@ -424,7 +431,10 @@ body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);ov
   <div class="tdv"></div>
   <button id="btn-save" class="tb tb-g" onclick="manualSave()" title="지금 저장 (자동 저장: 0.8초 후)">💾 저장</button>
   <button id="btn-cloud" class="tb tb-cloud" onclick="openCloudModal()">☁ Cloud<span class="cloud-dot"></span></button>
+  <div class="tdv"></div>
+  <button id="tb-hide" class="tb-arrow" onclick="toggleTopbar()" title="상단바 숨기기">▲</button>
 </div>
+<button id="tb-reveal" class="tb-arrow" onclick="toggleTopbar()" title="상단바 표시">▼</button>
 
 <!-- Connection context menu -->
 <div id="ctxmenu">
@@ -469,19 +479,7 @@ body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);ov
 <!-- Connect hint -->
 <div id="zhint">연결할 첫 번째 조직을 클릭하세요</div>
 
-<!-- Zoom controls -->
-<div id="zctrl">
-  <span id="zpct">100%</span>
-  <div id="zslider-wrap">
-    <input type="range" id="zslider" min="15" max="300" value="100" step="1"
-      oninput="doZoomAbs(this.value)">
-  </div>
-  <div id="zctrl-btns">
-    <button class="zb" onclick="doZoomAbs(Math.round(S.scale*100)-1)" title="축소 (-1%)">－</button>
-    <button class="zb" onclick="fitScreen()" title="화면 맞춤 (Ctrl+0)">⊡</button>
-    <button class="zb" onclick="doZoomAbs(Math.round(S.scale*100)+1)" title="확대 (+1%)">＋</button>
-  </div>
-</div>
+<!-- Zoom controls moved into topbar -->
 
 <!-- Status bar -->
 <div id="stbar">
@@ -756,6 +754,12 @@ body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);ov
             oninput="OPT.logoColor=this.value;applyLogo();document.getElementById('opt-logo-col-v').textContent=this.value.toUpperCase();saveOptLS()">
           <span class="opt-val" id="opt-logo-col-v" style="font-family:monospace;letter-spacing:0.5px;">#40D2A7</span>
         </div>
+        <div class="opt-row">
+          <span class="opt-lbl">부제 색상</span>
+          <input type="color" class="opt-color" id="opt-logo-subcol"
+            oninput="OPT.logoSubColor=this.value;applyLogo();document.getElementById('opt-logo-subcol-v').textContent=this.value.toUpperCase();saveOptLS()">
+          <span class="opt-val" id="opt-logo-subcol-v" style="font-family:monospace;letter-spacing:0.5px;">#808080</span>
+        </div>
       </div>
       <!-- UI 색상 -->
       <div class="opt-sec">
@@ -871,6 +875,7 @@ const OPT = {
   logoText: 'AIM',
   logoSub : '조직도 · Org Chart',
   logoColor: '#40D2A7',
+  logoSubColor: '#808080',
   // 드롭다운 카테고리
   jobCats:['개발','디자인','마케팅','PM','영업','CS','운영','기타'],
   roleCats:['대표이사','부문장','팀장','파트장','시니어','주니어','인턴','계약직'],
@@ -2470,6 +2475,8 @@ function openOptions(){
   const ls=document.getElementById('opt-logo-sub'); if(ls) ls.value = OPT.logoSub || '';
   const lc=document.getElementById('opt-logo-col'); if(lc){ lc.value = OPT.logoColor || '#40D2A7'; }
   const lcv=document.getElementById('opt-logo-col-v'); if(lcv) lcv.textContent = (OPT.logoColor||'#40D2A7').toUpperCase();
+  const lsc=document.getElementById('opt-logo-subcol'); if(lsc) lsc.value = OPT.logoSubColor || '#808080';
+  const lscv=document.getElementById('opt-logo-subcol-v'); if(lscv) lscv.textContent = (OPT.logoSubColor||'#808080').toUpperCase();
   document.getElementById('optov').classList.add('show');
 }
 function closeOptions(){
@@ -2670,6 +2677,7 @@ function _applyOptObj(d){
   if(d.logoText!=null) OPT.logoText=d.logoText;
   if(d.logoSub!=null)  OPT.logoSub=d.logoSub;
   if(d.logoColor)      OPT.logoColor=d.logoColor;
+  if(d.logoSubColor)   OPT.logoSubColor=d.logoSubColor;
   if(typeof applyLogo==='function') applyLogo();
 }
 function loadFromLocal(){
@@ -3107,12 +3115,25 @@ document.addEventListener('keydown',e=>{
   }
 });
 
+// ═══ 상단바 숨기기 / 표시
+function toggleTopbar(){
+  const tb=document.getElementById('topbar');
+  const hidden=tb.classList.toggle('tb-hidden');
+  const wrap=document.getElementById('wrap');
+  const grid=document.getElementById('grid-bg');
+  const rev=document.getElementById('tb-reveal');
+  if(wrap) wrap.style.top = hidden ? '0' : '50px';
+  if(grid) grid.style.top = hidden ? '0' : '50px';
+  if(rev)  rev.style.display = hidden ? 'flex' : 'none';
+  try{ updateGrid(); }catch(_){}
+}
+
 // ═══ 로고 (좌상단) 적용
 function applyLogo(){
   const lt=document.querySelector('#topbar .tl');
   if(lt){ lt.textContent=OPT.logoText||'AIM'; lt.style.color=OPT.logoColor||'#40D2A7'; }
   const ls=document.querySelector('#topbar .tsub');
-  if(ls) ls.textContent=OPT.logoSub||'';
+  if(ls){ ls.textContent=OPT.logoSub||''; ls.style.color=OPT.logoSubColor||'rgba(255,255,255,.4)'; }
   try{ document.title='AIM Intelligence — '+(OPT.logoText||'조직도'); }catch(_){}
 }
 
