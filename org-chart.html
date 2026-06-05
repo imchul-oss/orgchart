@@ -735,6 +735,26 @@ body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);ov
         </div>
         <div id="opt-line-colors"></div>
       </div>
+      <!-- 로고 (좌상단) -->
+      <div class="opt-sec">
+        <div class="opt-sec-title">로고 (좌상단)</div>
+        <div class="opt-row">
+          <span class="opt-lbl">로고 텍스트</span>
+          <input type="text" id="opt-logo-txt" maxlength="20" style="flex:1;padding:6px 9px;border:1.5px solid #DDD;border-radius:5px;font-size:13px;outline:none;"
+            oninput="OPT.logoText=this.value;applyLogo();saveOptLS()">
+        </div>
+        <div class="opt-row">
+          <span class="opt-lbl">부제 텍스트</span>
+          <input type="text" id="opt-logo-sub" maxlength="40" style="flex:1;padding:6px 9px;border:1.5px solid #DDD;border-radius:5px;font-size:13px;outline:none;"
+            oninput="OPT.logoSub=this.value;applyLogo();saveOptLS()">
+        </div>
+        <div class="opt-row">
+          <span class="opt-lbl">로고 색상</span>
+          <input type="color" class="opt-color" id="opt-logo-col"
+            oninput="OPT.logoColor=this.value;applyLogo();document.getElementById('opt-logo-col-v').textContent=this.value.toUpperCase();saveOptLS()">
+          <span class="opt-val" id="opt-logo-col-v" style="font-family:monospace;letter-spacing:0.5px;">#40D2A7</span>
+        </div>
+      </div>
       <!-- UI 색상 -->
       <div class="opt-sec">
         <div class="opt-sec-title">UI 색상</div>
@@ -3126,4 +3146,4 @@ document.addEventListener('keydown',e=>{
 })();
 </script>
 </body>
-</html>
+</html> 
