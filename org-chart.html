@@ -228,6 +228,8 @@ body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);ov
 
 /* Member rows */
 .nb{background:var(--card-bg);}
+.nb:empty{min-height:34px;}
+.nb:empty::before{content:'＋';display:flex;align-items:center;justify-content:center;height:34px;color:#C8CDD8;font-size:15px;pointer-events:none;}
 .mr{padding:4px 10px 4px calc(var(--band-w) + 8px);height:var(--mh);position:relative;display:flex;align-items:center;gap:0;border-top:1px solid var(--row-border);box-sizing:border-box;overflow:hidden;}
 .mr:nth-child(even){background:var(--row-even);}
 .mband{position:absolute;left:0;top:0;bottom:0;width:var(--band-w);}
@@ -949,7 +951,7 @@ function init() {
 }
 
 // ═══ Node height
-function nh(nd) { return CUR_HH + (nd.m||[]).length * CUR_MH; }
+function nh(nd) { const _m=(nd.m||[]).length; return CUR_HH + (_m ? _m*CUR_MH : 34); }  // 빈 카드는 .nb:empty min-height(34)와 일치
 
 // ═══ Grid — 스크롤·줌에 맞춰 background-position 재계산
 function updateGrid(){
@@ -1568,8 +1570,6 @@ function toggleColorDef(cb){
   if(cb.checked) syncBandDefault();
 }
 // STATUS_KEYS / STATUS_LABELS / stColors — OPT.statusItems 기반 동적 헬퍼
-function statusKeys(){ return OPT.statusItems.map(x=>x.key); }
-function statusLabel(k){ return (OPT.statusItems.find(x=>x.key===k)||{label:k}).label; }
 function statusItemColor(k){ return (OPT.statusItems.find(x=>x.key===k)||OPT.statusItems[0]||{color:'#999'}).color; }
 function applyAllStatusCSS(){
   OPT.statusItems.forEach(x=>document.documentElement.style.setProperty('--st-'+x.key,x.color));
@@ -1676,9 +1676,6 @@ function delCurrent(){
   if(S.eid&&confirm('이 조직을 삭제하시겠습니까?\n연결선도 함께 삭제됩니다.')){
     delNodeById(S.eid); closeModal();
   }
-}
-function confirmDel(id){
-  if(confirm('삭제하시겠습니까?')) delNodeById(id);
 }
 function delNodeById(id){
   S.nodes=S.nodes.filter(n=>n.id!==id);
@@ -2256,29 +2253,6 @@ function _applyOptCSS(key,val){
   if(cv==='--stroke-w'||cv==='--stroke-dash-w'||cv==='--shadow-a') document.documentElement.style.setProperty(cv,val);
   else document.documentElement.style.setProperty(cv, isNum&&isPx? val+'px': val);
 }
-function loadOptLS(){
-  try{
-    const d=JSON.parse(localStorage.getItem(OPT_LS)||'null');
-    if(!d) return;
-    const numKeys=['fsEn','fsKo','fsMn','fsMf','fsMr2','fsMa','lhH','lhC','hdrH','rowH','nw','bandW','rowGap','colGap','padX','padY','strokeW','strokeDashW','cardRadius','shadowA'];
-    numKeys.forEach(k=>{ if(d[k]!=null){ OPT[k]=+d[k]; _applyOptCSS(k,+d[k]); }});
-    const colKeys=['uiMint','uiSky','uiCoral','topbarBg','statsBg','stbarBg','hdrTop','hdrL1','hdrL2','hdrL3','hdrL4','hdrL5','hdrTf','hdrSide','bandTop','bandL1','bandL2','bandL3','bandL4','bandL5','bandTf','bandSide','canvasBg','cardBg','rowEven','rowBorder','connSolid','connDash','gridDot','txtHdrEn','txtHdrKo','txtMn','txtMf','txtMr2','txtMa'];
-    colKeys.forEach(k=>{ if(d[k]){ OPT[k]=d[k]; _applyOptCSS(k,d[k]); }});
-    if(d.statusItems){ OPT.statusItems=d.statusItems; applyAllStatusCSS(); }
-    else if(d.stColors){
-      // 구버전 호환: stColors → statusItems 색상에 덮어씌우기
-      Object.entries(d.stColors).forEach(([k,c])=>{
-        const it=OPT.statusItems.find(x=>x.key===k); if(it) it.color=c;
-      }); applyAllStatusCSS();
-    }
-    if(d.nw) NW=d.nw;
-    if(d.jobCats) OPT.jobCats=d.jobCats;
-    if(d.roleCats) OPT.roleCats=d.roleCats;
-    if(d.areaCats) OPT.areaCats=d.areaCats;
-    if(d.statsGroups) OPT.statsGroups=d.statsGroups;
-    if(d.dataLabel){ OPT.dataLabel=d.dataLabel; }
-  }catch(e){}
-}
 // ═══ Data panel
 function openData(){
   // 버튼 라벨 동기
@@ -2693,6 +2667,10 @@ function _applyOptObj(d){
   if(d.areaCats) OPT.areaCats=d.areaCats;
   if(d.statsGroups) OPT.statsGroups=d.statsGroups;
   if(d.dataLabel) OPT.dataLabel=d.dataLabel;
+  if(d.logoText!=null) OPT.logoText=d.logoText;
+  if(d.logoSub!=null)  OPT.logoSub=d.logoSub;
+  if(d.logoColor)      OPT.logoColor=d.logoColor;
+  if(typeof applyLogo==='function') applyLogo();
 }
 function loadFromLocal(){
   let loaded=false;
@@ -2788,7 +2766,6 @@ async function loadFromSupabase(){
 }
 
 // ═══ Font size
-function _lh(v){ return Math.max(1.0, 1.35-(v-12)*0.028).toFixed(2); }
 function applyAllFontHeights(){
   const r=document.documentElement.style;
   // 개별 변수 적용
@@ -3129,6 +3106,15 @@ document.addEventListener('keydown',e=>{
     if(document.getElementById('ov').classList.contains('show')){ closeModal(); return; }
   }
 });
+
+// ═══ 로고 (좌상단) 적용
+function applyLogo(){
+  const lt=document.querySelector('#topbar .tl');
+  if(lt){ lt.textContent=OPT.logoText||'AIM'; lt.style.color=OPT.logoColor||'#40D2A7'; }
+  const ls=document.querySelector('#topbar .tsub');
+  if(ls) ls.textContent=OPT.logoSub||'';
+  try{ document.title='AIM Intelligence — '+(OPT.logoText||'조직도'); }catch(_){}
+}
 
 // ═══ Boot
 (async function boot(){
