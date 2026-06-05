@@ -1336,13 +1336,35 @@ function wmu(e){
     anchorDrag=null;
     document.body.style.cursor='';
     renderAnchors(); drawConns(); scheduleSave();
-    return;
   }
-  if(S.wdrag){ S.wdrag=null; scheduleSave(); return; }
+  if(S.wdrag){ S.wdrag=null; scheduleSave(); }
+  // ─── 무조건 정리 (early return 제거) ────────────────────
+  // 카드 드래그(S.drag)·캔버스 pan(S.pan)은 어떤 경로로 mouseup이 도달하든 항상 풀어줌
   S.drag=null; S.pan=false;
-  document.getElementById('wrap').classList.remove('panning');
+  const _wrap=document.getElementById('wrap');
+  if(_wrap) _wrap.classList.remove('panning');
 }
 document.addEventListener('mouseup',wmu);
+
+// ─── 전역 드래그 안전망 ─────────────────────────────────
+// dragend 누락·window blur·alt+tab 등 어떤 이유로든 stuck 상태에 빠진 경우 강제 정리
+function _resetAllDragState(){
+  S.drag=null; S.pan=false; S.wdrag=null;
+  if(typeof anchorDrag!=='undefined') anchorDrag=null;
+  _mrDrag=null;
+  const _w=document.getElementById('wrap');
+  if(_w) _w.classList.remove('panning');
+  document.body.style.cursor='';
+  try{ _mrClearIndicators(); }catch(_){}
+}
+window.addEventListener('blur', _resetAllDragState);
+document.addEventListener('mouseleave', e=>{ if(e.target===document.documentElement) _resetAllDragState(); });
+// ESC로 모든 진행 중인 드래그 상태 일괄 취소
+document.addEventListener('keydown', e=>{
+  if(e.key==='Escape' && (S.drag||S.pan||S.wdrag||_mrDrag||(typeof anchorDrag!=='undefined'&&anchorDrag))){
+    _resetAllDragState();
+  }
+});
 
 // ═══ Connect mode
 function toggleConnect(){
