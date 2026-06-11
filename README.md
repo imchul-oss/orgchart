@@ -35,7 +35,7 @@ AIM Intelligence 조직도를 시각화·편집하는 단일 HTML 도구. 브라
 3. 본 레포의 [`supabase-schema.sql`](./supabase-schema.sql) 전체 복사·붙여넣기 → **Run**
 4. **Project Settings → API**:
    - **Project URL** 복사
-   - **Publishable key** (또는 Legacy `anon` key) 복사
+   - **Legacy `anon` key** 복사 (권장) — 본 스키마의 RLS 정책이 `to anon` 대상이므로 Legacy anon(JWT) key가 가장 확실합니다. 신형 `sb_publishable_*` key는 프로젝트 설정에 따라 anon 역할로 매핑되지 않아 아래의 silent fail이 발생할 수 있습니다.
 5. `org-chart.html` 열고 ☁ **Cloud** 모달에 두 값 입력 → **연결**
 
 ### 신 UI 위치 안내 (2026 기준)
@@ -47,7 +47,7 @@ AIM Intelligence 조직도를 시각화·편집하는 단일 HTML 도구. 브라
 
 ## ⚠ RLS (Row Level Security) 정책
 
-본 도구는 **Publishable Key (anon)** 만으로 접근합니다. 따라서 Supabase가 anon 권한자에게 읽기·쓰기를 허용해야 동기화가 작동합니다.
+본 도구는 **anon 권한 key** 만으로 접근합니다. 따라서 Supabase가 anon 권한자에게 읽기·쓰기를 허용해야 동기화가 작동합니다. 신형 Publishable key(`sb_publishable_*`)는 `to anon` 정책과 호환되지 않는 경우가 있으니, 증상이 있으면 Legacy `anon` key로 교체해 보세요.
 
 ### 자가 진단 — "저장됨 메시지는 뜨는데 실제로는 안 됨" 증상
 

@@ -1145,7 +1145,7 @@ function nodeHTML(nd) {
     <div class="nb">${av}</div>`;
 }
 
-function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 // 색상 피커 + 6자리 헥스 텍스트 콤보 인풋
 // val: '#RRGGBB', oinp: 피커 oninput에 추가할 JS (this.value = 새 색상값), extraAttrs: 피커 input에 추가할 속성 문자열
 function mkHexInp(val,oinp,extraAttrs){
@@ -1440,7 +1440,7 @@ function nodeClick(e,id){
       const tNode=S.nodes.find(n=>n.id===id);
       const d=tNode?.type==='side'?1:0;
       S.conns.push({id:'e'+(++S.nid),f:S.cfrom,t:id,d});
-      drawConns();
+      drawConns(); scheduleSave();
     } else alert('이미 연결되어 있습니다.');
     clearCSrc(); S.cfrom=null;
     document.getElementById('zhint').textContent='연결할 첫 번째 조직을 클릭하세요';
@@ -1494,11 +1494,11 @@ function closeCtxMenu(){
 function delConnFromMenu(){
   if(!S.selConn) return;
   S.conns=S.conns.filter(c=>c.id!==S.selConn);
-  S.selConn=null; clearConnHl(); closeCtxMenu(); drawConns();
+  S.selConn=null; clearConnHl(); closeCtxMenu(); drawConns(); scheduleSave();
 }
 function toggleConnDash(){
   const c=S.conns.find(c=>c.id===S.selConn); if(!c) return;
-  c.d=c.d?0:1; closeCtxMenu(); drawConns();
+  c.d=c.d?0:1; closeCtxMenu(); drawConns(); scheduleSave();
 }
 // Click on canvas background → clear selection & menu
 document.addEventListener('click',e=>{
@@ -1686,7 +1686,7 @@ function delNodeById(id){
   S.nodes=S.nodes.filter(n=>n.id!==id);
   S.conns=S.conns.filter(c=>c.f!==id&&c.t!==id);
   const el=document.getElementById('n'+id); if(el) el.remove();
-  drawConns(); updateSt();
+  drawConns(); updateSt(); scheduleSave();
 }
 
 // ═══ Add node / Add child
@@ -2794,7 +2794,8 @@ function applyAllFontHeights(){
 //   MEMBERS section: node_id,name,func,role,status
 //   CONNECTIONS section: id,from,to,dashed,from_side,to_side
 function exportCSV(){
-  const cid=n=>q(n.en);
+  // id 컬럼은 실제 노드 id 사용 — 영문명(en)은 중복·공란이 흔해 re-import 시 멤버·연결이 섞임
+  const cid=n=>q(n.id);
   const rows=['NODES','id,en,ko,type,x,y,color'];
   S.nodes.forEach(n=>{
     rows.push([cid(n),q(n.en),q(n.ko),n.type,n.x,n.y,n.color||''].join(','));
@@ -2807,8 +2808,7 @@ function exportCSV(){
   rows.push('');
   rows.push('CONNECTIONS','id,from,to,dashed,from_side,to_side');
   S.conns.forEach(c=>{
-    const fn=S.nodes.find(n=>n.id===c.f), tn=S.nodes.find(n=>n.id===c.t);
-    rows.push([c.id,q(fn?fn.en:c.f),q(tn?tn.en:c.t),c.d,c.fromSide||'',c.toSide||''].join(','));
+    rows.push([c.id,q(c.f),q(c.t),c.d,c.fromSide||'',c.toSide||''].join(','));
   });
   dl(rows.join('\n'),'aim-org-chart.csv','text/csv;charset=utf-8');
 }
@@ -2849,7 +2849,8 @@ function importCSV(inp){
       });
       if(!nodes.length) throw new Error('노드 데이터 없음');
       S.nodes=nodes; S.conns=conns; S.selConn=null; S.busY={};
-      S.nid=201;
+      // 가져온 id의 숫자 최대값 기준으로 nid 산정 — 'nd2xx' id와 신규 노드 id 충돌 방지 (importJSON과 동일)
+      S.nid=Math.max(201,...[...nodes,...conns].map(x=>parseInt(String(x.id||'').replace(/\D/g,''))||0))+1;
       render(); fitScreen(); scheduleSave();
       alert(`가져오기 완료: ${nodes.length}개 조직, ${conns.length}개 연결`);
     } catch(err){ alert('CSV 파싱 오류: '+err.message); }
