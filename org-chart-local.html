@@ -111,7 +111,7 @@ body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);ov
 
 /* ── Canvas ───────────────────────────────────────── */
 #wrap{
-  position:fixed;top:50px;left:0;right:0;bottom:26px;
+  position:fixed;top:50px;left:0;right:0;bottom:56px;
   overflow:auto;
 }
 #wrap.panning{cursor:grab;}
@@ -124,7 +124,7 @@ body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);ov
 }
 /* dot grid — fixed overlay, dynamically positioned via JS */
 #grid-bg{
-  position:fixed;top:50px;left:0;right:0;bottom:26px;
+  position:fixed;top:50px;left:0;right:0;bottom:56px;
   pointer-events:none;z-index:0;opacity:.5;
   background-image:radial-gradient(circle at 0 0,var(--grid-dot) 1px,transparent 1px);
 }
@@ -378,7 +378,7 @@ body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);ov
   display:flex;align-items:center;padding:0 14px;font-size:11px;gap:14px;
 }
 #zhint{
-  position:fixed;bottom:36px;left:50%;transform:translateX(-50%);
+  position:fixed;bottom:66px;left:50%;transform:translateX(-50%);
   background:var(--coral);color:#fff;padding:7px 18px;
   border-radius:20px;font-size:13px;font-weight:600;
   pointer-events:none;z-index:500;display:none;
@@ -396,6 +396,26 @@ body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);ov
 #zslider{
   width:100px;cursor:pointer;accent-color:var(--mint);
 }
+/* ── 시트 탭 바 (엑셀식) ──────────────────────────── */
+#sheetbar{
+  position:fixed;bottom:26px;left:0;right:0;height:30px;z-index:1000;
+  background:#232327;display:flex;align-items:flex-end;padding:0 8px;gap:2px;
+  overflow-x:auto;overflow-y:hidden;scrollbar-width:none;
+  border-top:1px solid rgba(255,255,255,.07);
+}
+#sheetbar::-webkit-scrollbar{display:none;}
+.sht{
+  display:flex;align-items:center;gap:6px;flex-shrink:0;
+  padding:5px 14px;font-size:12px;color:rgba(255,255,255,.55);
+  background:rgba(255,255,255,.04);border:none;border-radius:6px 6px 0 0;
+  cursor:pointer;white-space:nowrap;max-width:180px;
+}
+.sht:hover{background:rgba(255,255,255,.1);color:rgba(255,255,255,.8);}
+.sht.active{background:var(--bg);color:#222;font-weight:700;}
+.sht .sht-x{border:none;background:none;color:inherit;opacity:.45;cursor:pointer;font-size:11px;padding:0 1px;line-height:1;}
+.sht .sht-x:hover{opacity:1;color:#E33;}
+.sht-add{flex-shrink:0;border:none;background:none;color:rgba(255,255,255,.5);font-size:14px;font-weight:700;cursor:pointer;padding:4px 10px;border-radius:5px;}
+.sht-add:hover{background:rgba(255,255,255,.12);color:#fff;}
 /* ── 읽기 전용 모드 (관리자 잠금) ─────────────────── */
 body.ro .nact{display:none!important;}
 body.ro .adm-only{display:none!important;}
@@ -533,6 +553,9 @@ body.ro .sfl-ex-btn{display:none;}
 <div id="zhint">연결할 첫 번째 조직을 클릭하세요</div>
 
 <!-- Zoom controls moved into topbar -->
+
+<!-- Sheet tabs (엑셀식) -->
+<div id="sheetbar"></div>
 
 <!-- Status bar -->
 <div id="stbar">
@@ -956,6 +979,59 @@ const OPT = {
   dataLabel:'데이터'
 };
 
+// ═══ Sheets (엑셀식 탭) — S.nodes/conns/busY는 항상 현재 시트의 데이터
+let SHEETS=[], CUR_SHEET=0;
+function _syncSheet(){
+  const sh=SHEETS[CUR_SHEET]; if(!sh) return;
+  sh.nodes=S.nodes; sh.conns=S.conns; sh.busY=S.busY;
+}
+function _loadSheet(i){
+  CUR_SHEET=i;
+  const sh=SHEETS[i];
+  S.nodes=sh.nodes||[]; S.conns=sh.conns||[]; S.busY=sh.busY||{};
+  S.selConn=null; S.eid=null;
+  const nl=document.getElementById('nl'); if(nl) nl.innerHTML='';
+}
+function switchSheet(i){
+  if(i===CUR_SHEET||!SHEETS[i]) return;
+  _syncSheet();
+  _loadSheet(i);
+  // 좌표 없는(전부 0,0) 시트는 자동 배치, 그 외에는 저장된 배치 유지
+  if(S.nodes.length&&!_hasPositions(S.nodes)) autoLayout();
+  else { render(); if(S.nodes.length) fitScreen(); }
+  renderSheetTabs();
+  scheduleSave(); // activeSheet 위치도 저장 대상 (관리자 모드에서만 실제 기록)
+}
+function addSheet(){
+  if(!ADMIN) return;
+  _syncSheet();
+  SHEETS.push({name:'시트'+(SHEETS.length+1),nodes:[],conns:[],busY:{}});
+  _loadSheet(SHEETS.length-1);
+  render(); renderSheetTabs(); scheduleSave();
+}
+function renameSheet(i){
+  if(!ADMIN||!SHEETS[i]) return;
+  const nm=prompt('시트 이름',SHEETS[i].name);
+  if(nm&&nm.trim()){ SHEETS[i].name=nm.trim().slice(0,30); renderSheetTabs(); scheduleSave(); }
+}
+function delSheet(i,ev){
+  if(ev) ev.stopPropagation();
+  if(!ADMIN||!SHEETS[i]) return;
+  if(SHEETS.length<=1){ alert('마지막 시트는 삭제할 수 없습니다.'); return; }
+  if(!confirm(`'${SHEETS[i].name}' 시트를 삭제하시겠습니까?\n시트의 조직도 데이터도 함께 삭제됩니다.`)) return;
+  SHEETS.splice(i,1);
+  const next=Math.min(CUR_SHEET>=i?CUR_SHEET-1:CUR_SHEET, SHEETS.length-1);
+  _loadSheet(Math.max(0,next));
+  render(); if(S.nodes.length) fitScreen();
+  renderSheetTabs(); scheduleSave();
+}
+function renderSheetTabs(){
+  const bar=document.getElementById('sheetbar'); if(!bar) return;
+  bar.innerHTML=SHEETS.map((sh,i)=>
+    `<button class="sht${i===CUR_SHEET?' active':''}" onclick="switchSheet(${i})" ondblclick="renameSheet(${i})" title="${ADMIN?'더블클릭: 이름 변경':''}">${esc(sh.name)}${ADMIN&&SHEETS.length>1?`<span class="sht-x" onclick="delSheet(${i},event)" title="시트 삭제">✕</span>`:''}</button>`
+  ).join('')+(ADMIN?`<button class="sht-add" onclick="addSheet()" title="시트 추가">＋</button>`:'');
+}
+
 // ═══ State
 const S = {
   nodes: [],
@@ -994,6 +1070,8 @@ function init() {
     {id:'e5',f:'b2',t:'t3',d:0},
     {id:'e6',f:'hq',t:'st',d:1},
   ];
+  SHEETS=[{name:'조직도',nodes:S.nodes,conns:S.conns,busY:S.busY}];
+  CUR_SHEET=0;
 }
 
 // ═══ Node height
@@ -2646,6 +2724,7 @@ function applyRO(){
   if(btn) btn.textContent=ADMIN?'🔓 관리자':'🔒 관리자';
   const badge=document.getElementById('ro-badge');
   if(badge) badge.textContent=ADMIN?'🔓 편집 모드':'🔒 읽기 전용';
+  renderSheetTabs();
   render();
 }
 let _pwMode='unlock'; // 'unlock' | 'register'
@@ -2722,12 +2801,14 @@ async function manualSave(){
   }
 }
 function _saveLocalFallback(){
-  try{ localStorage.setItem(SB_LS_KEY, JSON.stringify({nodes:S.nodes,conns:S.conns,busY:S.busY})); }catch(e){}
+  _syncSheet();
+  try{ localStorage.setItem(SB_LS_KEY, JSON.stringify({sheets:SHEETS,activeSheet:CUR_SHEET})); }catch(e){}
 }
 function _fileData(){
+  _syncSheet();
   return {
-    v:1, app:'ssb-orgchart', savedAt:new Date().toISOString(),
-    nodes:S.nodes, conns:S.conns, busY:S.busY,
+    v:2, app:'ssb-orgchart', savedAt:new Date().toISOString(),
+    sheets:SHEETS, activeSheet:CUR_SHEET,
     opt:OPT,
     ...(ADMIN_REC?{admin:ADMIN_REC}:{})
   };
@@ -2793,6 +2874,7 @@ function _finishLoad(hasPos){
   const b=document.getElementById('btn-data');
   if(b) b.textContent='◈ '+OPT.dataLabel;
   applyLogo();
+  renderSheetTabs();
   if(hasPos){ render(); fitScreen(); }
   else autoLayout();
 }
@@ -2802,18 +2884,28 @@ function _hasPositions(nodes){
 // id는 인라인 핸들러 문자열(onclick="openEdit('${id}')")에 들어가므로 형식을 강제한다.
 // 이 앱이 만드는 id는 항상 [A-Za-z0-9_.-] 범위 — 벗어나면 조작된 파일로 보고 거부.
 const _ID_RE=/^[A-Za-z0-9_.-]+$/;
-function _adoptData(d){
-  const badN=(d.nodes||[]).find(n=>!_ID_RE.test(String(n.id||'')));
-  const badC=(d.conns||[]).find(c=>!_ID_RE.test(String(c.id||'')));
+function _sanitizeSheet(sh){
+  const badN=(sh.nodes||[]).find(n=>!_ID_RE.test(String(n.id||'')));
+  const badC=(sh.conns||[]).find(c=>!_ID_RE.test(String(c.id||'')));
   if(badN||badC) throw new Error('유효하지 않은 id가 있는 파일입니다: '+String((badN||badC).id).slice(0,40));
-  d.nodes.forEach(n=>{
+  (sh.nodes||[]).forEach(n=>{
     if(n.type==='ceo')n.type='top';
     if(n.color&&!/^#[0-9a-fA-F]{3,8}$/.test(n.color)) n.color='';
   });
-  S.nodes=d.nodes; S.conns=d.conns||[]; S.selConn=null;
-  S.busY={};
-  Object.entries(d.busY||{}).forEach(([k,v])=>{ if(Number.isFinite(+v)) S.busY[k]=+v; });
-  S.nid=Math.max(200,...[...S.nodes,...S.conns]
+  const busY={};
+  Object.entries(sh.busY||{}).forEach(([k,v])=>{ if(Number.isFinite(+v)) busY[k]=+v; });
+  return {name:String(sh.name||'조직도').slice(0,30), nodes:sh.nodes||[], conns:sh.conns||[], busY};
+}
+function _adoptData(d){
+  // v2 {sheets:[...]} / v1 {nodes,conns,busY} 모두 수용
+  const rawSheets = Array.isArray(d.sheets)&&d.sheets.length ? d.sheets : [ {name:'조직도',nodes:d.nodes,conns:d.conns,busY:d.busY} ];
+  const prevName = SHEETS[CUR_SHEET]?.name; // 감시 리로드 시 보던 시트 유지용
+  SHEETS = rawSheets.map(_sanitizeSheet);
+  let idx = Number.isInteger(d.activeSheet) ? d.activeSheet : 0;
+  const keep = prevName!=null ? SHEETS.findIndex(s=>s.name===prevName) : -1;
+  if(keep>=0) idx=keep;
+  _loadSheet(Math.min(Math.max(0,idx), SHEETS.length-1));
+  S.nid=Math.max(200,...SHEETS.flatMap(sh=>[...sh.nodes,...sh.conns])
     .map(x=>parseInt((x.id||'').replace(/\D/g,''))||0));
 }
 function loadFromLocal(){
@@ -2822,7 +2914,7 @@ function loadFromLocal(){
     const raw=localStorage.getItem(SB_LS_KEY);
     if(raw){
       const d=JSON.parse(raw);
-      if(d.nodes&&d.nodes.length){ _adoptData(d); loaded=true; }
+      if((d.sheets&&d.sheets.length)||(d.nodes&&d.nodes.length)){ _adoptData(d); loaded=true; }
     }
     const rawOpt=localStorage.getItem(SB_OPT_LS);
     if(rawOpt) _applyOptObj(JSON.parse(rawOpt));
@@ -2841,7 +2933,7 @@ async function loadFromFile(){
     return;
   }
   const d=JSON.parse(txt);
-  if(!d.nodes||!Array.isArray(d.nodes)) throw new Error('nodes 필드가 없는 파일입니다.');
+  if(!Array.isArray(d.sheets)&&!Array.isArray(d.nodes)) throw new Error('sheets/nodes 필드가 없는 파일입니다.');
   _adoptData(d);
   if(d.opt) _applyOptObj(d.opt);
   if(d.admin&&d.admin.hash){
@@ -2963,17 +3055,16 @@ function importJSON(inp){
   reader.onload=e=>{
     try{
       const data=JSON.parse(e.target.result);
-      if(!data.nodes) throw new Error('nodes 필드 없음');
-      // 구버전 호환: type 'ceo' → 'top'
-      data.nodes.forEach(n=>{ if(n.type==='ceo') n.type='top'; });
-      S.nodes=data.nodes; S.conns=data.conns||[]; S.selConn=null;
-      S.busY=data.busY||{};
+      if(!Array.isArray(data.sheets)&&!Array.isArray(data.nodes)) throw new Error('sheets/nodes 필드 없음');
+      _adoptData(data); // v1/v2 수용 + id·색상 경계 검증 (파일 로드와 동일 경로)
       if(data.opt) _applyOptObj(data.opt);
-      S.nid=Math.max(201,...[...S.nodes,...S.conns].map(x=>parseInt((x.id||'').replace(/\D/g,''))||0))+1;
       const b=document.getElementById('btn-data');
       if(b) b.textContent='◈ '+OPT.dataLabel;
-      render(); fitScreen(); scheduleSave();
-      alert(`가져오기 완료: ${S.nodes.length}개 조직`);
+      renderSheetTabs();
+      if(S.nodes.length&&!_hasPositions(S.nodes)) autoLayout();
+      else { render(); fitScreen(); }
+      scheduleSave();
+      alert(`가져오기 완료: 시트 ${SHEETS.length}개, 현재 시트 ${S.nodes.length}개 조직`);
     } catch(err){ alert('JSON 파싱 오류: '+err.message); }
     inp.value='';
   };
