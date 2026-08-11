@@ -2864,12 +2864,17 @@ function importJSON(inp){
   const reader=new FileReader();
   reader.onload=e=>{
     try{
-      const data=JSON.parse(e.target.result);
+      let data=JSON.parse(e.target.result);
+      // 로컬판 v2 포맷({sheets:[...]}) 호환: 활성 시트 하나를 꺼내 쓴다
+      if(!data.nodes&&Array.isArray(data.sheets)&&data.sheets.length){
+        const si=Number.isInteger(data.activeSheet)?Math.min(Math.max(0,data.activeSheet),data.sheets.length-1):0;
+        data={...data.sheets[si],opt:data.opt};
+      }
       if(!data.nodes) throw new Error('nodes 필드 없음');
       // 구버전 호환: type 'ceo' → 'top'
       data.nodes.forEach(n=>{ if(n.type==='ceo') n.type='top'; });
       S.nodes=data.nodes; S.conns=data.conns||[]; S.selConn=null;
-      S.busY={};
+      S.busY=data.busY||{};
       if(data.opt){
         const o=data.opt;
         if(o.jobCats) OPT.jobCats=o.jobCats;
