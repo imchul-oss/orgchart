@@ -1,99 +1,61 @@
-# AIM Intelligence Org Chart
+# Org Chart
 
-AIM Intelligence 조직도를 시각화·편집하는 단일 HTML 도구. 브라우저에서 바로 열리며, 필요 시 Supabase에 연결해 클라우드 동기화한다.
+카드 기반 조직도를 시각화·편집하는 단일 HTML 도구. 두 가지 버전이 있습니다.
 
-## 핵심 기능
+| 파일 | 데이터 저장 | 용도 |
+|---|---|---|
+| `org-chart-local.html` | 지정 JSON 파일 + localStorage 백업 | **로컬 전용** - 네트워크 호출 없음, 관리자 비밀번호 게이트 |
+| `org-chart.html` | Supabase 클라우드 (옵션) + localStorage | 클라우드 동기화 버전 (기존) |
 
-- 카드 기반 조직도 (top / L1–L5 / Side / TF 8개 타입)
-- 드래그·줌(15~300%)·자동 배치·화면 맞춤 — 줌·배치 컨트롤은 상단바에 인라인 배치
-- 자기 서브트리 너비 기반 컴팩트 자동 배치 + leaf 패딩으로 시각 균형 보정
-- 멤버 행 드래그앤드롭 — 팀 간 이동 + 팀 내 순서 변경 (빈 카드에도 드롭 가능, 드롭 위치 미리보기)
-- 실선/점선 연결선, 웨이포인트 편집
-- Supabase 클라우드 동기화 (옵션) — 0.8초 debounce 자동 저장 + 수동 `💾 저장` 버튼
-- CSV / JSON 로컬 import·export
-- 직무·직책·분야·상태 카테고리 자유 편집
-- 카드 색상·폰트·간격·여백 슬라이더로 정밀 조정 (상단 여백 최대 250px)
-- 로고 텍스트·부제·색상·부제 색상 커스터마이징 (⚙ 옵션 → 로고)
-- 상단바 숨기기 / 표시 토글 — 우측 끝 `▲`, 숨기면 같은 위치에 민트색 `▼` 오버레이
-- 인원 현황 플로팅 패널 (재직·예정·채용·퇴사 그룹 가시화)
-- 파일명 기반 localStorage 네임스페이스 — 파일 복사·이름변경 시 별도 저장소 자동 분리
+## 로컬 버전 (`org-chart-local.html`)
 
-## 빠른 시작
+### 동작 방식
 
-1. `org-chart.html`을 브라우저에서 연다.
-2. (선택) 상단 **☁ Cloud** 버튼 → Supabase Project URL + Publishable key 입력 → 연결.
-3. **＋ 조직 추가**로 카드 생성, **🔗 연결선 추가**로 카드 간 관계 표현.
-4. **⚙ 옵션** / **◈ 데이터** 패널에서 색상·폰트·간격·카테고리·로고 커스터마이징.
-5. 화면이 좁으면 우측 **▲**로 상단바를 접고, 다시 **▼**로 펼친다.
+- **읽기 전용이 기본**: 파일을 열면 누구나 조직도를 볼 수 있지만 수정은 불가능합니다. 편집 UI(조직 추가·수정·연결선·옵션·데이터·가져오기·저장)는 관리자 모드에서만 나타납니다.
+- **관리자 모드**: 상단 `🔒 관리자` 버튼 → 비밀번호 입력으로 잠금 해제. **최초 1회는 비밀번호 등록**(4자 이상, 2회 입력)이며, 비밀번호는 PBKDF2-SHA256(150,000회) 해시로만 저장됩니다. 해시는 데이터 JSON 파일 안에 함께 저장되어 파일과 같이 이동합니다. 다시 누르면 잠금.
+- **데이터 파일**: 상단 `📄 파일` 버튼 → `파일 선택`으로 JSON 파일을 한 번 지정하면, 다음에 열 때 자동으로 그 파일을 불러옵니다(브라우저 권한 확인이 필요하면 상단 배너에서 한 번 클릭). 관리자 모드의 저장(자동 0.8초 debounce + 수동 `💾 저장`)은 그 파일에 직접 기록됩니다.
+- **뷰어 자동 반영**: 읽기 전용 상태에서는 3초마다 파일 변경을 감지해 화면을 자동 갱신합니다. 파일을 공유 폴더에 두면 "관리자가 수정 → 다른 PC 뷰어에 반영" 흐름이 됩니다.
+- **파일 미지정 시**: localStorage(브라우저 저장소)만으로도 동작합니다. localStorage는 파일 연결 여부와 무관하게 항상 백업으로 함께 기록됩니다.
 
-## Supabase 셋업 (1회만)
+### 요구 사항
 
-### 새 Supabase 프로젝트에서 시작하는 경우
+- 파일 연결(자동 열기·직접 저장)은 File System Access API가 필요합니다: **Chrome / Edge** (file:// 로 열어도 동작). 미지원 브라우저(Firefox 등)에서는 localStorage + 내려받기/가져오기 방식으로만 동작합니다.
 
-1. [Supabase 대시보드](https://supabase.com/dashboard) → **New project** 생성
-2. 좌측 **SQL Editor** → **New query**
-3. 본 레포의 [`supabase-schema.sql`](./supabase-schema.sql) 전체 복사·붙여넣기 → **Run**
-4. **Project Settings → API**:
-   - **Project URL** 복사
-   - **Legacy `anon` key** 복사 (권장) — 본 스키마의 RLS 정책이 `to anon` 대상이므로 Legacy anon(JWT) key가 가장 확실합니다. 신형 `sb_publishable_*` key는 프로젝트 설정에 따라 anon 역할로 매핑되지 않아 아래의 silent fail이 발생할 수 있습니다.
-5. `org-chart.html` 열고 ☁ **Cloud** 모달에 두 값 입력 → **연결**
+### 데이터 파일 포맷
 
-### 신 UI 위치 안내 (2026 기준)
-
-| 항목 | 경로 |
-|---|---|
-| Project URL | Project Settings → **Integrations → Data API → Overview** |
-| API Keys | Project Settings → **API Keys** (좌측 사이드바) |
-
-## ⚠ RLS (Row Level Security) 정책
-
-본 도구는 **anon 권한 key** 만으로 접근합니다. 따라서 Supabase가 anon 권한자에게 읽기·쓰기를 허용해야 동기화가 작동합니다. 신형 Publishable key(`sb_publishable_*`)는 `to anon` 정책과 호환되지 않는 경우가 있으니, 증상이 있으면 Legacy `anon` key로 교체해 보세요.
-
-### 자가 진단 — "저장됨 메시지는 뜨는데 실제로는 안 됨" 증상
-
-`supabase-schema.sql`을 실행하지 않았거나, 별도로 RLS를 강화했다면 **silent fail**이 발생합니다:
-
-- ✅ 화면에는 `✓ 저장됨` 표시
-- ❌ 실제로는 Supabase DB에 row가 들어가지 않음
-- 새로고침·다른 컴퓨터에서 열면 **옛 데이터로 되돌아감**
-
-본 도구의 최신 빌드는 silent fail을 자동 감지해 다음 메시지를 띄웁니다:
-> ⚠ 저장 실패: Silent fail 감지 — RLS 정책이 anon write를 차단했을 가능성. SQL Editor에서 supabase-schema.sql 의 anon 정책 부분을 실행하세요.
-
-### 즉시 해결 — SQL Editor에서 4줄 실행
-
-이미 테이블은 있는데 정책만 없는 경우, `supabase-schema.sql`의 다음 4줄만 실행하면 됩니다:
-
-```sql
-create policy "anon_all_nodes"   on public.nodes   for all to anon using (true) with check (true);
-create policy "anon_all_members" on public.members for all to anon using (true) with check (true);
-create policy "anon_all_conns"   on public.conns   for all to anon using (true) with check (true);
-create policy "anon_all_options" on public.options for all to anon using (true) with check (true);
+```json
+{
+  "v": 1,
+  "app": "ssb-orgchart",
+  "nodes": [...], "conns": [...], "busY": {...},
+  "opt": {...},
+  "admin": {"salt": "...", "iter": 150000, "hash": "..."}
+}
 ```
 
-### 보안 모델 명시
+`내려받기 → JSON 파일`로 받은 파일을 그대로 `파일 선택`으로 연결할 수 있습니다(동일 포맷). `data/` 폴더는 gitignore 되어 있어 실데이터를 커밋하지 않습니다.
 
-위 정책은 **Publishable key를 가진 사람만 접근**하는 "Key = 비밀번호" 모델입니다. Key가 공개 레포·이메일 등에 노출될 가능성이 있다면:
+### 보안 모델
 
-1. 정책을 `to anon` → `to authenticated` 로 변경
-2. Supabase Auth로 사용자 로그인 의무화
-3. Key 재발급 (대시보드 → API Keys → New publishable key)
+비밀번호 게이트는 **UI 게이트**입니다. 파일 자체를 열 수 있는 사람은 JSON을 직접 편집할 수 있으므로, 열람 권한 통제는 파일·폴더 권한(공유 폴더 ACL)으로 하세요. 게이트가 막는 것은 "뷰어가 실수로/임의로 조직도를 고치는 것"입니다.
 
-## 데이터 저장 구조
+## 클라우드 버전 (`org-chart.html`)
 
-- **Local**: `localStorage` 키 `aim-org-chart-sb__<filename>-v1` (파일명 prefix로 네임스페이스 분리)
-- **옵션 Local**: `aim-org-chart-sb-opt__<filename>-v1` (폰트·색상·로고·카테고리 등 OPT 전체)
-- **Cloud**: Supabase REST API — 4개 테이블(`nodes`/`members`/`conns`/`options`)
-- **자동 저장 주기**: 마지막 편집 후 0.8초 (debounce) → 자동 push
-- **수동 저장**: 상단 `💾 저장` 버튼 → 즉시 push (debounce 우회)
-- **백업**: CSV·JSON export 권장 — Cloud DB 사고 대비
+Supabase 연동 버전. 셋업·RLS 정책·문제 해결은 [`supabase-schema.sql`](./supabase-schema.sql)과 이 README의 이전 버전(git 히스토리) 참조. 핵심:
+
+1. Supabase 프로젝트 생성 → SQL Editor에서 `supabase-schema.sql` 실행
+2. `☁ Cloud` 버튼 → Project URL + Legacy `anon` key 입력
+3. RLS가 anon write를 막으면 silent fail이 발생하며, 최신 빌드는 이를 감지해 경고합니다
+
+## 공통 기능
+
+- 카드 기반 조직도 (top / L1-L5 / Side / TF 8개 타입), 드래그·줌(15~300%)·자동 배치·화면 맞춤
+- 멤버 행 드래그앤드롭(팀 간 이동·순서 변경), 실선/점선 연결선·웨이포인트 편집
+- 직무·직책·분야·상태 카테고리 자유 편집, 카드 색상·폰트·간격 슬라이더
+- 인원 현황 플로팅 패널(상태 그룹·직무·직책·분야별 집계)
+- CSV / JSON 내려받기·가져오기 (CSV는 조직·인원·연결 데이터 전용 - 색상·카테고리·웨이포인트 등 설정까지 온전히 왕복하려면 JSON 사용)
+- 파일명 기반 localStorage 네임스페이스 (파일 복사 시 저장소 자동 분리)
 
 ## 기술 스택
 
-- Vanilla JS + HTML + CSS (런타임 의존성 없음)
-- Supabase JS SDK v2 (CDN: jsdelivr)
-- 단일 self-contained `.html` 파일 — 오프라인에서도 Local 모드로 동작
-
-## 라이선스
-
-내부 사용 (AIM Intelligence). 외부 배포 전 별도 협의 필요.
+Vanilla JS + HTML + CSS 단일 파일. 로컬 버전은 런타임 의존성 0 (클라우드 버전만 Supabase JS SDK CDN 사용).
