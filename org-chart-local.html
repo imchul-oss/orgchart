@@ -990,6 +990,10 @@ function _loadSheet(i){
   const sh=SHEETS[i];
   S.nodes=sh.nodes||[]; S.conns=sh.conns||[]; S.busY=sh.busY||{};
   S.selConn=null; S.eid=null;
+  // 진행 중이던 작업 상태를 시트 경계 너머로 끌고 가지 않는다
+  // (연결 모드 유지 시 다른 시트 노드와 유령 연결선이 생긴다 - Vertex R2 지적)
+  if(S.cmode&&typeof toggleConnect==='function') toggleConnect();
+  if(typeof _resetAllDragState==='function') _resetAllDragState();
   const nl=document.getElementById('nl'); if(nl) nl.innerHTML='';
 }
 function switchSheet(i){
@@ -1019,6 +1023,7 @@ function delSheet(i,ev){
   if(!ADMIN||!SHEETS[i]) return;
   if(SHEETS.length<=1){ alert('마지막 시트는 삭제할 수 없습니다.'); return; }
   if(!confirm(`'${SHEETS[i].name}' 시트를 삭제하시겠습니까?\n시트의 조직도 데이터도 함께 삭제됩니다.`)) return;
+  _syncSheet(); // 현재 시트의 미반영 편집을 먼저 배열에 반영 (누락 시 삭제 후 롤백됨)
   SHEETS.splice(i,1);
   const next=Math.min(CUR_SHEET>=i?CUR_SHEET-1:CUR_SHEET, SHEETS.length-1);
   _loadSheet(Math.max(0,next));
@@ -2729,7 +2734,10 @@ function applyRO(){
 }
 let _pwMode='unlock'; // 'unlock' | 'register'
 function adminBtn(){
-  if(ADMIN){ ADMIN=false; applyRO(); return; }
+  if(ADMIN){
+    if(S.cmode) toggleConnect(); // 잠그기 전에 연결 모드 해제 (잠긴 뒤엔 뷰어가 못 끄고 cmode가 남는다)
+    ADMIN=false; applyRO(); return;
+  }
   _pwMode=ADMIN_REC?'unlock':'register';
   document.getElementById('pw-title').textContent=_pwMode==='register'?'🔑 관리자 비밀번호 등록 (최초 1회)':'🔒 관리자 잠금 해제';
   document.getElementById('pw-lbl1').textContent=_pwMode==='register'?'새 비밀번호 (4자 이상)':'비밀번호';
@@ -2900,9 +2908,12 @@ function _adoptData(d){
   // v2 {sheets:[...]} / v1 {nodes,conns,busY} 모두 수용
   const rawSheets = Array.isArray(d.sheets)&&d.sheets.length ? d.sheets : [ {name:'조직도',nodes:d.nodes,conns:d.conns,busY:d.busY} ];
   const prevName = SHEETS[CUR_SHEET]?.name; // 감시 리로드 시 보던 시트 유지용
+  const prevIdx  = CUR_SHEET;
   SHEETS = rawSheets.map(_sanitizeSheet);
   let idx = Number.isInteger(d.activeSheet) ? d.activeSheet : 0;
-  const keep = prevName!=null ? SHEETS.findIndex(s=>s.name===prevName) : -1;
+  // 같은 인덱스에 같은 이름이 있으면 그 자리를 우선 (동명 시트가 있어도 튕기지 않게)
+  const keep = prevName==null ? -1
+    : (SHEETS[prevIdx]?.name===prevName ? prevIdx : SHEETS.findIndex(s=>s.name===prevName));
   if(keep>=0) idx=keep;
   _loadSheet(Math.min(Math.max(0,idx), SHEETS.length-1));
   S.nid=Math.max(200,...SHEETS.flatMap(sh=>[...sh.nodes,...sh.conns])
@@ -3038,8 +3049,9 @@ function importCSV(inp){
       });
       if(!nodes.length) throw new Error('노드 데이터 없음');
       S.nodes=nodes; S.conns=conns; S.selConn=null; S.busY={};
-      // 가져온 id의 숫자 최대값 기준으로 nid 산정 — 'nd2xx' id와 신규 노드 id 충돌 방지 (importJSON과 동일)
-      S.nid=Math.max(201,...[...nodes,...conns].map(x=>parseInt(String(x.id||'').replace(/\D/g,''))||0))+1;
+      _syncSheet();
+      // nid는 전체 시트 기준 최대값 — 다른 시트의 id와 신규 노드 id 충돌 방지
+      S.nid=Math.max(201,...SHEETS.flatMap(sh=>[...sh.nodes,...sh.conns]).map(x=>parseInt(String(x.id||'').replace(/\D/g,''))||0))+1;
       render(); fitScreen(); scheduleSave();
       alert(`가져오기 완료: ${nodes.length}개 조직, ${conns.length}개 연결`);
     } catch(err){ alert('CSV 파싱 오류: '+err.message); }
