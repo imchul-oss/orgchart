@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>순수본 — 조직도 (Local)</title>
+<title>조직도 (Local)</title>
 <style>
-/* ── AIM Brand Colors ─────────────────────────────── */
+/* ── Brand Colors ─────────────────────────────── */
 :root {
   --dark:   #2C2C2C;
   --gray:   #4F4F4F;
@@ -477,7 +477,7 @@ body.present #wrap,body.present #grid-bg{top:0!important;bottom:0!important;}
 
 <!-- Topbar -->
 <div id="topbar">
-  <span class="tl">순수본</span>
+  <span class="tl">조직도</span>
   <span class="tsub">조직도 · Org Chart</span>
   <div class="tdv"></div>
   <button class="tb tb-g adm-only" onclick="autoLayout()">⟳ 자동 배치</button>
@@ -1007,14 +1007,14 @@ const OPT = {
     {key:'hiring', label:'채용 중', color:'#A78BFA'}
   ],
   // 로고 (좌상단)
-  logoText: '순수본',
+  logoText: '',
   logoSub : '조직도 · Org Chart',
   logoColor: '#40D2A7',
   logoSubColor: '#808080',
   // 드롭다운 카테고리
-  jobCats:['본부장','실장','팀장','팀장(겸)','팀장(대행)','인사총무','총무지원','회계관리','생산관리','시설관리','자재관리','물류사무','직배관리','품질관리','연구개발','상품기획','마케팅','영업','디자인','웹서비스','CS','기타'],
-  roleCats:['대표이사','부문장','부장','차장','과장','대리','주임','사원','PT','계약직'],
-  areaCats:['본사','1공장','2공장','지주','기타'],
+  jobCats:[],
+  roleCats:[],
+  areaCats:[],
   // 현황 그룹
   statsGroups:[
     {name:'재직',   statuses:['active']},
@@ -1107,28 +1107,8 @@ const S = {
 
 // ═══ Initial data (플레이스홀더 — 실데이터는 지정한 JSON 파일에서 불러온다)
 function init() {
-  S.nodes = [
-    {id:'hq', en:'CEO',        ko:'대표이사',  type:'top', x:690,  y:50,
-     m:[{n:'홍길동',f:'',r:'대표이사'}]},
-    {id:'b1', en:'Production', ko:'생산본부',  type:'l1',  x:200,  y:288,
-     m:[{n:'홍길동',f:'본부장',r:'차장'}]},
-    {id:'b2', en:'Business',   ko:'사업본부',  type:'l1',  x:690,  y:288,
-     m:[{n:'홍길동',f:'본부장',r:'차장'}]},
-    {id:'t1', en:'Team A',     ko:'A팀',       type:'l2',  x:80,   y:510,
-     m:[{n:'홍길동',f:'팀장',r:'과장'},{n:'홍길동',f:'',r:'대리'}]},
-    {id:'t2', en:'Team B',     ko:'B팀',       type:'l2',  x:400,  y:510,
-     m:[{n:'홍길동',f:'팀장',r:'과장'},{n:'홍길동',f:'',r:'주임'}]},
-    {id:'t3', en:'Team C',     ko:'C팀',       type:'l2',  x:690,  y:510,
-     m:[{n:'홍길동',f:'팀장',r:'과장'},{n:'홍길동',f:'',r:'사원'}]},
-    {id:'st', en:'HQ Support', ko:'지원팀',    type:'side',x:1180, y:50,
-     m:[{n:'홍길동',f:'지원',r:'실장'}]},
-  ];
-  S.conns = [
-    {id:'e1',f:'hq',t:'b1',d:0},{id:'e2',f:'hq',t:'b2',d:0},
-    {id:'e3',f:'b1',t:'t1',d:0},{id:'e4',f:'b1',t:'t2',d:0},
-    {id:'e5',f:'b2',t:'t3',d:0},
-    {id:'e6',f:'hq',t:'st',d:1},
-  ];
+  S.nodes = [];
+  S.conns = [];
   SHEETS=[{name:'조직도',nodes:S.nodes,conns:S.conns,busY:S.busY}];
   CUR_SHEET=0;
 }
@@ -3272,7 +3252,7 @@ function openOptions(){
     {lbl:'상태바 배경',      key:'stbarBg',  cssVar:'--stbar-bg',  val:OPT.stbarBg},
   ]);
   // 로고 input 값 sync
-  const lt=document.getElementById('opt-logo-txt'); if(lt) lt.value = OPT.logoText || 'AIM';
+  const lt=document.getElementById('opt-logo-txt'); if(lt) lt.value = OPT.logoText ||'조직도';
   const ls=document.getElementById('opt-logo-sub'); if(ls) ls.value = OPT.logoSub || '';
   const lc=document.getElementById('opt-logo-col'); if(lc){ lc.value = OPT.logoColor || '#40D2A7'; }
   const lcv=document.getElementById('opt-logo-col-v'); if(lcv) lcv.textContent = (OPT.logoColor||'#40D2A7').toUpperCase();
@@ -4187,7 +4167,7 @@ function toggleTopbar(){
 // ═══ 로고 (좌상단) 적용
 function applyLogo(){
   const lt=document.querySelector('#topbar .tl');
-  if(lt){ lt.textContent=OPT.logoText||'AIM'; lt.style.color=OPT.logoColor||'#40D2A7'; }
+  if(lt){ lt.textContent=OPT.logoText||'조직도'; lt.style.color=OPT.logoColor||'#40D2A7'; }
   const ls=document.querySelector('#topbar .tsub');
   if(ls){ ls.textContent=OPT.logoSub||''; ls.style.color=OPT.logoSubColor||'rgba(255,255,255,.4)'; }
   try{ document.title=(OPT.logoText||'조직도')+' — 조직도'; }catch(_){}
