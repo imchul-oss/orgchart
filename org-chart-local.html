@@ -152,7 +152,7 @@ body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);ov
 .anchor-dot.drop-target{border-color:var(--sky);background:rgba(96,220,248,.2);transform:translate(-50%,-50%) scale(1.25);}
 /* 드롭다운 메뉴 */
 .dd-wrap{position:relative;display:inline-block;}
-.dd{position:absolute;top:calc(100% + 5px);left:0;z-index:2000;
+.dd{position:fixed;z-index:2000;
   background:#fff;border-radius:8px;box-shadow:0 5px 18px rgba(0,0,0,.2);
   padding:4px 0;min-width:130px;border:1px solid rgba(0,0,0,.07);display:none;}
 .dd.open{display:block;}
@@ -204,7 +204,26 @@ body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);ov
 }
 .nd:hover{box-shadow:0 6px 20px rgba(0,0,0,var(--shadow-a));}
 .nd{cursor:move;}
+.nd.lint-bad{outline:3px solid #dc2626;outline-offset:2px;}
+.nd.lint-flash{animation:lintflash .3s ease 3;}
+@keyframes lintflash{50%{filter:brightness(1.4);}}
+#lint-panel{display:none;position:fixed;z-index:9999;background:#fff;color:#111;border:1px solid #ccc;border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,.25);padding:8px;width:300px;max-height:60vh;overflow:auto;font-size:12px;}
+.lint-item{padding:4px 2px;cursor:pointer;border-top:1px solid #eee;}
+.lint-item:hover{background:#fee2e2;}
 .nd .mr{cursor:grab;}
+.mr[data-cmp]::after{position:absolute;right:2px;top:1px;font-size:9px;line-height:1;padding:1px 3px;border-radius:3px;color:#fff;pointer-events:none;}
+.mr[data-cmp="new"]{background:rgba(46,160,67,.18);}
+.mr[data-cmp="new"]::after{content:'신규';background:#2ea043;}
+.mr[data-cmp="moved"]{background:rgba(56,139,253,.18);}
+.mr[data-cmp="moved"]::after{content:'이동';background:#388bfd;}
+.mr[data-cmp="changed"]{background:rgba(227,160,8,.22);}
+.mr[data-cmp="changed"]::after{content:'변경';background:#d29922;}
+.nd[data-cmp="new"]{outline:2px dashed #2ea043;outline-offset:2px;}
+#cmp-panel{position:fixed;top:60px;right:12px;z-index:900;background:#fff;color:#222;border:1px solid #ccc;border-radius:6px;box-shadow:0 2px 10px rgba(0,0,0,.2);padding:8px 10px;width:340px;max-height:60vh;overflow:auto;font-size:12px;}
+#cmp-panel .cmp-h{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;}
+#cmp-panel .cmp-err{color:#c00;}
+#cmp-panel .cmp-cnt{margin-bottom:6px;font-weight:600;}
+#cmp-panel .cmp-item{padding:3px 0;border-top:1px solid #eee;cursor:pointer;}
 .nd .mr:active{cursor:grabbing;}
 .nd .nact button{cursor:pointer;}
 .nd.sel{outline:2.5px solid var(--sky);outline-offset:2px;}
@@ -439,6 +458,19 @@ body.ro .sfl-ex-btn{display:none;}
 #pwmodal{background:#fff;border-radius:12px;width:360px;padding:24px 26px;box-shadow:0 8px 40px rgba(0,0,0,.35);}
 #pwmodal h3{font-size:15px;font-weight:700;color:#2C2C2C;margin-bottom:14px;}
 #pw-status{font-size:12px;margin-bottom:10px;min-height:16px;color:#CC3333;}
+#present-exit{display:none;position:fixed;top:10px;right:14px;z-index:5000;padding:7px 14px;border-radius:6px;border:1px solid rgba(255,255,255,.3);background:rgba(30,30,30,.85);color:#fff;font-size:12px;font-weight:600;cursor:pointer;}
+body.present #present-exit{display:block;}
+body.present #topbar,body.present #tb-reveal,body.present #stbar,body.present #lint-panel,body.present #cmp-panel,body.present .nact,body.present .anchor-dot,body.present .dd,body.present #statsfl,body.present #sheetbar{display:none!important;}
+body.present #wrap,body.present #grid-bg{top:0!important;bottom:0!important;}
+@media print{
+  @page{size:A4 landscape;margin:0}
+  body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  #topbar,#tb-reveal,#stbar,#lint-panel,#cmp-panel,#statsfl,#sheetbar,.dd,#present-exit,#ctxmenu,#grid-bg,[id$="ov"],.modal,.overlay{display:none!important;}
+  html,body{width:1123px;height:794px;overflow:hidden!important;margin:0;background:#fff;}
+  #wrap{position:static!important;overflow:visible!important;top:0!important;left:0!important;right:auto!important;bottom:auto!important;width:1123px;height:794px;}
+  #canvas{min-width:0!important;min-height:0!important;}
+}
 </style>
 </head>
 <body>
@@ -456,6 +488,10 @@ body.ro .sfl-ex-btn{display:none;}
     <button class="zb" onclick="doZoomAbs(Math.round(S.scale*100)+1)" title="확대 (+1%)">＋</button>
   </div>
   <button class="tb tb-g" onclick="fitScreen()">⊡ 화면 맞춤</button>
+  <button id="lint-badge" class="tb tb-g" onclick="toggleLintPanel()">✓ 배치 이상 없음</button>
+  <button id="btn-cmp" class="tb tb-g">⇄ 비교</button>
+  <button id="btn-present" class="tb tb-g" onclick="enterPresent()">▶ 발표 보기</button>
+  <input type="file" id="cmp-file" accept=".json" style="display:none">
   <div class="tdv adm-only"></div>
   <button class="tb tb-g adm-only" onclick="openAddModal()">＋ 조직 추가</button>
   <button class="tb tb-g adm-only" id="btnconn" onclick="toggleConnect()">🔗 연결선 추가</button>
@@ -469,6 +505,8 @@ body.ro .sfl-ex-btn{display:none;}
       <div style="padding:6px 15px 2px;font-size:10px;color:#999;font-weight:700;letter-spacing:1px;">내려받기</div>
       <button class="ddi" onclick="exportCSV();closeDD()">CSV 파일</button>
       <button class="ddi" onclick="exportJSON();closeDD()">JSON 파일</button>
+      <button class="ddi" id="dl-png" onclick="exportPNG();closeDD()">그림 파일 (PNG)</button>
+      <button class="ddi" id="dl-print" onclick="closeDD();printChart()">인쇄 / PDF</button>
       <div class="adm-only" style="padding:6px 15px 2px;font-size:10px;color:#999;font-weight:700;letter-spacing:1px;border-top:1px solid #EEE;margin-top:4px;">불러오기</div>
       <label class="ddi adm-only">CSV 파일<input type="file" accept=".csv" style="display:none" onchange="importCSV(this);closeDD()"></label>
       <label class="ddi adm-only">JSON 파일<input type="file" accept=".json" style="display:none" onchange="importJSON(this);closeDD()"></label>
@@ -482,6 +520,7 @@ body.ro .sfl-ex-btn{display:none;}
   <button id="tb-hide" class="tb-arrow" onclick="toggleTopbar()" title="상단바 숨기기">▲</button>
 </div>
 <button id="tb-reveal" class="tb-arrow" onclick="toggleTopbar()" title="상단바 표시">▼</button>
+<button id="present-exit" onclick="exitPresent()">✕ 발표 끝내기</button>
 
 <!-- Connection context menu -->
 <div id="ctxmenu">
@@ -528,6 +567,7 @@ body.ro .sfl-ex-btn{display:none;}
 </div>
 
 <!-- File reconnect banner -->
+<div id="lint-panel"></div>
 <div id="file-banner">
   <span id="file-banner-txt">📄 데이터 파일 다시 연결</span>
   <button onclick="reconnectFile()">연결</button>
@@ -773,6 +813,12 @@ body.ro .sfl-ex-btn{display:none;}
           <span class="opt-val" id="opt-rg-v">80px</span>
         </div>
         <div class="opt-row">
+          <span class="opt-lbl">한 줄 최대 조직 수</span>
+          <input type="range" class="opt-slider" id="opt-wrap" min="0" max="8" step="1"
+            oninput="OPT.wrapN=+this.value;document.getElementById('opt-wrap-v').textContent=OPT.wrapN?OPT.wrapN+'개':'끔';scheduleOptLayout()">
+          <span class="opt-val" id="opt-wrap-v">끔</span>
+        </div>
+        <div class="opt-row">
           <span class="opt-lbl">좌우 간격</span>
           <input type="range" class="opt-slider" id="opt-cg" min="10" max="120" step="10"
             oninput="OPT.colGap=+this.value;document.getElementById('opt-cg-v').textContent=this.value+'px';scheduleOptLayout()">
@@ -928,7 +974,7 @@ const OPT = {
   lhH:1.2, lhC:1.2, hdrH:0, rowH:0,
   // 카드/배치
   nw:228, bandW:12,
-  rowGap:80, colGap:44, padX:80, padY:60,
+  rowGap:80, colGap:44, padX:80, padY:60, wrapN:0,
   // 선
   strokeW:1.8, strokeDashW:1.5,
   // 브랜드 / UI 액센트
@@ -1104,7 +1150,222 @@ function updateGrid(){
 }
 
 // ═══ Render
-function render() { drawConns(); drawNodes(); updateCanvas(); updateSt(); renderAnchors(); updateGrid(); scheduleSave(); }
+function render() { drawConns(); drawNodes(); updateCanvas(); updateSt(); renderAnchors(); updateGrid(); scheduleSave(); runLint(); cmpRun(); }
+/* ===== 비교 모드 (저장 대상 아님) ===== */
+var CMP=null; // {file, data:{sheets:[...]}, single:bool, err:string}
+function cmpTrim(v){return String(v==null?'':v).trim();}
+function cmpClear(){
+  document.querySelectorAll('[data-cmp]').forEach(e=>{e.removeAttribute('data-cmp'); if(e.classList.contains('mr')) e.removeAttribute('title');});
+}
+function cmpPanel(){
+  let p=document.getElementById('cmp-panel');
+  if(!p){p=document.createElement('div');p.id='cmp-panel';document.body.appendChild(p);}
+  return p;
+}
+function cmpExit(){
+  CMP=null; cmpClear();
+  const p=document.getElementById('cmp-panel'); if(p) p.remove();
+}
+function cmpFocus(id){
+  const nd=S.nodes.find(n=>String(n.id)===String(id)); const w=document.getElementById('wrap');
+  if(!nd||!w) return;
+  w.scrollLeft=Math.max(0,(nd.x+NW/2)*S.scale-w.clientWidth/2);
+  w.scrollTop=Math.max(0,(nd.y+NW/2)*S.scale-w.clientHeight/2);
+}
+function cmpRun(){
+  cmpClear();
+  if(!CMP){const o=document.getElementById('cmp-panel'); if(o) o.remove(); return;}
+  const p=cmpPanel();
+  const head='<div class="cmp-h"><b>비교: '+esc(CMP.file)+' → 현재</b> <button id="cmp-exit" type="button">비교 끝내기</button></div>';
+  const bind=()=>{const b=document.getElementById('cmp-exit'); if(b) b.onclick=cmpExit;};
+  if(CMP.err){
+    p.removeAttribute('data-join');
+    p.innerHTML='<div class="cmp-h"><b>비교</b> <button id="cmp-exit" type="button">비교 끝내기</button></div><div class="cmp-err">'+esc(CMP.err)+'</div>';
+    bind(); return;
+  }
+  const cur=SHEETS[CUR_SHEET]; const name=cur?cur.name:'';
+  const bs=CMP.single?CMP.data.sheets[0]:CMP.data.sheets.find(s=>s&&s.name===name);
+  if(!bs){
+    p.innerHTML=head+'<div class="cmp-err">'+esc("이전 파일에 '"+name+"' 시트가 없습니다.")+'</div>';
+    ['join','leave','move','change','orgnew','orggone'].forEach(k=>p.removeAttribute('data-'+k));
+    bind(); return;
+  }
+  const BN=Array.isArray(bs.nodes)?bs.nodes:[], AN=S.nodes;
+  const cmap=new Map(); // before idx -> after node
+  BN.forEach((b,i)=>{
+    let a=AN.find(x=>String(x.id)===String(b.id));
+    if(!a){const e=cmpTrim(b.en); a=AN.find(x=>cmpTrim(x.en)===e);}
+    if(a) cmap.set(i,a);
+  });
+  const mapped=new Set(cmap.values());
+  const occ=(nodes)=>{const m=new Map();nodes.forEach((nd,ni)=>(nd.m||[]).forEach((mm,mi)=>{const k=cmpTrim(mm.n);if(!m.has(k))m.set(k,[]);m.get(k).push({nd,ni,mm,mi});}));return m;};
+  const bo=occ(BN), ao=occ(AN);
+  const items=[]; let c={join:0,leave:0,move:0,change:0,orgnew:0,orggone:0};
+  const marks=[];
+  const add=(kind,text,nid)=>{items.push({kind,text,nid});c[kind]++;};
+  const F=[['r','직위'],['f','직무'],['s','상태']];
+  const bi=new Map(); BN.forEach((b,i)=>bi.set(b,i));
+  ao.forEach((alist,k)=>{
+    const blist=bo.get(k)||[];
+    alist.forEach((a,j)=>{
+      const b=blist[j];
+      if(!b){add('join','입사: '+esc(k)+' ('+esc(a.nd.en||'')+')',a.nd.id);marks.push([a,'new','']);return;}
+      const mp=cmap.get(bi.get(b.nd));
+      if(mp!==a.nd){add('move','이동: '+esc(k)+' '+esc(b.nd.en||'')+' → '+esc(a.nd.en||''),a.nd.id);marks.push([a,'moved','이전: '+(b.nd.en||'')]);return;}
+      const diffs=[],tl=[];
+      F.forEach(([f,l])=>{const o=cmpTrim(b.mm[f]),n=cmpTrim(a.mm[f]);if(o!==n){const lb=v=>{if(f!=='s')return v;const it=OPT.statusItems.find(x=>x.key===v);return it?it.label:v;};const ol=lb(o),nl=lb(n);diffs.push(esc(l)+' '+esc(ol)+' → '+esc(nl));tl.push(l+' '+ol+' → '+nl);}});
+      if(diffs.length){add('change','변경: '+esc(k)+' '+diffs.join(', '),a.nd.id);marks.push([a,'changed',tl.join(', ')]);}
+    });
+  });
+  bo.forEach((blist,k)=>{
+    const alist=ao.get(k)||[];
+    blist.forEach((b,j)=>{
+      if(j<alist.length) return;
+      const mp=cmap.get(bi.get(b.nd));
+      add('leave','퇴사: '+esc(k)+' ('+esc(b.nd.en||'')+', '+esc(cmpTrim(b.mm.r))+')',mp?mp.id:null);
+    });
+  });
+  AN.forEach(a=>{if(!mapped.has(a)) add('orgnew','조직 신설: '+esc(a.en||''),a.id);});
+  BN.forEach((b,i)=>{if(!cmap.has(i)) add('orggone','조직 폐지: '+esc(b.en||'')+' ('+(b.m||[]).length+'명)',null);});
+  // 마크 적용
+  marks.forEach(([a,kind,title])=>{
+    const row=document.querySelector('#n'+CSS.escape(String(a.nd.id))+' .mr[data-mi="'+a.mi+'"]');
+    if(row){row.setAttribute('data-cmp',kind); if(title) row.setAttribute('title',title);}
+  });
+  AN.forEach(a=>{if(!mapped.has(a)){const el=document.getElementById('n'+a.id); if(el) el.setAttribute('data-cmp','new');}});
+  for(const k in c) p.setAttribute('data-'+k,c[k]);
+  p.innerHTML=head+'<div class="cmp-cnt">입사 '+c.join+' · 퇴사 '+c.leave+' · 이동 '+c.move+' · 변경 '+c.change+' · 조직 신설 '+c.orgnew+' · 조직 폐지 '+c.orggone+'</div>'+
+    items.map((it,i)=>'<div class="cmp-item" data-kind="'+it.kind+'" data-i="'+i+'"'+(it.nid!=null?' data-nid="'+esc(it.nid)+'"':'')+'>'+it.text+'</div>').join('');
+  bind();
+  p.querySelectorAll('.cmp-item[data-nid]').forEach(e=>e.onclick=()=>cmpFocus(e.getAttribute('data-nid')));
+}
+function cmpLoad(file){
+  const fr=new FileReader();
+  fr.onload=()=>{
+    let d=null,err='';
+    try{d=JSON.parse(String(fr.result).replace(/^﻿/,''));}catch(e){d=null;}
+    let sheets=null,single=false;
+    if(d&&Array.isArray(d.sheets)) sheets=d.sheets.filter(s=>s&&typeof s==='object');
+    else if(d&&Array.isArray(d.nodes)){single=true;const cs=SHEETS[CUR_SHEET];sheets=[{name:cs?cs.name:'',nodes:d.nodes,conns:d.conns||[]}];}
+    if(!sheets||!sheets.some(s=>Array.isArray(s.nodes)&&s.nodes.length)){
+      CMP=null; cmpClear();
+      const p=cmpPanel();
+      ['join','leave','move','change','orgnew','orggone'].forEach(k=>p.removeAttribute('data-'+k));
+      p.innerHTML='<div class="cmp-h"><b>비교</b> <button id="cmp-exit" type="button">닫기</button></div><div class="cmp-err">비교 파일을 읽지 못했습니다: 올바른 조직도 데이터(JSON)가 아닙니다.</div>';
+      document.getElementById('cmp-exit').onclick=cmpExit;
+      return;
+    }
+    CMP={file:file.name,data:{sheets},single};
+    cmpRun();
+  };
+  fr.onerror=()=>{CMP=null;const p=cmpPanel();p.innerHTML='<div class="cmp-err">비교 파일을 읽지 못했습니다: 올바른 조직도 데이터(JSON)가 아닙니다.</div>';};
+  fr.readAsText(file,'UTF-8');
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  const b=document.getElementById('btn-cmp'), f=document.getElementById('cmp-file');
+  if(!b||!f) return;
+  b.addEventListener('click',()=>f.click());
+  f.addEventListener('change',()=>{const fl=f.files&&f.files[0]; if(fl) cmpLoad(fl); f.value='';});
+});
+
+// ─── 배치 점검 (저장하지 않음) ───────────────────────────
+let _lintRes=null;
+function layoutLint(){
+  const nodes=S.nodes, byId=new Map(nodes.map(n=>[n.id,n]));
+  const segs=[];
+  document.querySelectorAll('#svgl path.cpath, #svgl path.cpath-dash').forEach(p=>{
+    const nums=(p.getAttribute('d')||'').match(/-?\d+(\.\d+)?/g)||[];
+    const pts=[]; for(let i=0;i+1<nums.length;i+=2) pts.push([parseFloat(nums[i]),parseFloat(nums[i+1])]);
+    for(let i=0;i+1<pts.length;i++) segs.push([pts[i],pts[i+1]]);
+  });
+  const overlaps=[];
+  for(let i=0;i<nodes.length;i++) for(let j=i+1;j<nodes.length;j++){
+    const A=nodes[i],B=nodes[j],ah=nh(A),bh=nh(B);
+    if(A.x<B.x+NW && B.x<A.x+NW && A.y<B.y+bh && B.y<A.y+ah) overlaps.push([A,B]);
+  }
+  const crossed=[];
+  nodes.forEach(n=>{
+    const h=nh(n);
+    const hit=segs.some(s=>{
+      const x1=Math.min(s[0][0],s[1][0]),x2=Math.max(s[0][0],s[1][0]);
+      const y1=Math.min(s[0][1],s[1][1]),y2=Math.max(s[0][1],s[1][1]);
+      return x2>n.x+3 && x1<n.x+NW-3 && y2>n.y+3 && y1<n.y+h-3;
+    });
+    if(hit) crossed.push(n);
+  });
+  const broken=[];
+  (S.conns||[]).forEach(c=>{
+    const f=byId.get(c.f), t=byId.get(c.t);
+    let bad=false;
+    if(!f||!t) bad=true;
+    else if(t.type!=='side'){
+      const tx=t.x+NW/2, ty=t.y;
+      bad=!segs.some(s=>{
+        if(Math.abs(s[0][0]-s[1][0])>2) return false;
+        return s.some(p=>Math.abs(p[0]-tx)<=2 && Math.abs(p[1]-ty)<=2);
+      }) && !segs.some(s=>{
+        if(Math.abs(s[0][1]-s[1][1])>2) return false;
+        const th=nh(t);
+        return s.some(p=>(Math.abs(p[0]-t.x)<=2||Math.abs(p[0]-(t.x+NW))<=2) && p[1]>=t.y && p[1]<=t.y+th);
+      });
+    }
+    if(bad) broken.push(c);
+  });
+  return {overlaps,crossed,broken,overlap:overlaps.length,cross:crossed.length,brokenN:broken.length,
+          count:overlaps.length+crossed.length+broken.length};
+}
+function runLint(){
+  const r=layoutLint(); _lintRes=r;
+  const b=document.getElementById('lint-badge');
+  if(b){
+    b.setAttribute('data-overlap',r.overlap); b.setAttribute('data-cross',r.cross);
+    b.setAttribute('data-broken',r.brokenN); b.setAttribute('data-count',r.count);
+    b.textContent=r.count===0?'✓ 배치 이상 없음':'⚠ 배치 점검 '+r.count+'건';
+    b.style.color=r.count===0?'#16a34a':'#dc2626';
+  }
+  const bad=new Set();
+  r.overlaps.forEach(p=>{bad.add(p[0].id);bad.add(p[1].id);});
+  r.crossed.forEach(n=>bad.add(n.id));
+  r.broken.forEach(c=>{bad.add(c.f);bad.add(c.t);});
+  S.nodes.forEach(n=>{
+    const el=document.getElementById('n'+n.id);
+    if(el) el.classList.toggle('lint-bad',bad.has(n.id));
+  });
+  const p=document.getElementById('lint-panel');
+  if(p && p.style.display!=='none') fillLintPanel();
+}
+function fillLintPanel(){
+  const p=document.getElementById('lint-panel'); if(!p||!_lintRes) return;
+  const r=_lintRes, nm=(n)=>esc(n.en);
+  const items=[];
+  r.overlaps.forEach(([a,b])=>items.push([`겹침: ${nm(a)} ↔ ${nm(b)}`,[a.id,b.id]]));
+  r.crossed.forEach(n=>items.push([`선이 카드를 지남: ${nm(n)}`,[n.id]]));
+  r.broken.forEach(c=>{
+    const f=S.nodes.find(n=>n.id===c.f), t=S.nodes.find(n=>n.id===c.t);
+    items.push([`끊긴 연결: ${f?nm(f):esc(c.f)} → ${t?nm(t):esc(c.t)}`,[f?f.id:null,t?t.id:null].filter(x=>x!==null)]);
+  });
+  p.innerHTML='<div style="text-align:right"><span id="lint-close" style="cursor:pointer" onclick="toggleLintPanel(false)">✕</span></div>'+
+    (items.length?items.map(([tx,ids])=>`<div class="lint-item" data-nodes="${ids.join(',')}" onclick="lintGo(this)">${tx}</div>`).join(''):'<div>배치에 이상이 없습니다.</div>');
+}
+function toggleLintPanel(show){
+  const p=document.getElementById('lint-panel'), b=document.getElementById('lint-badge'); if(!p||!b) return;
+  if(show===undefined) show=p.style.display==='none'||!p.style.display;
+  if(show){
+    const r=b.getBoundingClientRect();
+    p.style.top=(r.bottom+4)+'px'; p.style.left=Math.max(0,Math.min(r.left,window.innerWidth-320))+'px';
+    p.style.display='block'; fillLintPanel();
+  } else p.style.display='none';
+}
+function lintGo(el){
+  const ids=(el.dataset.nodes||'').split(',').filter(Boolean);
+  if(!ids.length) return;
+  const n=S.nodes.find(x=>String(x.id)===ids[0]); if(!n) return;
+  const w=document.getElementById('wrap');
+  w.scrollLeft=Math.max(0,(n.x+NW/2)*S.scale-w.clientWidth/2);
+  w.scrollTop=Math.max(0,(n.y+nh(n)/2)*S.scale-w.clientHeight/2);
+  const c=document.getElementById('n'+n.id);
+  if(c){ c.classList.add('lint-flash'); setTimeout(()=>c.classList.remove('lint-flash'),900); }
+}
 
 function updateCanvas() {
   let mx=0,my=0;
@@ -1144,6 +1405,7 @@ function bindNode(el,nd) {
   el.className='nd t-'+nd.type;
   if(nd.color) el.style.setProperty('--band-color',nd.color);
   else el.style.removeProperty('--band-color');
+  {const _nh=el.querySelector('.nh'); if(_nh) _nh.style.background=nd.color?nd.color:'';}
   // 카드 전체에서 드래그 가능 — 단, 멤버 행(.mr)·액션 버튼(.nact) 위는 각자 핸들러로 양보
   // 빈 카드(멤버 0)도 본문 영역에서 드래그 시작 가능
   el.onmousedown=e=>{
@@ -1172,7 +1434,7 @@ function statusColor(s){
 // ─── Member-row drag-and-drop: 팀 간 이동 + 팀 내 순서 변경 ─────────────
 let _mrDrag = null;
 function mrDragStart(e,nid,idx){
-  if(!ADMIN){ e.preventDefault(); return; }
+  if(!ADMIN||document.body.classList.contains('present')){ e.preventDefault(); return; }
   e.stopPropagation();
   _mrDrag = { fromNid: nid, fromIdx: idx };
   try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', JSON.stringify(_mrDrag)); } catch(_){}
@@ -1287,6 +1549,28 @@ function mkHexInp(val,oinp,extraAttrs){
   return `<div class="chex"><input type="color" class="chex-c" ${ea} value="#${hex}" oninput="this.nextElementSibling.nextElementSibling.value=this.value.slice(1).toUpperCase();${oinp}"><span class="chex-hash">#</span><input type="text" class="chex-t" maxlength="6" value="${hex}" oninput="const _v=this.value.trim();if(/^[0-9a-fA-F]{6}$/.test(_v)){const _h='#'+_v.toUpperCase();const _p=this.previousElementSibling.previousElementSibling;_p.value=_h;_p.dispatchEvent(new Event('input'))}"></div>`;
 }
 
+// side 타입 직속(beside) 카드의 부모 id (없으면 null)
+function sideBesideParent(sid){
+  const s=S.nodes.find(n=>n.id===sid);
+  if(!s||s.type!=='side') return null;
+  const isNon=id=>{const n=S.nodes.find(x=>x.id===id);return !!n&&n.type!=='side';};
+  if(S.conns.some(k=>k.f===sid&&isNon(k.t))) return null;
+  const k=S.conns.find(k=>k.t===sid&&isNon(k.f));
+  return k?k.f:null;
+}
+// 부모 P의 beside 카드 좌우 분배 + 순서: {R:[nodes],L:[nodes]}
+function besideSplit(P,cards){
+  const ord=cards.slice().sort((a,b)=>{
+    if(P.ad!=='L'&&P.ad!=='B') return (a.y-b.y)||(a.x-b.x);
+    const ga=P.ad==='B'?(a.x>=P.x?0:1):0, gb=P.ad==='B'?(b.x>=P.x?0:1):0;
+    return (ga-gb)||(a.y-b.y)||(Math.abs(a.x-P.x)-Math.abs(b.x-P.x));
+  });
+  const n=ord.length;
+  const nR=P.ad==='L'?0:P.ad==='B'?Math.ceil(n/2):n;
+  return {R:ord.slice(0,nR),L:ord.slice(nR)};
+}
+const besideCols=P=>(P&&(P.ac===2||P.ac===3))?P.ac:1;
+
 // ─── Draw connections (SVG) — 실선·점선 모두 버스 패턴 (스타일만 구분)
 function drawConns() {
   const svg=document.getElementById('svgl');
@@ -1309,8 +1593,100 @@ function drawConns() {
       if(!all.length) return;
 
       // side 대상: 개별 직접 연결; 나머지: 기존 bus 로직
-      const sideItems=all.filter(x=>sideNodeIds.has(x.t.id));
-      const items=all.filter(x=>!sideNodeIds.has(x.t.id));
+      const isAsideItem=x=>x.t.aside===true&&!sideNodeIds.has(x.t.id)&&!S.conns.some(k=>k.f===x.t.id&&!sideNodeIds.has(k.t));
+      const isBesideItem=x=>isAsideItem(x)||(sideNodeIds.has(x.t.id)&&sideBesideParent(x.t.id)===fid);
+      const sideItems=all.filter(x=>sideNodeIds.has(x.t.id)&&!isBesideItem(x));
+      const asideItems=all.filter(isBesideItem);
+      const items=all.filter(x=>!sideNodeIds.has(x.t.id)&&!isAsideItem(x));
+
+      const bAll=[];
+      S.conns.forEach(k=>{
+        if(k.f!==fid) return;
+        const t=S.nodes.find(n=>n.id===k.t);
+        if(t&&!bAll.includes(t)&&isBesideItem({t})) bAll.push(t);
+      });
+      const asideTop=bAll.length?Math.max(f.y+nh(f),...bAll.map(t=>t.y+nh(t))):null;
+      if(bAll.length){
+        const sp=besideSplit(f,bAll);
+        const sideOf=new Map();
+        sp.R.forEach(t=>sideOf.set(t.id,1)); sp.L.forEach(t=>sideOf.set(t.id,-1));
+        const Cn=besideCols(f);
+        const ay=f.y+CUR_HH/2;
+        [1,-1].forEach(dir=>{
+          const ord=dir>0?sp.R:sp.L;
+          const mine=asideItems.filter(x=>sideOf.get(x.t.id)===dir);
+          if(!ord.length||!mine.length) return;
+          const E=dir>0?Math.round(f.x+NW):Math.round(f.x);
+          const xs=dir>0?Math.round(f.x+NW+Math.round(OPT.colGap/2)):Math.round(f.x-Math.round(OPT.colGap/2));
+          const mkG=(hit,p)=>{
+            const c0=hit.c, sel=S.selConn===c0.id;
+            const sg=document.createElementNS('http://www.w3.org/2000/svg','g');
+            sg.innerHTML=
+              (sel?`<path class="${hlCls}" d="${hit.d}" style="pointer-events:none;"/>`:'')+
+              `<path class="chit" d="${hit.d}"
+                 onclick="selectConn('${c0.id}')"
+                 oncontextmenu="connContextMenu(event,'${c0.id}');return false;"
+                 style="pointer-events:stroke;cursor:pointer;"/>
+               <path class="${pCls}" d="${p}" style="pointer-events:none;"/>`;
+            svg.appendChild(sg);
+          };
+          if(Cn===1){
+            const last=mine.map(x=>x.t).sort((a,b)=>(a.y-b.y)||(Math.abs(a.x-f.x)-Math.abs(b.x-f.x))).pop();
+            if(last.id!==ord[0].id) addPath(svg,`M${xs} ${ay} L${xs} ${last.y+CUR_HH/2}`,pCls);
+            mine.forEach(({c,t})=>{
+              const bx=dir>0?Math.round(t.x):Math.round(t.x+NW), by2=t.y+CUR_HH/2;
+              const isFirst=ord[0].id===t.id;
+              const mx=Math.round((E+bx)/2);
+              const p=isFirst
+                ?(Math.abs(ay-by2)<0.5?`M${E} ${ay} L${bx} ${by2}`:`M${E} ${ay} L${mx} ${ay} L${mx} ${by2} L${bx} ${by2}`)
+                :`M${xs} ${by2} L${bx} ${by2}`;
+              const hit=isFirst?p:`M${E} ${ay} L${xs} ${ay} L${xs} ${by2} L${bx} ${by2}`;
+              mkG({c,d:hit},p);
+            });
+          } else {
+            const ybMax=Math.max(...mine.map(x=>x.t.y-10));
+            addPath(svg,`M${E} ${ay} L${xs} ${ay}`,pCls);
+            addPath(svg,`M${xs} ${f.y-10} L${xs} ${Math.max(ay,ybMax)}`,pCls);
+            const rows=new Map();
+            mine.forEach(({t})=>{
+              const cx=t.x+NW/2;
+              if(!rows.has(t.y)||Math.abs(cx-xs)>Math.abs(rows.get(t.y)-xs)) rows.set(t.y,cx);
+            });
+            rows.forEach((far,ry)=>addPath(svg,`M${xs} ${ry-10} L${far} ${ry-10}`,pCls));
+            mine.forEach(({c,t})=>{
+              const cx=t.x+NW/2, yb=t.y-10;
+              mkG({c,d:`M${E} ${ay} L${xs} ${ay} L${xs} ${yb} L${cx} ${yb} L${cx} ${t.y}`},`M${cx} ${yb} L${cx} ${t.y}`);
+            });
+          }
+        });
+      }
+
+      const colApplies=f.kl==='col'&&items.length>0&&S.conns.every(k=>{
+        if(k.f!==fid||sideNodeIds.has(k.t)) return true;
+        const kt=S.nodes.find(n=>n.id===k.t); if(!kt) return true;
+        if(isAsideItem({t:kt})) return true;
+        return !S.conns.some(k2=>k2.f===kt.id&&!sideNodeIds.has(k2.t));
+      });
+      if(colApplies){
+        const tx0=Math.round(f.x+20), ty0=f.y+nh(f);
+        const lowY=Math.max(...items.map(x=>x.t.y+CUR_HH/2));
+        addPath(svg,`M${tx0} ${ty0} L${tx0} ${lowY}`,pCls);
+        items.forEach(({c,t})=>{
+          const cy=t.y+CUR_HH/2, cx=Math.round(t.x);
+          const sel=S.selConn===c.id;
+          const visP=`M${tx0} ${cy} L${cx} ${cy}`;
+          const hitP=`M${tx0} ${ty0} L${tx0} ${cy} L${cx} ${cy}`;
+          const g=document.createElementNS('http://www.w3.org/2000/svg','g');
+          g.innerHTML=
+            (sel?`<path class="${hlCls}" d="${hitP}" style="pointer-events:none;"/>`:'')+
+            `<path class="chit" d="${hitP}"
+               onclick="selectConn('${c.id}')"
+               oncontextmenu="connContextMenu(event,'${c.id}');return false;"
+               style="pointer-events:stroke;cursor:pointer;"/>
+             <path class="${pCls}" d="${visP}" style="pointer-events:none;"/>`;
+          svg.appendChild(g);
+        });
+      }
 
       sideItems.forEach(({c,t})=>{
         const fSide=c.fromSide||autoSide(f,t,'f');
@@ -1347,7 +1723,7 @@ function drawConns() {
         svg.appendChild(sg);
       });
 
-      if(!items.length) return;
+      if(!items.length||colApplies) return;
 
       const fSide0=items.length===1&&items[0].c.fromSide ? items[0].c.fromSide : 'bottom';
       const fa0=items.length===1 ? connAnchor(f,fSide0) : connAnchor(f,'bottom');
@@ -1361,9 +1737,11 @@ function drawConns() {
         const sel=S.selConn===c.id;
         const straight=Math.abs(fx2-tx)<2&&Math.abs(fy2-ty)<2;
         const fIsV=(fSide==='top'||fSide==='bottom');
-        const defaultBy=fIsV?Math.round((fy2+ty)/2):Math.round((fx2+tx)/2);
+        const useTop=asideTop!==null&&fSide==='bottom';
+        const fyT=useTop?Math.max(fy2,asideTop):fy2;
+        const defaultBy=fIsV?Math.round((fyT+ty)/2):Math.round((fx2+tx)/2);
         const storedBy=S.busY[c.id];
-        const by=storedBy!==undefined ? Math.max(Math.min(fy2,ty)+12,Math.min(Math.max(fy2,ty)-12,storedBy)) : defaultBy;
+        const by=storedBy!==undefined ? Math.max(Math.min(fyT,ty)+12,Math.min(Math.max(fy2,ty)-12,storedBy)) : defaultBy;
         const p=straight
           ?`M${fx2} ${fy2} L${tx} ${ty}`
           : fIsV
@@ -1391,15 +1769,66 @@ function drawConns() {
 
       } else {
         const minChildY=Math.min(...items.map(x=>x.t.y));
-        const defaultBy=Math.round((fy+minChildY)/2);
+        const fyT=asideTop!==null?Math.max(fy,asideTop):fy;
+        const defaultBy=Math.round((fyT+minChildY)/2);
         const busKey=fid+bSfx;
         const storedBy=S.busY[busKey];
-        const by=storedBy!==undefined ? Math.max(fy+12,Math.min(minChildY-12,storedBy)) : defaultBy;
+        const by=storedBy!==undefined ? Math.max(fyT+12,Math.min(minChildY-12,storedBy)) : defaultBy;
         const anySelected=items.some(x=>S.selConn===x.c.id);
 
         const childAnchors=items.map(({c,t})=>({c,t,ta:connAnchor(t,c.toSide||'top')}));
         const txs=childAnchors.map(x=>Math.round(x.ta.x));
         const busL=Math.min(fx,...txs), busR=Math.max(fx,...txs);
+
+        const rowYs=[...new Set(items.map(x=>x.t.y))].sort((a,b)=>a-b);
+        if(rowYs.length>1){
+          const rowBy=rowYs.map((ry,ri)=>ri===0?by:ry-Math.round(OPT.rowGap/2));
+          const yLast=rowBy[rowBy.length-1];
+          const blockedAt=x=>S.nodes.some(n=>n.x-10<x&&x<n.x+NW+10&&n.y<yLast&&n.y+nh(n)>rowBy[0]);
+          let xt=fx;
+          const hitAt=S.nodes.some(n=>n.x<fx&&fx<n.x+NW&&n.y<yLast&&n.y+nh(n)>rowBy[0]);
+          if(hitAt){
+            for(let d=10;d<=4*NW;d+=10){
+              if(!blockedAt(fx+d)){xt=fx+d;break;}
+              if(!blockedAt(fx-d)){xt=fx-d;break;}
+            }
+          }
+          const detour=xt!==fx;
+          if(detour){
+            addPath(svg,`M${fx} ${fy} L${fx} ${rowBy[0]}`,pCls);
+            addPath(svg,`M${xt} ${rowBy[0]} L${xt} ${yLast}`,pCls);
+          } else addPath(svg,`M${fx} ${fy} L${fx} ${yLast}`,pCls);
+          rowYs.forEach((ry,ri)=>{
+            const rby=rowBy[ri];
+            const rowItems=childAnchors.filter(x=>x.t.y===ry);
+            const rxs=rowItems.map(x=>Math.round(x.ta.x));
+            const anc=(detour&&ri>0)?[xt]:detour?[fx,xt]:[fx];
+            const rL=Math.min(...anc,...rxs), rR=Math.max(...anc,...rxs);
+            const rg=document.createElementNS('http://www.w3.org/2000/svg','g');
+            rg.innerHTML=`<path class="${pCls}" d="M${rL} ${rby} L${rR} ${rby}" style="pointer-events:none;"/>`+
+              ((ri===0&&anySelected)?`<circle cx="${fx}" cy="${rby}" r="6"
+                 class="way-handle"
+                 onmousedown="startWayDrag(event,'${busKey}')"
+                 style="pointer-events:all;"/>`:'');
+            svg.appendChild(rg);
+            rowItems.forEach(({c,t,ta})=>{
+              const tx=Math.round(ta.x), ty=ta.y;
+              const sel=S.selConn===c.id;
+              const visP=`M${tx} ${rby} L${tx} ${ty}`;
+              const hitP=(detour&&ri>0)?`M${fx} ${fy} L${fx} ${rowBy[0]} L${xt} ${rowBy[0]} L${xt} ${rby} L${tx} ${rby} L${tx} ${ty}`:`M${fx} ${fy} L${fx} ${rby} L${tx} ${rby} L${tx} ${ty}`;
+              const g=document.createElementNS('http://www.w3.org/2000/svg','g');
+              g.innerHTML=
+                (sel?`<path class="${hlCls}" d="${hitP}" style="pointer-events:none;"/>`:'')+
+                `<path class="chit" d="${hitP}"
+                   onclick="selectConn('${c.id}')"
+                   oncontextmenu="connContextMenu(event,'${c.id}');return false;"
+                   style="pointer-events:stroke;cursor:pointer;"/>
+                 <path class="${pCls}" d="${visP}" style="pointer-events:none;"/>`;
+              svg.appendChild(g);
+            });
+          });
+          return;
+        }
 
         addPath(svg,`M${fx} ${fy} L${fx} ${by}`,pCls);
         const busG=document.createElementNS('http://www.w3.org/2000/svg','g');
@@ -1438,6 +1867,7 @@ function addPath(svg,d,cls){
 
 // ═══ Drag
 function startDrag(e,id){
+  if(document.body.classList.contains('present')) return;
   if(!ADMIN) return;
   if(S.cmode) return;
   e.stopPropagation(); e.preventDefault();
@@ -1446,6 +1876,30 @@ function startDrag(e,id){
   S.drag=id;
   S.dox=(e.clientX-r.left)/S.scale-nd.x;
   S.doy=(e.clientY-r.top)/S.scale-nd.y;
+  S.dgrp=null; S.dstart=null;
+  if(!e.shiftKey){
+    const sideSet=new Set(S.nodes.filter(n=>n.type==='side').map(n=>n.id));
+    const seen=new Set([id]), q=[id], grp=[];
+    while(q.length){
+      const cur=q.shift();
+      S.conns.forEach(c=>{
+        if(c.f!==cur||seen.has(c.t)||sideSet.has(c.t)) return;
+        seen.add(c.t); q.push(c.t);
+        const cn=S.nodes.find(n=>n.id===c.t);
+        if(cn) grp.push({n:cn,x0:cn.x,y0:cn.y});
+      });
+    }
+    const inGrp=new Set([id,...grp.map(g=>g.n.id)]);
+    sideSet.forEach(sid=>{
+      if(inGrp.has(sid)) return;
+      const pid=sideBesideParent(sid);
+      if(pid&&inGrp.has(pid)){
+        const sn=S.nodes.find(n=>n.id===sid);
+        if(sn) grp.push({n:sn,x0:sn.x,y0:sn.y});
+      }
+    });
+    if(grp.length){ S.dgrp=grp; S.dstart={x:nd.x,y:nd.y}; }
+  }
   // 카드 이동 시 연결선이 고정되는 버그 방지:
   // busY는 절대 Y 좌표로 저장되므로 카드가 움직여도 선이 따라오지 않음.
   // 드래그 시작 시 관련된 모든 busY를 초기화 → 다음 drawConns에서 동적 기본값으로 재계산
@@ -1485,6 +1939,18 @@ function wmm(e){
     const r=document.getElementById('canvas').getBoundingClientRect();
     nd.x=Math.max(0,Math.round(((e.clientX-r.left)/S.scale-S.dox)/20)*20);
     nd.y=Math.max(0,Math.round(((e.clientY-r.top)/S.scale-S.doy)/20)*20);
+    if(S.dgrp&&S.dgrp.length){
+      let dx=nd.x-S.dstart.x, dy=nd.y-S.dstart.y;
+      const mnx=Math.min(S.dstart.x,...S.dgrp.map(g=>g.x0))+dx, mny=Math.min(S.dstart.y,...S.dgrp.map(g=>g.y0))+dy;
+      if(mnx<0) dx-=mnx;
+      if(mny<0) dy-=mny;
+      nd.x=S.dstart.x+dx; nd.y=S.dstart.y+dy;
+      S.dgrp.forEach(g=>{
+        g.n.x=g.x0+dx; g.n.y=g.y0+dy;
+        const ge=document.getElementById('n'+g.n.id);
+        if(ge){ge.style.left=g.n.x+'px';ge.style.top=g.n.y+'px';}
+      });
+    }
     const el=document.getElementById('n'+nd.id);
     if(el){el.style.left=nd.x+'px';el.style.top=nd.y+'px';}
     drawConns(); updateCanvas(); return;
@@ -1496,6 +1962,7 @@ function wmm(e){
   }
 }
 function wmu(e){
+  const _wasDrag=!!S.drag;
   if(anchorDrag){
     // Find drop target under cursor
     const under=document.elementsFromPoint(e.clientX,e.clientY);
@@ -1514,9 +1981,10 @@ function wmu(e){
   if(S.wdrag){ S.wdrag=null; scheduleSave(); }
   // ─── 무조건 정리 (early return 제거) ────────────────────
   // 카드 드래그(S.drag)·캔버스 pan(S.pan)은 어떤 경로로 mouseup이 도달하든 항상 풀어줌
-  S.drag=null; S.pan=false;
+  S.drag=null; S.pan=false; S.dgrp=null; S.dstart=null;
   const _wrap=document.getElementById('wrap');
   if(_wrap) _wrap.classList.remove('panning');
+  if(_wasDrag) runLint();
 }
 document.addEventListener('mouseup',wmu);
 
@@ -1682,7 +2150,38 @@ function openEdit(id){
       </select>
     </div>
     <div class="fg">
-      <label class="fl">색상띠 <small style="color:#aaa">— 왼쪽 강조 바</small></label>
+      <label class="fl">하위 조직 배치</label>
+      <select class="fs" id="ei-kl">
+        <option value="row" ${nd.kl!=='col'?'selected':''}>가로 (기본)</option>
+        <option value="col" ${nd.kl==='col'?'selected':''}>세로 1열</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label class="fl">한 줄 최대 개수 (0 = 전체 설정)</label>
+      <input class="fi" type="number" id="ei-kn" min="0" max="20" value="${(Number.isInteger(nd.kn)&&nd.kn>0)?nd.kn:0}">
+    </div>
+    <div class="fg">
+      <label class="fl">직속 카드 위치</label>
+      <select class="fs" id="ei-ad">
+        <option value="R" ${nd.ad!=='L'&&nd.ad!=='B'?'selected':''}>오른쪽 (기본)</option>
+        <option value="L" ${nd.ad==='L'?'selected':''}>왼쪽</option>
+        <option value="B" ${nd.ad==='B'?'selected':''}>좌우 나눔</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label class="fl">직속 카드 한 줄 개수</label>
+      <select class="fs" id="ei-ac">
+        <option value="1" ${nd.ac!==2&&nd.ac!==3?'selected':''}>1개 (기본)</option>
+        <option value="2" ${nd.ac===2?'selected':''}>2개</option>
+        <option value="3" ${nd.ac===3?'selected':''}>3개</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label class="fl" style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" id="ei-aside" ${nd.aside===true?'checked':''}> 상위 카드 옆에 붙이기 (직속)</label>
+      <div style="font-size:11px;color:#999;">배치 설정은 자동 배치를 누르면 적용됩니다.</div>
+    </div>
+    <div class="fg">
+      <label class="fl">색상띠<small style="color:#aaa">— 왼쪽 강조 바</small></label>
       <div style="display:flex;align-items:center;gap:10px;">
         ${mkHexInp(nd.color||DEF_COLORS[nd.type]||'#40D2A7',"document.getElementById('ei-color-def').checked=false",'id="ei-color"')}
         <label style="font-size:12px;color:#555;display:flex;align-items:center;gap:5px;cursor:pointer;">
@@ -1750,6 +2249,11 @@ function saveModal(){
   nd.en=document.getElementById('ei-en').value.trim();
   nd.ko=document.getElementById('ei-ko').value.trim();
   nd.type=document.getElementById('ei-type').value;
+  if(document.getElementById('ei-kl').value==='col') nd.kl='col'; else delete nd.kl;
+  { const kn=parseInt(document.getElementById('ei-kn').value,10); if(kn>=1) nd.kn=kn; else delete nd.kn; }
+  { const ad=document.getElementById('ei-ad').value; if(ad==='L'||ad==='B') nd.ad=ad; else delete nd.ad; }
+  { const ac=parseInt(document.getElementById('ei-ac').value,10); if(ac===2||ac===3) nd.ac=ac; else delete nd.ac; }
+  if(document.getElementById('ei-aside').checked) nd.aside=true; else delete nd.aside;
   const defCb=document.getElementById('ei-color-def');
   nd.color=defCb&&defCb.checked?'':document.getElementById('ei-color').value;
   // Collect members from modal rows (must happen before closeModal removes DOM)
@@ -1977,9 +2481,13 @@ function fitScreen(){
 //   - 고아 Y = nearestGapY (임의) → 타입 레벨 무시
 function autoLayout(){
   const COL_GAP=OPT.colGap, ROW_GAP=OPT.rowGap, PAD_X=OPT.padX, PAD_Y=OPT.padY;
+  const r20=v=>Math.round(v/20)*20, c20=v=>Math.ceil(v/20)*20, STEP=c20(NW+COL_GAP);
+  const sideKids={};
+  S.nodes.forEach(n=>{ if(n.type!=='side') return; const pid=sideBesideParent(n.id); if(pid) (sideKids[pid]||(sideKids[pid]=[])).push(n.id); });
+  const besideSide=new Set();
 
   S.busY={};
-  S.nodes.forEach(n=>{ delete n._d; delete n._lx; });
+  S.nodes.forEach(n=>{ delete n._d; delete n._lx; delete n._wrap; delete n._col; delete n._asides; delete n._bs; });
 
   const sideIds=new Set(S.nodes.filter(n=>n.type==='side').map(n=>n.id));
 
@@ -2044,8 +2552,15 @@ function autoLayout(){
   // 현재 X 위치 기준으로 자식 순서 정렬 → 사용자가 수동 배치한 좌우 순서 유지
   S.nodes.forEach(n=>{
     if(kids[n.id]&&kids[n.id].length>1){
+      const allLeaves=kids[n.id].every(c=>!(kids[c]&&kids[c].length));
+      const ys=kids[n.id].map(c=>{const m=S.nodes.find(x=>x.id===c);return m?m.y:0;});
+      const readOrder=allLeaves&&ys.some(y=>y!==ys[0]);
       kids[n.id].sort((a,b)=>{
         const na=S.nodes.find(x=>x.id===a), nb=S.nodes.find(x=>x.id===b);
+        if(readOrder){
+          const dy=(na?na.y:0)-(nb?nb.y:0);
+          if(dy) return dy;
+        }
         return (na?na.x:0)-(nb?nb.x:0);
       });
     }
@@ -2054,16 +2569,81 @@ function autoLayout(){
   // X 배치 (DFS). _d = Y 행 결정용 깊이
   // 규칙: 자식 _d > 부모 _d (타입 레벨 기준이지만 같거나 낮으면 강제로 +1)
   // grpGap = 부모 _d 기반 → 상위일수록 넓게, 하위로 갈수록 좁게
+  // 트리 자식 / aside(leaf, aside===true) / 일반 자식
+  const tk=id=>(kids[id]||[]).filter(k=>!sideIds.has(k)&&pars[k]===id);
+  const isAsideC=id=>{const n=S.nodes.find(x=>x.id===id);return !!n&&n.aside===true&&tk(id).length===0;};
+  const nk=id=>tk(id).filter(k=>!isAsideC(k));
+  const ak=id=>tk(id).filter(k=>isAsideC(k));
   function place(id,L,parentD){
     const nd=S.nodes.find(n=>n.id===id);
     if(!nd||sideIds.has(id)) return L;
     const typeD=TYPE_LV[nd.type]??0;
     // 부모가 있으면 반드시 부모보다 한 단계 아래에 배치
     nd._d=parentD!==undefined ? Math.max(typeD,parentD+1) : typeD;
-    const ch=kids[id].filter(k=>!sideIds.has(k)&&pars[k]===id);
+    const ch=nk(id);
+    const xyOrd=(a,b)=>{const na=S.nodes.find(n=>n.id===a),nb=S.nodes.find(n=>n.id===b);return ((na?na.x:0)-(nb?nb.x:0))||((na?na.y:0)-(nb?nb.y:0));};
+    const asd=ak(id).sort((a,b)=>{const na=S.nodes.find(n=>n.id===a),nb=S.nodes.find(n=>n.id===b);return ((na?na.y:0)-(nb?nb.y:0))||((na?na.x:0)-(nb?nb.x:0));});
+    (sideKids[id]||[]).forEach(sid=>{ asd.push(sid); besideSide.add(sid); });
+    nd._asides=asd;
+    const shiftDesc=(cid,dl)=>{
+      const cn=S.nodes.find(n=>n.id===cid); if(!cn) return;
+      if(cn._lx!==undefined) cn._lx+=dl;
+      if(cn._wrap) cn._wrap.x0+=dl;
+      nk(cid).forEach(k=>shiftDesc(k,dl));
+    };
+    // aside 카드: 부모 옆. 예약 폭 계산 + 임시 _d/_lx
+    const fin=(r)=>{
+      if(!asd.length) return r;
+      asd.forEach(aid=>{const an=S.nodes.find(n=>n.id===aid); if(an&&an.type!=='side'){an._d=nd._d; an._lx=0;}});
+      const n=asd.length, C=besideCols(nd);
+      const nR=nd.ad==='L'?0:nd.ad==='B'?Math.ceil(n/2):n, nL=n-nR;
+      if(nL>0){
+        const ext=NW+COL_GAP+(Math.min(C,nL)-1)*STEP+20;
+        if(nd._lx-ext<L){
+          const delta=L-(nd._lx-ext);
+          nd._lx+=delta; if(nd._wrap) nd._wrap.x0+=delta;
+          nk(id).forEach(k=>shiftDesc(k,delta));
+          r+=delta;
+        }
+      }
+      if(nR>0){
+        const ar=r20(nd._lx+NW+COL_GAP)+(Math.min(C,nR)-1)*STEP+NW;
+        r=Math.max(r,ar);
+      }
+      return r;
+    };
     if(!ch.length){
       nd._lx=Math.round(L/20)*20;
-      return nd._lx+NW;
+      return fin(nd._lx+NW);
+    }
+    // ─── kl='col': 모든 일반 자식이 leaf이면 세로 1열
+    if(nd.kl==='col' && ch.every(cid=>tk(cid).length===0)){
+      nd._lx=L;
+      const ord=ch.slice().sort(xyOrd);
+      ord.forEach(cid=>{
+        const cn=S.nodes.find(n=>n.id===cid); if(!cn) return;
+        cn._d=Math.max(TYPE_LV[cn.type]??0,nd._d+1);
+        cn._lx=L+40;
+      });
+      nd._col=ord;
+      return fin(L+NW+40);
+    }
+    // ─── 한 줄 최대 조직 수: 모두 leaf인 넓은 그룹은 행으로 줄바꿈
+    const WN=(Number.isInteger(nd.kn)&&nd.kn>0)?nd.kn:(OPT.wrapN|0);
+    if(WN>0 && ch.length>WN && ch.every(cid=>tk(cid).length===0)){
+      const x0=L, nrows=Math.ceil(ch.length/WN), per=Math.ceil(ch.length/nrows), cols=per;
+      const wrows=[];
+      ch.forEach((cid,i)=>{
+        const cn=S.nodes.find(n=>n.id===cid); if(!cn) return;
+        const r=Math.floor(i/per), j=i%per;
+        cn._d=nd._d+1;
+        cn._lx=Math.round((x0+j*(NW+COL_GAP))/20)*20;
+        (wrows[r]||(wrows[r]=[])).push(cid);
+      });
+      const k=Math.ceil(cols/2);
+      nd._lx=(x0+k*(NW+COL_GAP)-COL_GAP/2)-NW/2;
+      nd._wrap={N:WN,x0,per,rows:wrows};
+      return fin(x0+(cols-1)*(NW+COL_GAP)+NW);
     }
     // 깊이별 자연스러운 감쇠: top 1.5x, l1 1.3x, l2 1.1x, l3+ 1.0x
     const grpGap=COL_GAP*Math.max(1, 1.5 - 0.2 * nd._d);
@@ -2072,7 +2652,7 @@ function autoLayout(){
     // 각 자식은 자기 서브트리 너비만큼만 차지 → 그룹 간 간격은 grpGap 일정.
     // 단, 자식 없는 leaf 형제는 NW × 1.2로 약간 부풀려 시각 균형 보정.
     const LEAF_PAD = 1.2;  // leaf 슬롯 너비 = NW × 1.2
-    const isLeafArr=ch.map(cid=>(kids[cid]||[]).filter(k=>!sideIds.has(k)&&pars[k]===cid).length===0);
+    const isLeafArr=ch.map(cid=>tk(cid).length===0);
     const hasMixed = isLeafArr.some(v=>v) && isLeafArr.some(v=>!v);
 
     let x=L, lastR=L;
@@ -2098,9 +2678,20 @@ function autoLayout(){
     }
     const clxs=ch.map(k=>{const n=S.nodes.find(n=>n.id===k);return n?n._lx:Math.round(L/20)*20;});
     nd._lx=(Math.min(...clxs)+Math.max(...clxs)+NW)/2-NW/2;
-    return lastR;
+    return fin(lastR);
   }
   place(root.id,PAD_X,undefined);
+
+  // beside 카드 좌우 분배 (현재 위치 기준, 위치 적용 전에 확정)
+  S.nodes.forEach(n=>{
+    if(!n._asides||!n._asides.length) return;
+    n._bs=besideSplit(n,n._asides.map(id=>S.nodes.find(q=>q.id===id)).filter(Boolean));
+  });
+  const stackRows=(cards,C)=>{
+    const rows=[];
+    cards.forEach((a,k)=>{ const r=Math.floor(k/C); (rows[r]||(rows[r]=[])).push(a); });
+    return rows;
+  };
 
   // ─── 형제 간격 균등화 (Post-pass) ─────────────────────
   // 같은 부모의 자식들 간 gap을 균등화하고, 서브트리를 함께 이동시킴.
@@ -2111,7 +2702,7 @@ function autoLayout(){
       if(!n||n._lx===undefined) return null;
       let left=n._lx, right=n._lx+NW;
       (kids[id]||[]).forEach(cid=>{
-        if(sideIds.has(cid)||pars[cid]!==id) return;
+        if(sideIds.has(cid)||pars[cid]!==id||isAsideC(cid)) return;
         const b=getSubtreeBounds(cid);
         if(b){ left=Math.min(left,b.left); right=Math.max(right,b.right); }
       });
@@ -2136,7 +2727,8 @@ function autoLayout(){
     // 두 번 반복: 한 번으로는 깊이 간 전파 완전치 않을 수 있어 안정화 위해
     for(let pass=0; pass<2; pass++){
       allParents.forEach(pid=>{
-        const children=(kids[pid]||[]).filter(k=>!sideIds.has(k)&&pars[k]===pid);
+        const children=nk(pid);
+        { const pw=S.nodes.find(n=>n.id===pid); if(pw&&(pw._wrap||pw._col)) return; } // 줄바꿈 그룹: 격자·차선 유지
         if(children.length<3) return; // 2개 이하는 균등화 의미 없음
         children.sort((a,b)=>{
           const na=S.nodes.find(n=>n.id===a), nb=S.nodes.find(n=>n.id===b);
@@ -2176,7 +2768,20 @@ function autoLayout(){
   // 레벨별 행 높이 (트리+고아 포함, side 제외)
   const depH={};
   S.nodes.filter(n=>n._d!==undefined&&!sideIds.has(n.id))
-    .forEach(n=>{ depH[n._d]=Math.max(depH[n._d]||0,nh(n)); });
+    .forEach(n=>{
+      let h=nh(n);
+      if(n._bs){
+        const C=besideCols(n);
+        [n._bs.R,n._bs.L].forEach(cards=>{
+          let off=0,prevH=0,first=true;
+          stackRows(cards,C).forEach(cs=>{
+            off=first?0:c20(off+prevH+20); first=false; prevH=Math.max(...cs.map(nh));
+          });
+          if(!first) h=Math.max(h,off+prevH);
+        });
+      }
+      depH[n._d]=Math.max(depH[n._d]||0,h);
+    });
   const depY={}; let cy=PAD_Y;
   Object.keys(depH).sort((a,b)=>a-b).forEach(d=>{
     depY[d]=Math.round(cy/20)*20;
@@ -2190,19 +2795,62 @@ function autoLayout(){
     n.y=depY[n._d]??PAD_Y;
   });
 
+  // 줄바꿈 그룹: 2행 이후는 직전 행 최하단 아래로 로컬 적재
+  treeNodes.forEach(p=>{
+    if(!p._wrap||!p._wrap.rows) return;
+    const rws=p._wrap.rows.map(ids=>ids.map(id=>S.nodes.find(n=>n.id===id)).filter(Boolean));
+    for(let r=1;r<rws.length;r++){
+      const prev=rws[r-1]; if(!prev.length) continue;
+      const yy=Math.ceil((Math.max(...prev.map(c=>c.y+nh(c)))+ROW_GAP)/20)*20;
+      rws[r].forEach(c=>{ c.y=yy; });
+    }
+  });
+
+  // 세로 1열 그룹
+  treeNodes.forEach(p=>{
+    if(!p._col) return;
+    let prev=null;
+    p._col.forEach(cid=>{
+      const c=S.nodes.find(n=>n.id===cid); if(!c) return;
+      const minY=prev?prev.y+nh(prev)+20:Math.max(c.y,p.y+nh(p)+20);
+      c.y=Math.ceil(minY/20)*20;
+      c.x=p.x+40;
+      prev=c;
+    });
+  });
+
+  // aside 카드: 부모 좌/우, 부모와 같은 y에서 시작
+  treeNodes.forEach(p=>{
+    if(!p._bs) return;
+    const C=besideCols(p);
+    [[p._bs.R,1],[p._bs.L,-1]].forEach(([cards,dir])=>{
+      let prevY=p.y,prevH=0;
+      stackRows(cards,C).forEach((cs,ri)=>{
+        const y=ri===0?p.y:c20(prevY+prevH+20);
+        cs.forEach((a,j)=>{
+          a.x=dir>0?r20(p.x+NW+COL_GAP)+j*STEP:r20(p.x-COL_GAP-NW)-j*STEP;
+          a.y=y;
+        });
+        prevY=y; prevH=Math.max(...cs.map(nh));
+      });
+    });
+  });
+
   // 트리 우측 끝
-  const treeR=treeNodes.length?Math.max(...treeNodes.map(n=>n.x+NW)):PAD_X+NW;
+  const treeR=Math.max(treeNodes.length?Math.max(...treeNodes.map(n=>n.x+NW)):PAD_X+NW,
+    ...[...besideSide].map(id=>S.nodes.find(n=>n.id===id)).filter(Boolean).map(n=>n.x+NW));
 
   // side 노드: L1 행 우측
   const sideY=depY[1]??PAD_Y;
-  [...sideIds].forEach((sid,i)=>{
+  const freeSides=[...sideIds].filter(sid=>!besideSide.has(sid));
+  freeSides.forEach((sid,i)=>{
     const snd=S.nodes.find(n=>n.id===sid);
     if(snd){ snd.x=Math.round((treeR+COL_GAP*2+i*(NW+COL_GAP))/20)*20; snd.y=sideY; }
   });
 
   // 고아 노드: 타입 레벨 행 Y, 트리+사이드 우측 X (결정론적 — shiftX 누적 없음)
   // 같은 타입 레벨끼리 나란히 배치
-  const sideCount=sideIds.size;
+  const sideCount=freeSides.length;
   const orphanByLv={};
   orphans.forEach(n=>{ (orphanByLv[n._d]||(orphanByLv[n._d]=[])).push(n); });
   let oi=sideCount;
@@ -2301,11 +2949,20 @@ function toggleDD(id){
   const el=document.getElementById(id);
   const wasOpen=el.classList.contains('open');
   document.querySelectorAll('.dd').forEach(d=>d.classList.remove('open'));
-  if(!wasOpen) el.classList.add('open');
+  if(!wasOpen){
+    const r=el.parentElement.querySelector('button').getBoundingClientRect();
+    el.style.top=(r.bottom+5)+'px';
+    el.style.left=r.left+'px';
+    el.classList.add('open');
+    if(r.left+el.offsetWidth>window.innerWidth-8)
+      el.style.left=Math.max(8,window.innerWidth-8-el.offsetWidth)+'px';
+  }
 }
 function closeDD(){
   document.querySelectorAll('.dd').forEach(d=>d.classList.remove('open'));
 }
+document.getElementById('topbar').addEventListener('scroll',closeDD);
+window.addEventListener('resize',closeDD);
 document.addEventListener('click',e=>{
   if(!e.target.closest('.dd-wrap')) closeDD();
 });
@@ -2586,6 +3243,8 @@ function openOptions(){
   sl('opt-cr', OPT.cardRadius);
   sv('opt-sha', OPT.shadowA);
   const _shav=document.getElementById('opt-sha-v'); if(_shav) _shav.textContent=Math.round(OPT.shadowA*100)+'%';
+  {const w=document.getElementById('opt-wrap'),wv=document.getElementById('opt-wrap-v');
+   if(w) w.value=OPT.wrapN||0; if(wv) wv.textContent=OPT.wrapN?OPT.wrapN+'개':'끔';}
   sl('opt-rg',OPT.rowGap); sl('opt-cg',OPT.colGap); sl('opt-px',OPT.padX);
   sl('opt-py', OPT.padY);
   // 높이
@@ -2629,7 +3288,7 @@ function resetOptions(){
   if(!confirm('모든 옵션을 초기값으로 되돌릴까요?')) return;
   Object.assign(OPT,{
     fsEn:12,fsKo:8,fsMn:11,fsMf:9,fsMr2:9,fsMa:9,lhH:1.2,lhC:1.2,hdrH:0,rowH:0,
-    nw:228,bandW:12,rowGap:80,colGap:44,padX:80,padY:60,
+    nw:228,bandW:12,rowGap:80,colGap:44,padX:80,padY:60,wrapN:0,
     strokeW:1.8,strokeDashW:1.5,
     uiMint:'#40D2A7',uiSky:'#60DCF8',uiCoral:'#FF8770',topbarBg:'#2C2C2C',
     statsBg:'#1C1C20',stbarBg:'#1A1A1A',
@@ -2872,7 +3531,7 @@ async function saveDataToFile(){
 
 // ═══ 데이터 불러오기 (파일 / localStorage)
 function _applyOptObj(d){
-  const numKeys=['fsEn','fsKo','fsMn','fsMf','fsMr2','fsMa','lhH','lhC','hdrH','rowH','nw','bandW','rowGap','colGap','padX','padY','strokeW','strokeDashW','cardRadius','shadowA'];
+  const numKeys=['fsEn','fsKo','fsMn','fsMf','fsMr2','fsMa','lhH','lhC','hdrH','rowH','nw','bandW','rowGap','colGap','padX','padY','strokeW','strokeDashW','cardRadius','shadowA','wrapN'];
   numKeys.forEach(k=>{if(d[k]!=null){OPT[k]=+d[k];_applyOptCSS(k,+d[k]);}});
   const colKeys=['uiMint','uiSky','uiCoral','topbarBg','statsBg','stbarBg','hdrTop','hdrL1','hdrL2','hdrL3','hdrL4','hdrL5','hdrTf','hdrSide','bandTop','bandL1','bandL2','bandL3','bandL4','bandL5','bandTf','bandSide','canvasBg','cardBg','rowEven','rowBorder','connSolid','connDash','gridDot','txtHdrEn','txtHdrKo','txtMn','txtMf','txtMr2','txtMa'];
   colKeys.forEach(k=>{if(d[k]&&/^#[0-9a-fA-F]{3,8}$/.test(String(d[k]))){OPT[k]=d[k];_applyOptCSS(k,d[k]);}});
@@ -3057,6 +3716,159 @@ function dl(data,name,type,bom=true){
   a.download=name; a.click();
   setTimeout(()=>URL.revokeObjectURL(a.href),1500);
 }
+
+function _chartBounds(){
+  let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
+  S.nodes.forEach(n=>{
+    x0=Math.min(x0,n.x); y0=Math.min(y0,n.y);
+    x1=Math.max(x1,n.x+NW); y1=Math.max(y1,n.y+nh(n));
+  });
+  return {x0,y0,x1,y1};
+}
+function exportPNG(){
+  if(!S.nodes.length) return;
+  const {x0,y0,x1,y1}=_chartBounds();
+  const W=Math.round((x1-x0+80)*2), H=Math.round((y1-y0+80)*2);
+  const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
+  const ctx=cv.getContext('2d');
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+  ctx.setTransform(2,0,0,2,(40-x0)*2,(40-y0)*2);
+  const font=getComputedStyle(document.body).fontFamily||'sans-serif';
+  const fitText=(text,left,y,weight,size,avail)=>{
+    const m=/^([\d.]+)(.*)$/.exec(String(size)), base=m?parseFloat(m[1]):13, unit=m?m[2]:'px';
+    const wp=weight?weight+' ':'';
+    const mk=s=>wp+s+unit+' '+font;
+    ctx.font=wp+size+' '+font;
+    if(ctx.measureText(text).width<=avail){ctx.fillText(text,left,y);return;}
+    const min=base*0.7;
+    for(let s=base*0.95;s>=min-1e-9;s-=base*0.05){
+      ctx.font=mk(Math.max(s,min));
+      if(ctx.measureText(text).width<=avail){ctx.fillText(text,left,y);return;}
+    }
+    ctx.font=mk(min);
+    let t=text;
+    while(t.length&&ctx.measureText(t+'…').width>avail) t=t.slice(0,-1);
+    ctx.fillText(t+'…',left,y);
+  };
+  document.querySelectorAll('#svgl path.cpath, #svgl path.cpath-dash').forEach(p=>{
+    const d=p.getAttribute('d'); if(!d) return;
+    const cs=getComputedStyle(p);
+    let col=cs.stroke; if(!col||col==='none') col='#555';
+    const lw=parseFloat(cs.strokeWidth)||1.5;
+    ctx.save();
+    ctx.strokeStyle=col; ctx.lineWidth=lw; ctx.fillStyle='none';
+    ctx.setLineDash(p.classList.contains('cpath-dash')?[6,4]:[]);
+    ctx.stroke(new Path2D(d));
+    ctx.restore();
+  });
+  S.nodes.forEach(nd=>{
+    const el=document.getElementById('n'+nd.id);
+    const hd=el&&el.querySelector('.nh');
+    const ecs=el?getComputedStyle(el):null;
+    const hcs=hd?getComputedStyle(hd):null;
+    let bw=parseFloat(ecs&&ecs.getPropertyValue('--band-w')); if(!isFinite(bw)) bw=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--band-w')); if(!isFinite(bw)) bw=12;
+    const band=ecs?ecs.getPropertyValue('--band-color').trim():'';
+    const x=nd.x,y=nd.y,h=nh(nd);
+    ctx.fillStyle='#fff'; ctx.fillRect(x,y,NW,h);
+    ctx.strokeStyle=(ecs&&ecs.borderTopColor&&ecs.borderTopWidth!=='0px')?ecs.borderTopColor:'#d0d0d0';
+    ctx.lineWidth=1; ctx.setLineDash([]); ctx.strokeRect(x+.5,y+.5,NW-1,h-1);
+    ctx.fillStyle=(hcs&&hcs.backgroundColor)||'#eee'; ctx.fillRect(x,y,NW,CUR_HH);
+    if(band){ ctx.fillStyle=band; ctx.fillRect(x,y,bw,CUR_HH); }
+    ctx.save();
+    ctx.beginPath(); ctx.rect(x,y,NW,CUR_HH); ctx.clip();
+    ctx.textBaseline='middle';
+    const enEl=el&&el.querySelector('.nen'), koEl=el&&el.querySelector('.nko');
+    const ens=enEl?getComputedStyle(enEl):null, kos=koEl?getComputedStyle(koEl):null;
+    let enT=nd.en||''; if(ens&&ens.textTransform==='uppercase') enT=enT.toUpperCase();
+    ctx.fillStyle=(ens&&ens.color)||'#222';
+    fitText(enT,x+bw+10,y+CUR_HH*0.35,(ens&&ens.fontWeight)||'bold',(ens&&ens.fontSize)||'13px',x+NW-6-(x+bw+10));
+    ctx.fillStyle=(kos&&kos.color)||'#222';
+    fitText(nd.ko||'',x+bw+10,y+CUR_HH*0.72,(kos&&kos.fontWeight)||'normal',(kos&&kos.fontSize)||'11px',x+NW-6-(x+bw+10));
+    ctx.restore();
+    (nd.m||[]).forEach((m,k)=>{
+      const ry=y+CUR_HH+k*CUR_MH;
+      ctx.fillStyle='#e4e4e4'; ctx.fillRect(x,ry,NW,1);
+      let sc=statusColor(m.s);
+      const vm=/^var\((--[^)]+)\)$/.exec(sc);
+      if(vm) sc=getComputedStyle(document.documentElement).getPropertyValue(vm[1]).trim()||'#999';
+      ctx.fillStyle=sc; ctx.fillRect(x,ry,bw,CUR_MH);
+      ctx.save();
+      ctx.beginPath(); ctx.rect(x,ry,NW,CUR_MH); ctx.clip();
+      ctx.textBaseline='middle';
+      ctx.fillStyle='#222';
+      const t1=(m.n||'')+(m.r?'  '+m.r:'');
+      fitText(t1,x+bw+8,ry+CUR_MH*0.33,'bold','12px',x+NW-6-(x+bw+8));
+      ctx.fillStyle='#555';
+      fitText(m.f||'',x+bw+8,ry+CUR_MH*0.72,'','10px',x+NW-6-(x+bw+8));
+      ctx.restore();
+    });
+  });
+  const dt=new Date(), pad=n=>String(n).padStart(2,'0');
+  const date=dt.getFullYear()+'-'+pad(dt.getMonth()+1)+'-'+pad(dt.getDate());
+  const sn=(SHEETS[CUR_SHEET]&&SHEETS[CUR_SHEET].name)||'';
+  const name='조직도-'+sn+'-'+date+'.png';
+  cv.toBlob(b=>{
+    if(!b) return;
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(b); a.download=name; a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href),1500);
+  },'image/png');
+}
+
+// ═══ Print / PDF
+let _prep=null;
+function preparePrint(){
+  if(_prep||!S.nodes.length) return;
+  const w=document.getElementById('wrap'), cvs=document.getElementById('canvas');
+  _prep={scale:S.scale,sl:w.scrollLeft,st:w.scrollTop,tf:cvs.style.transform};
+  const {x0,y0,x1,y1}=_chartBounds();
+  const sc=Math.min((1123-40)/(x1-x0),(794-40)/(y1-y0),1);
+  cvs.style.transform=`translate(${20-x0*sc}px,${20-y0*sc}px) scale(${sc})`;
+  document.body.classList.add('printing');
+  w.scrollLeft=0; w.scrollTop=0;
+}
+function restorePrint(){
+  if(!_prep) return;
+  const p=_prep; _prep=null;
+  const w=document.getElementById('wrap'), cvs=document.getElementById('canvas');
+  document.body.classList.remove('printing');
+  S.scale=p.scale; cvs.style.transform=p.tf;
+  w.scrollLeft=p.sl; w.scrollTop=p.st;
+}
+function printChart(){ preparePrint(); window.print(); }
+window.addEventListener('afterprint',restorePrint);
+window.addEventListener('beforeprint',()=>{ if(!_prep) preparePrint(); });
+
+// ═══ Presentation view
+let _pres=null;
+function enterPresent(){
+  if(_pres) return;
+  const w=document.getElementById('wrap');
+  _pres={scale:S.scale,sl:w.scrollLeft,st:w.scrollTop,hidden:document.getElementById('topbar').classList.contains('tb-hidden')};
+  document.querySelectorAll('.dd.show,.dd.open').forEach(d=>d.classList.remove('show','open'));
+  document.body.classList.add('present');
+  fitScreen();
+}
+function exitPresent(){
+  if(!_pres) return;
+  const p=_pres; _pres=null;
+  document.body.classList.remove('present');
+  const tb=document.getElementById('topbar'), rev=document.getElementById('tb-reveal');
+  const w=document.getElementById('wrap'), grid=document.getElementById('grid-bg');
+  tb.classList.toggle('tb-hidden',p.hidden);
+  w.style.top=p.hidden?'0':'50px';
+  if(grid) grid.style.top=p.hidden?'0':'50px';
+  if(rev) rev.style.display=p.hidden?'flex':'none';
+  S.scale=p.scale;
+  document.getElementById('canvas').style.transform=`scale(${p.scale})`;
+  try{updateGrid();updateSt();}catch(_){}
+  requestAnimationFrame(()=>{
+    w.scrollLeft=p.sl; w.scrollTop=p.st;
+    try{updateGrid();}catch(_){}
+  });
+}
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&document.body.classList.contains('present')) exitPresent(); });
 
 function importCSV(inp){
   if(!ADMIN){ inp.value=''; return; }
