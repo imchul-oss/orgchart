@@ -358,7 +358,11 @@ body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);ov
   box-shadow:0 6px 24px rgba(0,0,0,.35);
   cursor:move;user-select:none;color:#fff;font-size:12px;
 }
-#statsfl-hd{margin-bottom:8px;}
+#statsfl-hd{margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+#statsfl-tog{border:none;background:transparent;color:inherit;opacity:.7;cursor:pointer;font-size:12px;padding:0 2px;}
+#statsfl-tog:hover{opacity:1;}
+#statsfl.collapsed #statsfl-tabs,#statsfl.collapsed #statsfl-filter,#statsfl.collapsed #statsfl-body{display:none!important;}
+#statsfl.collapsed #statsfl-hd{margin-bottom:0;}
 #statsfl-title{font-size:11px;font-weight:700;letter-spacing:.8px;opacity:.6;}
 #statsfl-tabs{display:flex;gap:4px;margin-bottom:9px;}
 .sfl-tab{flex:1;padding:4px 0;border:1px solid rgba(255,255,255,.14);border-radius:5px;background:rgba(255,255,255,.05);color:rgba(255,255,255,.45);font-size:10px;font-weight:600;cursor:pointer;transition:.15s;}
@@ -462,7 +466,17 @@ body.ro .sfl-ex-btn{display:none;}
 body.present #present-exit{display:block;}
 body.present #topbar,body.present #tb-reveal,body.present #stbar,body.present #lint-panel,body.present #cmp-panel,body.present .nact,body.present .anchor-dot,body.present .dd,body.present #statsfl,body.present #sheetbar{display:none!important;}
 body.present #wrap,body.present #grid-bg{top:0!important;bottom:0!important;}
+.nd.srch-hit{outline:3px solid #FFB347;outline-offset:2px;}
+.nd.srch-hit.srch-cur{outline:4px solid #FF7A00;outline-offset:2px;}
+.mr.srch-row{background:#FFF7B0!important;}
+#srch-box{display:inline-flex;align-items:center;gap:6px;}
+#srch-input{width:190px;padding:3px 8px;border-radius:5px;border:1px solid rgba(255,255,255,.3);font-size:12px;}
+#srch-count{color:#fff;font-size:12px;min-width:36px;}
+body.present #srch-box,body.present #srch-btn{display:none!important;}
 @media print{
+  #srch-box,#srch-btn{display:none!important;}
+  .nd.srch-hit,.nd.srch-hit.srch-cur{outline:none!important;}
+  .mr.srch-row{background:inherit!important;}
   @page{size:A4 landscape;margin:0}
   body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
   *{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
@@ -489,6 +503,8 @@ body.present #wrap,body.present #grid-bg{top:0!important;bottom:0!important;}
   </div>
   <button class="tb tb-g" onclick="fitScreen()">⊡ 화면 맞춤</button>
   <button id="lint-badge" class="tb tb-g" onclick="toggleLintPanel()">✓ 배치 이상 없음</button>
+  <button id="srch-btn" class="tb tb-g" type="button" title="검색 (Ctrl+F)">🔍 검색</button>
+  <span id="srch-box" style="display:none"><input id="srch-input" type="search" placeholder="이름·직무·직책·조직 검색"><span id="srch-count"></span></span>
   <button id="btn-cmp" class="tb tb-g">⇄ 비교</button>
   <button id="btn-present" class="tb tb-g" onclick="enterPresent()">▶ 발표 보기</button>
   <input type="file" id="cmp-file" accept=".json" style="display:none">
@@ -609,6 +625,7 @@ body.present #wrap,body.present #grid-bg{top:0!important;bottom:0!important;}
 <div id="statsfl">
   <div id="statsfl-hd">
     <span id="statsfl-title">인원 현황</span>
+    <button id="statsfl-tog" type="button" title="접기">▾</button>
   </div>
   <div id="statsfl-tabs">
     <button class="sfl-tab active" onclick="switchStatTab(this,'summary')">현황</button>
@@ -1130,7 +1147,7 @@ function updateGrid(){
 }
 
 // ═══ Render
-function render() { drawConns(); drawNodes(); updateCanvas(); updateSt(); renderAnchors(); updateGrid(); scheduleSave(); runLint(); cmpRun(); }
+function render() { drawConns(); drawNodes(); updateCanvas(); updateSt(); renderAnchors(); updateGrid(); scheduleSave(); runLint(); cmpRun(); if(typeof srchApply==='function') srchApply(false); }
 /* ===== 비교 모드 (저장 대상 아님) ===== */
 var CMP=null; // {file, data:{sheets:[...]}, single:bool, err:string}
 function cmpTrim(v){return String(v==null?'':v).trim();}
@@ -1150,7 +1167,7 @@ function cmpFocus(id){
   const nd=S.nodes.find(n=>String(n.id)===String(id)); const w=document.getElementById('wrap');
   if(!nd||!w) return;
   w.scrollLeft=Math.max(0,(nd.x+NW/2)*S.scale-w.clientWidth/2);
-  w.scrollTop=Math.max(0,(nd.y+NW/2)*S.scale-w.clientHeight/2);
+  w.scrollTop=Math.max(0,(nd.y+nh(nd)/2)*S.scale-w.clientHeight/2);
 }
 function cmpRun(){
   cmpClear();
@@ -1228,17 +1245,14 @@ function cmpLoad(file){
     if(d&&Array.isArray(d.sheets)) sheets=d.sheets.filter(s=>s&&typeof s==='object');
     else if(d&&Array.isArray(d.nodes)){single=true;const cs=SHEETS[CUR_SHEET];sheets=[{name:cs?cs.name:'',nodes:d.nodes,conns:d.conns||[]}];}
     if(!sheets||!sheets.some(s=>Array.isArray(s.nodes)&&s.nodes.length)){
-      CMP=null; cmpClear();
-      const p=cmpPanel();
-      ['join','leave','move','change','orgnew','orggone'].forEach(k=>p.removeAttribute('data-'+k));
-      p.innerHTML='<div class="cmp-h"><b>비교</b> <button id="cmp-exit" type="button">닫기</button></div><div class="cmp-err">비교 파일을 읽지 못했습니다: 올바른 조직도 데이터(JSON)가 아닙니다.</div>';
-      document.getElementById('cmp-exit').onclick=cmpExit;
+      CMP={file:file.name,err:'비교 파일을 읽지 못했습니다: 올바른 조직도 데이터(JSON)가 아닙니다.'};
+      cmpRun();
       return;
     }
     CMP={file:file.name,data:{sheets},single};
     cmpRun();
   };
-  fr.onerror=()=>{CMP=null;const p=cmpPanel();p.innerHTML='<div class="cmp-err">비교 파일을 읽지 못했습니다: 올바른 조직도 데이터(JSON)가 아닙니다.</div>';};
+  fr.onerror=()=>{CMP={file:file.name,err:'비교 파일을 읽지 못했습니다: 올바른 조직도 데이터(JSON)가 아닙니다.'};cmpRun();};
   fr.readAsText(file,'UTF-8');
 }
 document.addEventListener('DOMContentLoaded',()=>{
@@ -1586,58 +1600,142 @@ function drawConns() {
         if(t&&!bAll.includes(t)&&isBesideItem({t})) bAll.push(t);
       });
       const asideTop=bAll.length?Math.max(f.y+nh(f),...bAll.map(t=>t.y+nh(t))):null;
-      if(bAll.length){
-        const sp=besideSplit(f,bAll);
-        const sideOf=new Map();
-        sp.R.forEach(t=>sideOf.set(t.id,1)); sp.L.forEach(t=>sideOf.set(t.id,-1));
+      // beside 블록은 부모당 한 번만 그린다(실선+점선 공유 구간 중복 방지)
+      const besideAllItems=bAll.length?S.conns.filter(k=>k.f===fid).map(k=>({c:k,t:S.nodes.find(n=>n.id===k.t)})).filter(x=>x.t&&isBesideItem(x)):[];
+      const besideAnySolid=besideAllItems.some(x=>!x.c.d);
+      if(bAll.length&&besideAllItems.length&&((bSfx==='_s')===besideAnySolid)){
         const Cn=besideCols(f);
         const ay=f.y+CUR_HH/2;
+        const pcx=f.x+NW/2;
+        const clsOf=c=>c.d?'cpath-dash':'cpath';
+        const hlOf=c=>c.d?'cpath-hl-dash':'cpath-hl';
+        const sideOfT=t=>(t.x+NW/2<pcx)?-1:1;
+        const cmpT=(a,b)=>(a.y-b.y)||(Math.abs(a.x-f.x)-Math.abs(b.x-f.x));
         [1,-1].forEach(dir=>{
-          const ord=dir>0?sp.R:sp.L;
-          const mine=asideItems.filter(x=>sideOf.get(x.t.id)===dir);
-          if(!ord.length||!mine.length) return;
+          const mine=besideAllItems.filter(x=>sideOfT(x.t)===dir);
+          if(!mine.length) return;
+          const ord=[];
+          mine.forEach(x=>{ if(!ord.includes(x.t)) ord.push(x.t); });
+          ord.sort(cmpT);
           const E=dir>0?Math.round(f.x+NW):Math.round(f.x);
           const xs=dir>0?Math.round(f.x+NW+Math.round(OPT.colGap/2)):Math.round(f.x-Math.round(OPT.colGap/2));
-          const mkG=(hit,p)=>{
-            const c0=hit.c, sel=S.selConn===c0.id;
-            const sg=document.createElementNS('http://www.w3.org/2000/svg','g');
-            sg.innerHTML=
-              (sel?`<path class="${hlCls}" d="${hit.d}" style="pointer-events:none;"/>`:'')+
-              `<path class="chit" d="${hit.d}"
-                 onclick="selectConn('${c0.id}')"
-                 oncontextmenu="connContextMenu(event,'${c0.id}');return false;"
-                 style="pointer-events:stroke;cursor:pointer;"/>
-               <path class="${pCls}" d="${p}" style="pointer-events:none;"/>`;
-            svg.appendChild(sg);
+          const chits=[];
+          const mkG=(c0,hlD,hitD,p,k)=>{
+            chits.push({c:c0,d:hitD,hl:hlD,p,k});
           };
-          if(Cn===1){
-            const last=mine.map(x=>x.t).sort((a,b)=>(a.y-b.y)||(Math.abs(a.x-f.x)-Math.abs(b.x-f.x))).pop();
-            if(last.id!==ord[0].id) addPath(svg,`M${xs} ${ay} L${xs} ${last.y+CUR_HH/2}`,pCls);
-            mine.forEach(({c,t})=>{
-              const bx=dir>0?Math.round(t.x):Math.round(t.x+NW), by2=t.y+CUR_HH/2;
-              const isFirst=ord[0].id===t.id;
-              const mx=Math.round((E+bx)/2);
-              const p=isFirst
-                ?(Math.abs(ay-by2)<0.5?`M${E} ${ay} L${bx} ${by2}`:`M${E} ${ay} L${mx} ${ay} L${mx} ${by2} L${bx} ${by2}`)
-                :`M${xs} ${by2} L${bx} ${by2}`;
-              const hit=isFirst?p:`M${E} ${ay} L${xs} ${ay} L${xs} ${by2} L${bx} ${by2}`;
-              mkG({c,d:hit},p);
+          const flushChits=()=>{
+            const firstIds=new Set(mine.filter(x=>x.t===ord[0]).map(x=>x.c.id));
+            const isF=h=>firstIds.has(h.c.id)?1:0;
+            chits.sort((a,b)=>(isF(a)-isF(b))||(b.k-a.k)).forEach(h=>{
+              const sg=document.createElementNS('http://www.w3.org/2000/svg','g');
+              sg.innerHTML=
+                (S.selConn===h.c.id?`<path class="${hlOf(h.c)}" d="${h.hl}" style="pointer-events:none;"/>`:'')+
+                `<path class="chit" d="${h.d}"
+                 onclick="selectConn('${h.c.id}')"
+                 oncontextmenu="connContextMenu(event,'${h.c.id}');return false;"
+                 style="pointer-events:stroke;cursor:pointer;"/>`+
+                `<path class="${clsOf(h.c)}" d="${h.p}" style="pointer-events:none;"/>`;
+              svg.appendChild(sg);
             });
+          };
+          // 구간 목록 [{a,b,s}] 병합 후 그리기 (s=true → 실선)
+          const emitSegs=(segs,mk)=>{
+            const m=[];
+            segs.forEach(g=>{ const l=m[m.length-1]; if(l&&l.s===g.s&&l.b===g.a) l.b=g.b; else m.push({a:g.a,b:g.b,s:g.s}); });
+            m.forEach(g=>addPath(svg,mk(g.a,g.b),g.s?'cpath':'cpath-dash'));
+          };
+          const uniform=list=>list.every(x=>!x.c.d)?'cpath':list.every(x=>x.c.d)?'cpath-dash':null;
+          if(Cn===1){
+            const first=ord[0];
+            const firstConns=mine.filter(x=>x.t===first);
+            const later=mine.filter(x=>x.t!==first);
+            const by2Of=t=>t.y+CUR_HH/2;
+            const lastT=ord[ord.length-1];
+            if(later.length){
+              const u=uniform(later);
+              if(u) addPath(svg,`M${xs} ${ay} L${xs} ${lastT.y+CUR_HH/2}`,u);
+              else {
+                const pts=[...new Set([ay,...later.map(x=>by2Of(x.t)).filter(v=>v>ay)])].sort((a,b)=>a-b);
+                const segs=[];
+                for(let i=0;i+1<pts.length;i++) segs.push({a:pts[i],b:pts[i+1],s:later.some(x=>!x.c.d&&by2Of(x.t)>=pts[i+1])});
+                emitSegs(segs,(a,b)=>`M${xs} ${a} L${xs} ${b}`);
+              }
+            }
+            const laterSolid=later.some(x=>!x.c.d);
+            mine.forEach(({c,t})=>{
+              const bx=dir>0?Math.round(t.x):Math.round(t.x+NW), by2=by2Of(t);
+              const isFirst=first===t;
+              const mx=Math.round((E+bx)/2);
+              const full=Math.abs(ay-by2)<0.5?`M${E} ${ay} L${bx} ${by2}`:`M${E} ${ay} L${mx} ${ay} L${mx} ${by2} L${bx} ${by2}`;
+              let p, hit, hl;
+              if(isFirst){
+                p=full; hl=full; hit=full;
+                if(later.length&&(xs-mx)*dir>0) hit=full+` M${E} ${ay} L${xs} ${ay}`;
+                if(c.d&&laterSolid){
+                  // 첫 카드가 점선이고 뒤 카드 중 실선이 있으면 공유 stub은 실선으로 따로 그림
+                  const mx2=(mx-xs)*dir>0?mx:xs;
+                  p=Math.abs(ay-by2)<0.5?`M${xs} ${ay} L${bx} ${by2}`:`M${xs} ${ay} L${mx2} ${ay} L${mx2} ${by2} L${bx} ${by2}`;
+                }
+              } else {
+                p=`M${xs} ${by2} L${bx} ${by2}`;
+                hl=`M${E} ${ay} L${xs} ${ay} L${xs} ${by2} L${bx} ${by2}`;
+                hit=`M${xs} ${ay} L${xs} ${by2} L${bx} ${by2}`;
+              }
+              mkG(c,hl,hit,p,0);
+            });
+            if(firstConns.length&&firstConns.every(x=>x.c.d)&&laterSolid) addPath(svg,`M${E} ${ay} L${xs} ${ay}`,'cpath');
           } else {
             const ybMax=Math.max(...mine.map(x=>x.t.y-10));
-            addPath(svg,`M${E} ${ay} L${xs} ${ay}`,pCls);
-            addPath(svg,`M${xs} ${f.y-10} L${xs} ${Math.max(ay,ybMax)}`,pCls);
+            const stubCls=mine.some(x=>!x.c.d)?'cpath':'cpath-dash';
+            addPath(svg,`M${E} ${ay} L${xs} ${ay}`,stubCls);
+            const top=f.y-10, end=Math.max(ay,ybMax);
+            const u=uniform(mine);
+            if(u) addPath(svg,`M${xs} ${top} L${xs} ${end}`,u);
+            else {
+              const pts=[...new Set([top,ay,end,...mine.map(x=>x.t.y-10)])].sort((a,b)=>a-b).filter(v=>v>=top&&v<=end);
+              const segs=[];
+              for(let i=0;i+1<pts.length;i++){
+                const a=pts[i], b=pts[i+1];
+                let lead=a>=ay?mine.filter(x=>x.t.y-10>=b):mine.filter(x=>x.t.y-10<=a);
+                if(!lead.length) lead=mine;
+                segs.push({a,b,s:lead.some(x=>!x.c.d)});
+              }
+              emitSegs(segs,(a,b)=>`M${xs} ${a} L${xs} ${b}`);
+            }
             const rows=new Map();
-            mine.forEach(({t})=>{
-              const cx=t.x+NW/2;
-              if(!rows.has(t.y)||Math.abs(cx-xs)>Math.abs(rows.get(t.y)-xs)) rows.set(t.y,cx);
+            mine.forEach(x=>{
+              if(!rows.has(x.t.y)) rows.set(x.t.y,[]);
+              rows.get(x.t.y).push(x);
             });
-            rows.forEach((far,ry)=>addPath(svg,`M${xs} ${ry-10} L${far} ${ry-10}`,pCls));
+            rows.forEach((rm,ry)=>{
+              const yb=ry-10;
+              const ru=uniform(rm);
+              if(ru){
+                let far=null;
+                rm.forEach(({t})=>{ const cx=t.x+NW/2; if(far===null||Math.abs(cx-xs)>Math.abs(far-xs)) far=cx; });
+                addPath(svg,`M${xs} ${yb} L${far} ${yb}`,ru);
+              } else {
+                [1,-1].forEach(sg=>{
+                  const grp=rm.filter(x=>((x.t.x+NW/2>=xs)?1:-1)===sg).sort((a,b)=>Math.abs(a.t.x+NW/2-xs)-Math.abs(b.t.x+NW/2-xs));
+                  if(!grp.length) return;
+                  const segs=[]; let prev=xs;
+                  grp.forEach((x,i)=>{
+                    const cx=x.t.x+NW/2;
+                    if(cx!==prev) segs.push({a:prev,b:cx,s:grp.slice(i).some(y=>!y.c.d)});
+                    prev=cx;
+                  });
+                  emitSegs(segs,(a,b)=>`M${a} ${yb} L${b} ${yb}`);
+                });
+              }
+            });
             mine.forEach(({c,t})=>{
               const cx=t.x+NW/2, yb=t.y-10;
-              mkG({c,d:`M${E} ${ay} L${xs} ${ay} L${xs} ${yb} L${cx} ${yb} L${cx} ${t.y}`},`M${cx} ${yb} L${cx} ${t.y}`);
+              const full=`M${E} ${ay} L${xs} ${ay} L${xs} ${yb} L${cx} ${yb} L${cx} ${t.y}`;
+              const hit=ord[0]===t?full:`M${xs} ${ay} L${xs} ${yb} L${cx} ${yb} L${cx} ${t.y}`;
+              mkG(c,full,hit,`M${cx} ${yb} L${cx} ${t.y}`,Math.abs(cx-xs));
             });
           }
+          flushChits();
         });
       }
 
@@ -2161,7 +2259,7 @@ function openEdit(id){
       <div style="font-size:11px;color:#999;">배치 설정은 자동 배치를 누르면 적용됩니다.</div>
     </div>
     <div class="fg">
-      <label class="fl">색상띠<small style="color:#aaa">— 왼쪽 강조 바</small></label>
+      <label class="fl">색상띠 <small style="color:#aaa">— 왼쪽 강조 바</small></label>
       <div style="display:flex;align-items:center;gap:10px;">
         ${mkHexInp(nd.color||DEF_COLORS[nd.type]||'#40D2A7',"document.getElementById('ei-color-def').checked=false",'id="ei-color"')}
         <label style="font-size:12px;color:#555;display:flex;align-items:center;gap:5px;cursor:pointer;">
@@ -2441,12 +2539,38 @@ function fitScreen(){
   S.scale=sc;
   cvs.style.marginLeft='';          // always clear stale margin
   cvs.style.transform=`scale(${sc})`;
-  const root=S.nodes.find(n=>n.type==='top')||S.nodes[0];
-  const cx=root ? (root.x+NW/2)*sc : (x0+x1)/2*sc;
+  const cx=(x0+x1)/2*sc;
   w.scrollLeft=Math.max(0, cx - w.clientWidth/2);
   w.scrollTop =Math.max(0, Math.round(y0*sc-60));
   updateGrid();
   updateSt();
+  statsflAvoidCards();
+}
+function statsflSetCollapsed(c,persist){
+  const fl=document.getElementById('statsfl'); if(!fl) return;
+  fl.classList.toggle('collapsed',!!c);
+  const b=document.getElementById('statsfl-tog');
+  if(b){ b.textContent=c?'▸':'▾'; b.title=c?'펼치기':'접기'; }
+  if(persist){ try{ if(c) localStorage.setItem('ssb-statsfl-collapsed','1'); else localStorage.removeItem('ssb-statsfl-collapsed'); }catch(e){} }
+  try{ updateStatsPanel(); }catch(e){}
+}
+function statsflAvoidCards(){
+  const fl=document.getElementById('statsfl'), w=document.getElementById('wrap');
+  if(!fl||!w||fl.classList.contains('collapsed')||getComputedStyle(fl).display==='none') return;
+  const cards=S.nodes.map(n=>document.getElementById('n'+n.id)).filter(Boolean);
+  const hit=(r)=>cards.some(c=>{
+    const b=c.getBoundingClientRect();
+    return b.width>0&&b.left<r.right&&b.right>r.left&&b.top<r.bottom&&b.bottom>r.top;
+  });
+  const pr=fl.getBoundingClientRect();
+  if(!hit(pr)) return;
+  const wr=w.getBoundingClientRect();
+  const left=wr.left+20, top=wr.bottom-20-pr.height;
+  const alt={left:left,top:top,right:left+pr.width,bottom:top+pr.height};
+  if(!hit(alt)){
+    fl.style.left=left+'px'; fl.style.top=top+'px';
+    fl.style.right='auto'; fl.style.bottom='auto';
+  } else statsflSetCollapsed(true,true);
 }
 
 // ═══ Auto layout
@@ -2869,7 +2993,7 @@ function autoLayout(){
   // DOM 페인트 후 스크롤 적용
   const _tx=Math.max(0,Math.round((rnd.x+NW/2)*sc-vw/2));
   const _ty=Math.max(0,Math.round(y0*sc-60));
-  requestAnimationFrame(()=>{ w.scrollLeft=_tx; w.scrollTop=_ty; updateGrid(); });
+  requestAnimationFrame(()=>{ w.scrollLeft=_tx; w.scrollTop=_ty; updateGrid(); statsflAvoidCards(); });
   updateSt();
 }
 
@@ -3466,15 +3590,25 @@ async function manualSave(){
     if(btn) btn.disabled=false;
   }
 }
+function _cleanSheets(){
+  return SHEETS.map(sh=>{
+    if(!sh||!Array.isArray(sh.nodes)) return sh;
+    return {...sh,nodes:sh.nodes.map(nd=>{
+      if(!nd||typeof nd!=='object') return nd;
+      const o={}; for(const k of Object.keys(nd)) if(k.charAt(0)!=='_') o[k]=nd[k];
+      return o;
+    })};
+  });
+}
 function _saveLocalFallback(){
   _syncSheet();
-  try{ localStorage.setItem(SB_LS_KEY, JSON.stringify({sheets:SHEETS,activeSheet:CUR_SHEET})); }catch(e){}
+  try{ localStorage.setItem(SB_LS_KEY, JSON.stringify({sheets:_cleanSheets(),activeSheet:CUR_SHEET})); }catch(e){}
 }
 function _fileData(){
   _syncSheet();
   return {
     v:2, app:'ssb-orgchart', savedAt:new Date().toISOString(),
-    sheets:SHEETS, activeSheet:CUR_SHEET,
+    sheets:_cleanSheets(), activeSheet:CUR_SHEET,
     opt:OPT,
     ...(ADMIN_REC?{admin:ADMIN_REC}:{})
   };
@@ -3727,9 +3861,10 @@ function exportPNG(){
       if(ctx.measureText(text).width<=avail){ctx.fillText(text,left,y);return;}
     }
     ctx.font=mk(min);
-    let t=text;
-    while(t.length&&ctx.measureText(t+'…').width>avail) t=t.slice(0,-1);
-    ctx.fillText(t+'…',left,y);
+    const ch=Array.from(String(text));
+    while(ch.length&&ctx.measureText(ch.join('')+'…').width>avail) ch.pop();
+    if(!ch.length) return;
+    ctx.fillText(ch.join('')+'…',left,y);
   };
   document.querySelectorAll('#svgl path.cpath, #svgl path.cpath-dash').forEach(p=>{
     const d=p.getAttribute('d'); if(!d) return;
@@ -4089,6 +4224,13 @@ function updateStatsPanel(){
   }
 
   body.innerHTML=html;
+  const ttl=document.getElementById('statsfl-title');
+  const flEl=document.getElementById('statsfl');
+  if(ttl){
+    const ex=new Set(OPT.statsGroups.filter(g=>g.excludeTotal).flatMap(g=>g.statuses));
+    const tot=allMembers.filter(m=>!ex.has(m.s||defKey)).length;
+    ttl.textContent=(flEl&&flEl.classList.contains('collapsed'))?`인원 현황 ${tot}명`:'인원 현황';
+  }
 }
 function addToCatBtn(el){
   if(!ADMIN) return;
@@ -4122,6 +4264,13 @@ function toggleGroupExclude(i){
     el.style.right='auto'; el.style.bottom='auto';
   });
   document.addEventListener('mouseup',()=>{ _d=null; });
+  const tg=document.getElementById('statsfl-tog');
+  if(tg) tg.addEventListener('click',()=>{
+    statsflSetCollapsed(!fl().classList.contains('collapsed'),true);
+  });
+  let st=null;
+  try{ st=localStorage.getItem('ssb-statsfl-collapsed'); }catch(e){}
+  if(st==='1') statsflSetCollapsed(true,false);
 })();
 
 // ═══ Status
@@ -4207,6 +4356,77 @@ function applyLogo(){
   _updateFileBtn();
   applyLogo();
 })();
+// ═══ Search (Ctrl+F)
+var SRCH={open:false,ids:[],idx:0};
+function srchQ(){ var i=document.getElementById('srch-input'); return i?i.value.trim().toLowerCase():''; }
+function srchHas(s,q){ return String(s==null?'':s).toLowerCase().indexOf(q)>=0; }
+function srchClear(){
+  document.querySelectorAll('.srch-hit,.srch-row,.srch-cur').forEach(function(e){e.classList.remove('srch-hit','srch-row','srch-cur');});
+}
+function srchCenter(){
+  var nd=S.nodes.find(function(n){return n.id===SRCH.ids[SRCH.idx];}); if(!nd) return;
+  var w=document.getElementById('wrap');
+  w.scrollLeft=Math.max(0,(nd.x+NW/2)*S.scale-w.clientWidth/2);
+  w.scrollTop=Math.max(0,(nd.y+nh(nd)/2)*S.scale-w.clientHeight/2);
+}
+function srchApply(recenter){
+  if(!SRCH) return;
+  srchClear();
+  var cnt=document.getElementById('srch-count');
+  if(!SRCH.open){ return; }
+  var q=srchQ();
+  if(!q){ SRCH.ids=[]; SRCH.idx=0; cnt.textContent=''; return; }
+  var hits=S.nodes.filter(function(nd){
+    return srchHas(nd.en,q)||srchHas(nd.ko,q)||(nd.m||[]).some(function(m){return srchHas(m.n,q)||srchHas(m.f,q)||srchHas(m.r,q);});
+  }).sort(function(a,b){return (a.y-b.y)||(a.x-b.x);});
+  SRCH.ids=hits.map(function(n){return n.id;});
+  if(SRCH.idx>=SRCH.ids.length||SRCH.idx<0) SRCH.idx=0;
+  if(!hits.length){ cnt.textContent='0건'; return; }
+  hits.forEach(function(nd,k){
+    var el=document.getElementById('n'+nd.id); if(!el) return;
+    el.classList.add('srch-hit');
+    if(k===SRCH.idx) el.classList.add('srch-cur');
+    el.querySelectorAll('.mr').forEach(function(r){
+      var m=(nd.m||[])[+r.getAttribute('data-mi')];
+      if(m&&(srchHas(m.n,q)||srchHas(m.f,q)||srchHas(m.r,q))) r.classList.add('srch-row');
+    });
+  });
+  cnt.textContent=(SRCH.idx+1)+'/'+hits.length;
+  if(recenter) srchCenter();
+}
+function srchOpen(){
+  SRCH.open=true;
+  document.getElementById('srch-box').style.display='inline-flex';
+  var i=document.getElementById('srch-input'); i.focus(); i.select();
+  srchApply(false);
+}
+function srchClose(){
+  SRCH.open=false; SRCH.ids=[]; SRCH.idx=0;
+  document.getElementById('srch-box').style.display='none';
+  document.getElementById('srch-input').value='';
+  document.getElementById('srch-count').textContent='';
+  srchClear();
+}
+function srchStep(d){
+  var k=SRCH.ids.length; if(!k) return;
+  SRCH.idx=(SRCH.idx+d+k)%k;
+  srchApply(true);
+}
+document.getElementById('srch-btn').addEventListener('click',srchOpen);
+document.getElementById('srch-input').addEventListener('input',function(){ SRCH.idx=0; srchApply(true); });
+document.getElementById('srch-input').addEventListener('keydown',function(e){
+  if(e.key==='Enter'){ e.preventDefault(); srchStep(e.shiftKey?-1:1); }
+  else if(e.key==='Escape'){ e.preventDefault(); srchClose(); }
+});
+document.addEventListener('keydown',function(e){
+  if(!(e.ctrlKey||e.metaKey)||e.altKey||String(e.key).toLowerCase()!=='f') return;
+  var ovs=document.querySelectorAll('[id$="ov"]');
+  for(var i=0;i<ovs.length;i++){ if(ovs[i].classList.contains('show')||getComputedStyle(ovs[i]).display!=='none') return; }
+  var t=e.target;
+  if(t&&t.id!=='srch-input'&&t.closest&&(t.closest('input,textarea,select,[contenteditable="true"]')||t.closest('.modal,.overlay,dialog,[id$="ov"]'))) return;
+  e.preventDefault();
+  srchOpen();
+});
 </script>
 </body>
 </html>
