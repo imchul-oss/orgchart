@@ -250,6 +250,12 @@ body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);ov
 
 /* Action buttons (hover) */
 .nact{position:absolute;top:6px;right:7px;opacity:0;transition:.15s;}
+.ncnt{position:absolute;top:3px;right:36px;font-size:9px;line-height:12px;padding:0 6px;border-radius:8px;background:rgba(255,255,255,.22);color:#fff;pointer-events:none;white-space:nowrap;}
+body.ro .ncnt,body.present .ncnt{right:7px;}
+#mtip{position:fixed;display:none;z-index:99999;background:rgba(20,20,24,.95);color:#fff;font-size:11px;line-height:1.5;padding:7px 10px;border-radius:6px;max-width:260px;pointer-events:none;word-break:break-all;box-shadow:0 2px 8px rgba(0,0,0,.35);}
+#mtip b{font-size:12px;}
+body.present #mtip{display:none!important;}
+@media print{#mtip{display:none!important;}}
 .nd:hover .nact{opacity:1;}
 .nab{width:22px;height:22px;border-radius:5px;border:none;cursor:pointer;font-size:12px;
      display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.2);color:#fff;transition:.15s;}
@@ -485,6 +491,10 @@ body.present #srch-box,body.present #srch-btn{display:none!important;}
   #wrap{position:static!important;overflow:visible!important;top:0!important;left:0!important;right:auto!important;bottom:auto!important;width:1123px;height:794px;}
   #canvas{min-width:0!important;min-height:0!important;}
 }
+
+.ctog{position:absolute;left:50%;bottom:1px;transform:translateX(-50%);min-width:16px;height:16px;padding:0 4px;box-sizing:border-box;border-radius:8px;border:1px solid #888;background:#fff;color:#333;font:10px/14px sans-serif;text-align:center;cursor:pointer;z-index:5;}
+.ctog:hover{background:#eef;}
+@media print{.ctog,#btn-expand-all{display:none!important;}}
 </style>
 </head>
 <body>
@@ -504,6 +514,7 @@ body.present #srch-box,body.present #srch-btn{display:none!important;}
   <button class="tb tb-g" onclick="fitScreen()">⊡ 화면 맞춤</button>
   <button id="lint-badge" class="tb tb-g" onclick="toggleLintPanel()">✓ 배치 이상 없음</button>
   <button id="srch-btn" class="tb tb-g" type="button" title="검색 (Ctrl+F)">🔍 검색</button>
+  <button id="btn-expand-all" class="tb tb-g" type="button" title="접은 조직 모두 펼치기" style="display:none">⊞ 모두 펼치기</button>
   <span id="srch-box" style="display:none"><input id="srch-input" type="search" placeholder="이름·직무·직책·조직 검색"><span id="srch-count"></span></span>
   <button id="btn-cmp" class="tb tb-g">⇄ 비교</button>
   <button id="btn-present" class="tb tb-g" onclick="enterPresent()">▶ 발표 보기</button>
@@ -530,6 +541,8 @@ body.present #srch-box,body.present #srch-btn{display:none!important;}
   </div>
   <div class="tdv"></div>
   <button id="btn-save" class="tb tb-g adm-only" onclick="manualSave()" title="지금 저장 (자동 저장: 0.8초 후)">💾 저장</button>
+  <button id="btn-undo" class="tb tb-g adm-only" title="되돌리기 (Ctrl+Z)" onclick="undoEdit()" disabled>↶</button>
+  <button id="btn-redo" class="tb tb-g adm-only" title="다시 하기 (Ctrl+Y)" onclick="redoEdit()" disabled>↷</button>
   <button id="btn-file" class="tb tb-cloud" onclick="openFileModal()">📄 파일<span class="cloud-dot"></span></button>
   <button id="btn-admin" class="tb tb-g" onclick="adminBtn()">🔒 관리자</button>
   <div class="tdv"></div>
@@ -796,6 +809,9 @@ body.present #srch-box,body.present #srch-btn{display:none!important;}
           <span class="opt-val" id="opt-rowh-v">0px</span>
         </div>
         <div class="opt-row">
+          <label class="opt-lbl" style="min-width:0"><input type="checkbox" id="opt-showcnt" checked onchange="OPT.showCnt=this.checked;render();saveOptLS()"> 카드에 인원 수 표시</label>
+        </div>
+        <div class="opt-row">
           <span class="opt-lbl">카드 너비</span>
           <input type="range" class="opt-slider" id="opt-nw" min="140" max="340" step="20"
             oninput="applyCardWidth(this.value)">
@@ -998,7 +1014,7 @@ const OPT = {
   uiMint:'#40D2A7', uiSky:'#60DCF8', uiCoral:'#FF8770', topbarBg:'#2C2C2C',
   statsBg:'#1C1C20', stbarBg:'#1A1A1A',
   // 카드 스타일
-  cardRadius:8, shadowA:0.11,
+  cardRadius:8, shadowA:0.11, showCnt:true,
   // 헤더 배경색
   hdrTop:'#1A1A1A', hdrL1:'#2C2C2C', hdrL2:'#383838', hdrL3:'#424242',
   hdrL4:'#4A4A4A', hdrL5:'#525252', hdrTf:'#30304A', hdrSide:'#323232',
@@ -1265,7 +1281,8 @@ document.addEventListener('DOMContentLoaded',()=>{
 // ─── 배치 점검 (저장하지 않음) ───────────────────────────
 let _lintRes=null;
 function layoutLint(){
-  const nodes=S.nodes, byId=new Map(nodes.map(n=>[n.id,n]));
+  const _H=collHidden();
+  const nodes=S.nodes.filter(n=>!_H.has(n.id)), byId=new Map(nodes.map(n=>[n.id,n]));
   const segs=[];
   document.querySelectorAll('#svgl path.cpath, #svgl path.cpath-dash').forEach(p=>{
     const nums=(p.getAttribute('d')||'').match(/-?\d+(\.\d+)?/g)||[];
@@ -1289,6 +1306,7 @@ function layoutLint(){
   });
   const broken=[];
   (S.conns||[]).forEach(c=>{
+    if(_H.has(c.f)||_H.has(c.t)) return;
     const f=byId.get(c.f), t=byId.get(c.t);
     let bad=false;
     if(!f||!t) bad=true;
@@ -1385,6 +1403,7 @@ function drawNodes() {
   [...layer.querySelectorAll('.nd')].forEach(el=>{
     if(!S.nodes.find(n=>'n'+n.id===el.id)) el.remove();
   });
+  collDecorate();
 }
 
 function mkNode(nd) {
@@ -1511,6 +1530,11 @@ function mrDrop(e,toNid){
   toN.m.splice(toIdx, 0, member);
   render();
 }
+function headCount(nd){
+  const defKey=OPT.statusItems[0]?.key||'active';
+  const exK=new Set(OPT.statsGroups.filter(g=>g.excludeTotal).flatMap(g=>g.statuses));
+  return (nd.m||[]).filter(m=>!exK.has(m.s||defKey)).length;
+}
 function nodeHTML(nd) {
   const av=nd.m.map((m,i)=>`
     <div class="mr" draggable="${ADMIN?'true':'false'}" data-nid="${nd.id}" data-mi="${i}">
@@ -1523,8 +1547,10 @@ function nodeHTML(nd) {
         <div class="mf">${esc(m.f||'')}${m.a?`<span style="color:var(--txt-ma)">&nbsp;/&nbsp;${esc(m.a)}</span>`:''}</div>
       </div>
     </div>`).join('');
+  const _cn=OPT.showCnt!==false?headCount(nd):0;
   return `
     <div class="nh">
+      ${_cn>0?`<span class="ncnt">${_cn}명</span>`:''}
       <div class="nen">${esc(nd.en||'')}</div>
       <div class="nko">${esc(nd.ko||'')}</div>
       <div class="nact">
@@ -1569,12 +1595,14 @@ const besideCols=P=>(P&&(P.ac===2||P.ac===3))?P.ac:1;
 function drawConns() {
   const svg=document.getElementById('svgl');
   svg.innerHTML='';
+  const _H=collHidden();
 
   // side 타입 노드 대상 연결: bus에 묶지 않고 개별 직접 연결로 렌더
   const sideNodeIds=new Set(S.nodes.filter(n=>n.type==='side').map(n=>n.id));
 
   const solidGroups={}, dashGroups={};
   S.conns.forEach(c=>{
+    if(_H.has(c.f)||_H.has(c.t)) return;
     const g=c.d?dashGroups:solidGroups;
     if(!g[c.f]) g[c.f]=[];
     g[c.f].push(c);
@@ -1583,7 +1611,7 @@ function drawConns() {
   [[solidGroups,'cpath','cpath-hl','_s'],[dashGroups,'cpath-dash','cpath-hl-dash','_d']].forEach(([groups,pCls,hlCls,bSfx])=>{
     Object.entries(groups).forEach(([fid,conns])=>{
       const f=S.nodes.find(n=>n.id===fid); if(!f) return;
-      const all=conns.map(c=>({c,t:S.nodes.find(n=>n.id===c.t)})).filter(x=>x.t);
+      const all=conns.map(c=>({c,t:S.nodes.find(n=>n.id===c.t)})).filter(x=>x.t&&!_H.has(x.t.id));
       if(!all.length) return;
 
       // side 대상: 개별 직접 연결; 나머지: 기존 bus 로직
@@ -1595,13 +1623,13 @@ function drawConns() {
 
       const bAll=[];
       S.conns.forEach(k=>{
-        if(k.f!==fid) return;
+        if(k.f!==fid||_H.has(k.t)) return;
         const t=S.nodes.find(n=>n.id===k.t);
         if(t&&!bAll.includes(t)&&isBesideItem({t})) bAll.push(t);
       });
       const asideTop=bAll.length?Math.max(f.y+nh(f),...bAll.map(t=>t.y+nh(t))):null;
       // beside 블록은 부모당 한 번만 그린다(실선+점선 공유 구간 중복 방지)
-      const besideAllItems=bAll.length?S.conns.filter(k=>k.f===fid).map(k=>({c:k,t:S.nodes.find(n=>n.id===k.t)})).filter(x=>x.t&&isBesideItem(x)):[];
+      const besideAllItems=bAll.length?S.conns.filter(k=>k.f===fid).map(k=>({c:k,t:S.nodes.find(n=>n.id===k.t)})).filter(x=>x.t&&!_H.has(x.t.id)&&isBesideItem(x)):[];
       const besideAnySolid=besideAllItems.some(x=>!x.c.d);
       if(bAll.length&&besideAllItems.length&&((bSfx==='_s')===besideAnySolid)){
         const Cn=besideCols(f);
@@ -1862,9 +1890,9 @@ function drawConns() {
         if(rowYs.length>1){
           const rowBy=rowYs.map((ry,ri)=>ri===0?by:ry-Math.round(OPT.rowGap/2));
           const yLast=rowBy[rowBy.length-1];
-          const blockedAt=x=>S.nodes.some(n=>n.x-10<x&&x<n.x+NW+10&&n.y<yLast&&n.y+nh(n)>rowBy[0]);
+          const blockedAt=x=>S.nodes.some(n=>!_H.has(n.id)&&n.x-10<x&&x<n.x+NW+10&&n.y<yLast&&n.y+nh(n)>rowBy[0]);
           let xt=fx;
-          const hitAt=S.nodes.some(n=>n.x<fx&&fx<n.x+NW&&n.y<yLast&&n.y+nh(n)>rowBy[0]);
+          const hitAt=S.nodes.some(n=>!_H.has(n.id)&&n.x<fx&&fx<n.x+NW&&n.y<yLast&&n.y+nh(n)>rowBy[0]);
           if(hitAt){
             for(let d=10;d<=4*NW;d+=10){
               if(!blockedAt(fx+d)){xt=fx+d;break;}
@@ -3345,6 +3373,7 @@ function openOptions(){
   // 카드/배치
   sl('opt-nw',OPT.nw); sl('opt-bw',OPT.bandW);
   sl('opt-cr', OPT.cardRadius);
+  {const el=document.getElementById('opt-showcnt');if(el)el.checked=OPT.showCnt!==false;}
   sv('opt-sha', OPT.shadowA);
   const _shav=document.getElementById('opt-sha-v'); if(_shav) _shav.textContent=Math.round(OPT.shadowA*100)+'%';
   {const w=document.getElementById('opt-wrap'),wv=document.getElementById('opt-wrap-v');
@@ -3512,6 +3541,7 @@ function applyRO(){
   if(badge) badge.textContent=ADMIN?'🔓 편집 모드':'🔒 읽기 전용';
   renderSheetTabs();
   render();
+  if(ADMIN?(!_hLast||!_hAdminBase):true) _hReset();
 }
 let _pwMode='unlock'; // 'unlock' | 'register'
 function adminBtn(){
@@ -3565,8 +3595,91 @@ async function pwSubmit(){
 
 // ═══ 저장 (localStorage 백업 + 연결된 JSON 파일에 기록)
 let _saveTimer=null, _saving=false;
+// ═══ 되돌리기 / 다시 하기 (history)
+let _hUndo=[], _hRedo=[], _hLast=null, _hAdminBase=false;
+function _hState(){ _syncSheet(); return {s:JSON.stringify(_cleanSheets()), cur:CUR_SHEET}; }
+function _hDragging(){
+  return !!(S.drag||S.wdrag||S.pan||_mrDrag||(typeof anchorDrag!=='undefined'&&anchorDrag));
+}
+function _hButtons(){
+  const u=document.getElementById('btn-undo'), r=document.getElementById('btn-redo');
+  if(u) u.disabled=!_hUndo.length;
+  if(r) r.disabled=!_hRedo.length;
+}
+function _hReset(){
+  _hUndo=[]; _hRedo=[]; _hAdminBase=!!ADMIN;
+  try{ _hLast=_hState(); }catch(_){ _hLast=null; }
+  _hButtons();
+}
+function _hCheckpoint(){
+  if(!ADMIN){ if(!_hDragging()) _hReset(); return; }
+  if(_hDragging()) return;
+  const cur=_hState();
+  if(!_hLast){ _hLast=cur; _hButtons(); return; }
+  if(cur.s!==_hLast.s){
+    _hUndo.push(_hLast);
+    if(_hUndo.length>50) _hUndo.shift();
+    _hRedo=[];
+  }
+  _hLast=cur;
+  _hButtons();
+}
+function _hRestore(st){
+  SHEETS=JSON.parse(st.s);
+  const i=Math.min(Math.max(0,st.cur|0),SHEETS.length-1);
+  _loadSheet(i);
+  _hLast=_hState();
+  render(); renderSheetTabs();
+  _hLast=_hState();
+  _hButtons();
+  scheduleSave();
+}
+function undoEdit(){
+  if(!ADMIN||!_hUndo.length) return;
+  _hCheckpoint();
+  if(!_hUndo.length) return;
+  _hRedo.push(_hLast);
+  _hRestore(_hUndo.pop());
+}
+function redoEdit(){
+  if(!ADMIN||!_hRedo.length) return;
+  _hCheckpoint();
+  if(!_hRedo.length) return;
+  _hUndo.push(_hLast);
+  _hRestore(_hRedo.pop());
+}
+document.addEventListener('mouseup',()=>{ setTimeout(_hCheckpoint,0); });
+document.addEventListener('dragend',()=>{
+  S.pan=false;
+  const w=document.getElementById('wrap'); if(w) w.classList.remove('panning');
+  setTimeout(_hCheckpoint,0);
+});
+document.addEventListener('drop',()=>{
+  S.pan=false;
+  const w=document.getElementById('wrap'); if(w) w.classList.remove('panning');
+  setTimeout(_hCheckpoint,0);
+},true);
+function _hModalOpen(){
+  const o=document.getElementById('ov');
+  if(o&&o.classList.contains('show')) return true;
+  return Array.prototype.some.call(document.querySelectorAll('[id$="ov"]'),el=>{
+    if(el.id==='ov') return false;
+    return el.offsetParent!==null||getComputedStyle(el).display!=='none'&&getComputedStyle(el).visibility!=='hidden'&&el.getClientRects().length>0;
+  });
+}
+document.addEventListener('keydown',e=>{
+  if(!ADMIN||!(e.ctrlKey||e.metaKey)||e.altKey) return;
+  if(_hModalOpen()) return;
+  const t=e.target, tag=t&&t.tagName;
+  if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT'||(t&&t.isContentEditable)) return;
+  const k=String(e.key).toLowerCase();
+  if(k==='z'&&!e.shiftKey){ e.preventDefault(); undoEdit(); }
+  else if(k==='y'||(k==='z'&&e.shiftKey)){ e.preventDefault(); redoEdit(); }
+});
+setTimeout(()=>{ if(!_hLast) _hReset(); },0);
 function scheduleSave(){
   if(!ADMIN) return; // 읽기 전용 모드에서는 어떤 쓰기도 하지 않는다
+  _hCheckpoint();
   clearTimeout(_saveTimer);
   _saveTimer=setTimeout(()=>{ saveDataToFile().catch(e=>console.error('save:',e)); },800);
 }
@@ -3655,6 +3768,7 @@ function _applyOptObj(d){
       .map(x=>({key:x.key,label:String(x.label||''),color:/^#[0-9a-fA-F]{3,8}$/.test(String(x.color||''))?x.color:'#999999'}));
     applyAllStatusCSS();
   }
+  OPT.showCnt=d.showCnt!==false;{const _c=document.getElementById('opt-showcnt');if(_c)_c.checked=OPT.showCnt;}
   if(d.nw) NW=d.nw;
   // 카테고리·현황그룹은 배열 형태를 강제 - 문자열이 들어오면 렌더 체인이 중간에 죽는다 (리뷰 지적)
   const _strArr=a=>Array.isArray(a)?a.filter(x=>typeof x==='string').map(x=>x.slice(0,60)):null;
@@ -3722,6 +3836,7 @@ function _adoptData(d,keepView=false){
   _loadSheet(Math.min(Math.max(0,idx), SHEETS.length-1));
   S.nid=Math.max(200,...SHEETS.flatMap(sh=>[...sh.nodes,...sh.conns])
     .map(x=>parseInt((x.id||'').replace(/\D/g,''))||0));
+  _hReset();
 }
 function loadFromLocal(){
   let loaded=false;
@@ -3841,7 +3956,10 @@ function _chartBounds(){
 }
 function exportPNG(){
   if(!S.nodes.length) return;
-  const {x0,y0,x1,y1}=_chartBounds();
+  const _H=collHidden(), _VN=S.nodes.filter(n=>!_H.has(n.id));
+  if(!_VN.length) return;
+  let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
+  _VN.forEach(n=>{x0=Math.min(x0,n.x);y0=Math.min(y0,n.y);x1=Math.max(x1,n.x+NW);y1=Math.max(y1,n.y+nh(n));});
   const W=Math.round((x1-x0+80)*2), H=Math.round((y1-y0+80)*2);
   const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
   const ctx=cv.getContext('2d');
@@ -3877,7 +3995,7 @@ function exportPNG(){
     ctx.stroke(new Path2D(d));
     ctx.restore();
   });
-  S.nodes.forEach(nd=>{
+  _VN.forEach(nd=>{
     const el=document.getElementById('n'+nd.id);
     const hd=el&&el.querySelector('.nh');
     const ecs=el?getComputedStyle(el):null;
@@ -3901,6 +4019,16 @@ function exportPNG(){
     ctx.fillStyle=(kos&&kos.color)||'#222';
     fitText(nd.ko||'',x+bw+10,y+CUR_HH*0.72,(kos&&kos.fontWeight)||'normal',(kos&&kos.fontSize)||'11px',x+NW-6-(x+bw+10));
     ctx.restore();
+    if(OPT.showCnt!==false){
+      const _c=headCount(nd);
+      if(_c>0){
+        ctx.save(); ctx.font='9px sans-serif'; ctx.textBaseline='middle'; ctx.textAlign='right';
+        const _t=_c+'명', _w=ctx.measureText(_t).width+12, _rx=x+NW-7;
+        ctx.fillStyle='rgba(255,255,255,0.22)'; ctx.fillRect(_rx-_w,y+3,_w,12);
+        ctx.fillStyle='#fff'; ctx.fillText(_t,_rx-6,y+9.5);
+        ctx.restore();
+      }
+    }
     (nd.m||[]).forEach((m,k)=>{
       const ry=y+CUR_HH+k*CUR_MH;
       ctx.fillStyle='#e4e4e4'; ctx.fillRect(x,ry,NW,1);
@@ -4356,6 +4484,73 @@ function applyLogo(){
   _updateFileBtn();
   applyLogo();
 })();
+
+// ═══ Collapse / expand sub-organisations (view state only)
+var COLL={name:null,set:new Set()};
+function collRead(){ try{ var o=JSON.parse(localStorage.getItem('ssb-collapsed')||'{}'); return (o&&typeof o==='object')?o:{}; }catch(e){ return {}; } }
+function collState(){
+  if(!COLL) return new Set();
+  var sh=SHEETS&&SHEETS[CUR_SHEET], name=sh?sh.name:'';
+  if(COLL.name!==name){
+    COLL.name=name; COLL.set=new Set();
+    var a=collRead()[name];
+    if(Array.isArray(a)) a.forEach(function(id){ if(S.nodes.some(function(n){return n.id===id;})) COLL.set.add(id); });
+  }
+  return COLL.set;
+}
+function collSave(){
+  try{ var o=collRead(); if(COLL.set.size) o[COLL.name]=Array.from(COLL.set); else delete o[COLL.name]; localStorage.setItem('ssb-collapsed',JSON.stringify(o)); }catch(e){}
+}
+function collDesc(id){
+  var out=new Set(), st=[id];
+  while(st.length){ var x=st.pop(); (S.conns||[]).forEach(function(c){ if(c.f===x&&!out.has(c.t)&&c.t!==id){ out.add(c.t); st.push(c.t); } }); }
+  return out;
+}
+function collHidden(){
+  var cs=collState(), h=new Set();
+  cs.forEach(function(id){
+    if(!S.nodes.some(function(n){return n.id===id;})){ cs.delete(id); return; }
+    collDesc(id).forEach(function(d){ h.add(d); });
+  });
+  return h;
+}
+function collDecorate(){
+  var h=collHidden(), cs=collState();
+  S.nodes.forEach(function(nd){
+    var el=document.getElementById('n'+nd.id); if(!el) return;
+    el.style.display=h.has(nd.id)?'none':'';
+    var old=el.querySelector('.ctog'); if(old) old.remove();
+    if(!(S.conns||[]).some(function(c){return c.f===nd.id;})) return;
+    var b=document.createElement('div'); b.className='ctog'; b.setAttribute('role','button');
+    b.textContent=cs.has(nd.id)?('+'+collDesc(nd.id).size):'▾';
+    var stop=function(e){ e.stopPropagation(); };
+    b.addEventListener('mousedown',stop); b.addEventListener('dblclick',stop);
+    b.addEventListener('click',function(e){ e.stopPropagation(); e.preventDefault(); collToggle(nd.id); });
+    el.appendChild(b);
+  });
+  var ea=document.getElementById('btn-expand-all'); if(ea) ea.style.display=cs.size?'':'none';
+}
+function collToggle(id){
+  var cs=collState();
+  if(cs.has(id)) cs.delete(id); else cs.add(id);
+  collSave(); drawNodes(); drawConns();
+  if(typeof SRCH!=='undefined'&&SRCH.open) srchApply(false);
+}
+function collExpandAll(){ collState().clear(); collSave(); drawNodes(); drawConns(); if(typeof SRCH!=='undefined'&&SRCH.open) srchApply(false); }
+function collRevealFor(id){
+  var cs=collState(), ch=false;
+  Array.from(cs).forEach(function(p){ if(collDesc(p).has(id)){ cs.delete(p); ch=true; } });
+  if(ch) collSave();
+  return ch;
+}
+document.getElementById('btn-expand-all').addEventListener('click',collExpandAll);
+['mousedown','click','dblclick'].forEach(function(t){
+  document.addEventListener(t,function(e){
+    var g=e.target&&e.target.closest?e.target.closest('.ctog'):null; if(!g) return;
+    e.stopPropagation(); e.stopImmediatePropagation(); e.preventDefault();
+    if(t==='click'){ var p=g.closest('.nd'); var nd=p&&S.nodes.find(function(n){return 'n'+n.id===p.id;}); if(nd) collToggle(nd.id); }
+  },true);
+});
 // ═══ Search (Ctrl+F)
 var SRCH={open:false,ids:[],idx:0};
 function srchQ(){ var i=document.getElementById('srch-input'); return i?i.value.trim().toLowerCase():''; }
@@ -4382,6 +4577,7 @@ function srchApply(recenter){
   SRCH.ids=hits.map(function(n){return n.id;});
   if(SRCH.idx>=SRCH.ids.length||SRCH.idx<0) SRCH.idx=0;
   if(!hits.length){ cnt.textContent='0건'; return; }
+  if(collRevealFor(SRCH.ids[SRCH.idx])){ drawNodes(); drawConns(); }
   hits.forEach(function(nd,k){
     var el=document.getElementById('n'+nd.id); if(!el) return;
     el.classList.add('srch-hit');
@@ -4427,6 +4623,36 @@ document.addEventListener('keydown',function(e){
   e.preventDefault();
   srchOpen();
 });
+(function(){
+  let tm=null, row=null, mx=0, my=0;
+  const tip=()=>document.getElementById('mtip');
+  function hide(){ clearTimeout(tm); tm=null; row=null; const t=tip(); if(t) t.style.display='none'; }
+  function show(){
+    const t=tip(); if(!t||!row||!row.isConnected) return;
+    const nd=S.nodes.find(n=>n.id===row.dataset.nid); const m=nd&&nd.m[+row.dataset.mi]; if(!m) return;
+    const defKey=OPT.statusItems[0]?.key||'active', sk=m.s||defKey;
+    const si=OPT.statusItems.find(x=>x.key===sk);
+    const L=[['직급',m.r],['직무',m.f],['근무지',m.a],['상태',si?si.label:sk]].filter(x=>x[1]);
+    t.innerHTML='<b>'+esc(m.n||'')+'</b>'+L.map(x=>'<div>'+x[0]+' '+esc(x[1])+'</div>').join('')+'<div style="opacity:.7">'+esc(nd.ko||nd.en||'')+'</div>';
+    t.style.display='block';
+    const w=t.offsetWidth, h=t.offsetHeight;
+    let x=mx+14, y=my+16;
+    if(x+w>window.innerWidth-4) x=Math.max(4,mx-w-10);
+    if(y+h>window.innerHeight-4) y=Math.max(4,my-h-10);
+    t.style.left=x+'px'; t.style.top=y+'px';
+  }
+  document.addEventListener('mousemove',e=>{
+    mx=e.clientX; my=e.clientY;
+    const r=e.target.closest&&e.target.closest('.mr');
+    if(r!==row){ hide(); if(r&&!document.body.classList.contains('present')&&!document.querySelector('.mr-dragging')){ row=r; tm=setTimeout(show,300);} }
+  });
+  document.addEventListener('mouseout',e=>{ if(row&&!row.contains(e.relatedTarget||document.body)) hide(); });
+  document.addEventListener('mousedown',hide,true);
+  document.addEventListener('dragstart',hide,true);
+  document.addEventListener('wheel',hide,{capture:true,passive:true});
+  window.addEventListener('scroll',hide,true);
+})();
 </script>
+<div id="mtip"></div>
 </body>
 </html>
