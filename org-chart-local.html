@@ -1719,7 +1719,9 @@ const besideCols=P=>(P&&(P.ac===2||P.ac===3))?P.ac:1;
 
 // ─── Draw connections (SVG) — 실선·점선 모두 버스 패턴 (스타일만 구분)
 function drawConns() {
-  if(OPT.orient==='right'||OPT.orient==='left') return _drawConnsSide();
+  // 현재 위치를 만든 방향(시트별 posOrient) 기준으로 그린다 — OPT.orient는 다음 배치의 방향일 뿐
+  const _po=(SHEETS[CUR_SHEET]&&SHEETS[CUR_SHEET].posOrient)||'down';
+  if(_po==='right'||_po==='left') return _drawConnsSide(_po);
   const svg=document.getElementById('svgl');
   svg.innerHTML='';
   const _H=collHidden();
@@ -2171,11 +2173,11 @@ function _sideLayout(cx){
 }
 
 // 가로 방향 연결선 (실선 버스는 옆으로 누운 엘보, 그 외는 카드를 피하는 직접 엘보)
-function _drawConnsSide(){
+function _drawConnsSide(po){
   const svg=document.getElementById('svgl');
   svg.innerHTML='';
   const _H=collHidden();
-  const dir=OPT.orient==='left'?-1:1;
+  const dir=po==='left'?-1:1;
   const nodes=S.nodes.filter(n=>!_H.has(n.id));
   const sideIds=new Set(S.nodes.filter(n=>n.type==='side').map(n=>n.id));
   const _tfh=tfHiddenConnSet();
