@@ -4172,7 +4172,8 @@ function _sanitizeSheet(sh){
   });
   const busY={};
   Object.entries(sh.busY||{}).forEach(([k,v])=>{ if(Number.isFinite(+v)) busY[k]=+v; });
-  return {name:String(sh.name||'조직도').slice(0,30), nodes:sh.nodes||[], conns:sh.conns||[], busY};
+  return {name:String(sh.name||'조직도').slice(0,30), nodes:sh.nodes||[], conns:sh.conns||[], busY,
+    ...((sh.posOrient==='right'||sh.posOrient==='left')?{posOrient:sh.posOrient}:{})};
 }
 function _adoptData(d,keepView=false){
   // v2 {sheets:[...]} / v1 {nodes,conns,busY} 모두 수용
