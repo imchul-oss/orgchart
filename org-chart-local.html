@@ -2104,7 +2104,7 @@ function addPath(svg,d,cls){
 
 // ═══ 가로 방향 배치 (OPT.orient 'right' | 'left')
 function _sideLayout(cx){
-  const {po,root,nk,tfg,sideIds,orphans,PAD_X,PAD_Y,COL_GAP,ROW_GAP}=cx;
+  const {po,root,nk,tfg,tfSet,sideIds,orphans,PAD_X,PAD_Y,COL_GAP,ROW_GAP}=cx;
   const byId=id=>S.nodes.find(n=>n.id===id);
   const gap=Math.max(60,COL_GAP), step=Math.ceil((NW+gap)/20)*20, VG=30, AG=20;
   const colX=d=>PAD_X+d*step;
@@ -2128,7 +2128,22 @@ function _sideLayout(cx){
     return Math.max(last,py+own);
   }
   let bottom=lay(root,PAD_Y,kidsOf,asFn,n=>n._d,0);
-  // TF 구역: 트리 전체 아래
+  // 남은 카드(자유 side, 고아): 트리 바로 아래 격자 — TF 구역보다 위에 두어 트리에서 오는 점선이 구역을 가로지르지 않게
+  const inAs=new Set(); Object.values(asidesOf).forEach(l=>l.forEach(a=>inAs.add(a.id)));
+  const rest=S.nodes.filter(n=>pos[n.id]===undefined&&!inAs.has(n.id)&&!tfSet.has(n.id));
+  if(rest.length){
+    const maxD=Math.max(0,...Object.values(dep));
+    const cols=Math.max(1,maxD+1);
+    rest.sort((a,b)=>((a._d??9)-(b._d??9))||_posCmp(po,a,b));
+    let y=Math.ceil((bottom+ROW_GAP)/20)*20;
+    for(let i=0;i<rest.length;i+=cols){
+      const row=rest.slice(i,i+cols);
+      row.forEach((n,j)=>{ n.x=Math.round(colX(j)/20)*20; n.y=y; });
+      y+=Math.ceil((Math.max(...row.map(nh))+AG+10)/20)*20;
+    }
+    bottom=y;
+  }
+  // TF 구역: 트리(와 남은 카드) 아래
   tfg.forEach(g=>{
     const kd=n=>((g.kids&&g.kids[n.id])||[]).map(byId).filter(Boolean).sort((a,b)=>_posCmp(po,a,b));
     const r=byId(g.root); if(!r) return;
@@ -2141,19 +2156,6 @@ function _sideLayout(cx){
     let y=n.y+nh(n)+AG;
     (asidesOf[id]||[]).forEach(a=>{ a.x=n.x; a.y=y; y+=nh(a)+AG; pos[a.id]=y; });
   });
-  // 남은 카드(자유 side, 고아): 맨 아래 격자
-  const rest=S.nodes.filter(n=>pos[n.id]===undefined);
-  if(rest.length){
-    const maxD=Math.max(0,...Object.values(dep));
-    const cols=Math.max(1,maxD+1);
-    rest.sort((a,b)=>((a._d??9)-(b._d??9))||_posCmp(po,a,b));
-    let y=Math.ceil((bottom+ROW_GAP)/20)*20;
-    for(let i=0;i<rest.length;i+=cols){
-      const row=rest.slice(i,i+cols);
-      row.forEach((n,j)=>{ n.x=Math.round(colX(j)/20)*20; n.y=y; });
-      y+=Math.ceil((Math.max(...row.map(nh))+AG+10)/20)*20;
-    }
-  }
   let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
   S.nodes.forEach(n=>{ x0=Math.min(x0,n.x); y0=Math.min(y0,n.y); x1=Math.max(x1,n.x+NW); y1=Math.max(y1,n.y+nh(n)); });
   if(OPT.orient==='left') S.nodes.forEach(n=>{ n.x=x0+x1-NW-n.x; });
