@@ -4311,6 +4311,8 @@ function _chartBounds(){
     x0=Math.min(x0,n.x); y0=Math.min(y0,n.y);
     x1=Math.max(x1,n.x+NW); y1=Math.max(y1,n.y+nh(n));
   });
+  // TF 존 프레임(카드보다 24px 바깥)도 인쇄 범위에 넣는다
+  { const z=tfZoneInfo(); if(z){ x0=Math.min(x0,z.x); y0=Math.min(y0,z.y); x1=Math.max(x1,z.x+z.w); y1=Math.max(y1,z.y+z.h); } }
   return {x0,y0,x1,y1};
 }
 function exportPNG(){
