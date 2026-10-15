@@ -5014,10 +5014,10 @@ function collDecorate(){
 function collToggle(id){
   var cs=collState();
   if(cs.has(id)) cs.delete(id); else cs.add(id);
-  collSave(); drawNodes(); drawConns();
+  collSave(); drawTfZone(); drawNodes(); drawConns();
   if(typeof SRCH!=='undefined'&&SRCH.open) srchApply(false);
 }
-function collExpandAll(){ collState().clear(); collSave(); drawNodes(); drawConns(); if(typeof SRCH!=='undefined'&&SRCH.open) srchApply(false); }
+function collExpandAll(){ collState().clear(); collSave(); drawTfZone(); drawNodes(); drawConns(); if(typeof SRCH!=='undefined'&&SRCH.open) srchApply(false); }
 function collRevealFor(id){
   var cs=collState(), ch=false;
   Array.from(cs).forEach(function(p){ if(collDesc(p).has(id)){ cs.delete(p); ch=true; } });
@@ -5058,7 +5058,7 @@ function srchApply(recenter){
   SRCH.ids=hits.map(function(n){return n.id;});
   if(SRCH.idx>=SRCH.ids.length||SRCH.idx<0) SRCH.idx=0;
   if(!hits.length){ cnt.textContent='0건'; return; }
-  if(collRevealFor(SRCH.ids[SRCH.idx])){ drawNodes(); drawConns(); }
+  if(collRevealFor(SRCH.ids[SRCH.idx])){ drawTfZone(); drawNodes(); drawConns(); }
   hits.forEach(function(nd,k){
     var el=document.getElementById('n'+nd.id); if(!el) return;
     el.classList.add('srch-hit');
@@ -5220,7 +5220,7 @@ function tvClose(){
 function tvGo(id){
   var nd=S.nodes.find(function(n){return n.id===id;}); if(!nd) return;
   tvClose();
-  if(collRevealFor(id)){ drawNodes(); drawConns(); }
+  if(collRevealFor(id)){ drawTfZone(); drawNodes(); drawConns(); }
   var w=document.getElementById('wrap');
   w.scrollLeft=Math.max(0,(nd.x+NW/2)*S.scale-w.clientWidth/2);
   if(nh(nd)*S.scale>w.clientHeight*0.6) w.scrollTop=Math.max(0,nd.y*S.scale-40);
