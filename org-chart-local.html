@@ -3178,6 +3178,11 @@ function autoLayout(){
       const n=S.nodes.find(x=>x.id===id);
       if(!n||n._lx===undefined) return null;
       let left=n._lx, right=n._lx+NW;
+      if(n._bs){ // beside 카드가 차지할 폭까지 포함 (없으면 간격이 부풀려져 형제 서브트리를 밀어 겹침)
+        const C=besideCols(n), nR=n._bs.R.length, nL=n._bs.L.length;
+        if(nR) right=Math.max(right,r20(n._lx+NW+COL_GAP)+(Math.min(C,nR)-1)*STEP+NW);
+        if(nL) left=Math.min(left,r20(n._lx-COL_GAP-NW)-(Math.min(C,nL)-1)*STEP);
+      }
       (kids[id]||[]).forEach(cid=>{
         if(sideIds.has(cid)||pars[cid]!==id||isAsideC(cid)) return;
         const b=getSubtreeBounds(cid);
@@ -3247,23 +3252,25 @@ function autoLayout(){
     return _sideLayout({po:_po,root,nk,tfg,tfSet,sideIds,orphans,PAD_X,PAD_Y,COL_GAP,ROW_GAP});
   }
 
+  // 카드 높이 + 옆에 적재되는 beside 카드 높이 (행 높이·줄바꿈 행·세로 1열 적재 기준)
+  const bsH=n=>{
+    let h=nh(n);
+    if(n._bs){
+      const C=besideCols(n);
+      [n._bs.R,n._bs.L].forEach(cards=>{
+        let off=0,prevH=0,first=true;
+        stackRows(cards,C).forEach(cs=>{
+          off=first?0:c20(off+prevH+20); first=false; prevH=Math.max(...cs.map(nh));
+        });
+        if(!first) h=Math.max(h,off+prevH);
+      });
+    }
+    return h;
+  };
   // 레벨별 행 높이 (트리+고아 포함, side 제외)
   const depH={};
   S.nodes.filter(n=>n._d!==undefined&&!sideIds.has(n.id))
-    .forEach(n=>{
-      let h=nh(n);
-      if(n._bs){
-        const C=besideCols(n);
-        [n._bs.R,n._bs.L].forEach(cards=>{
-          let off=0,prevH=0,first=true;
-          stackRows(cards,C).forEach(cs=>{
-            off=first?0:c20(off+prevH+20); first=false; prevH=Math.max(...cs.map(nh));
-          });
-          if(!first) h=Math.max(h,off+prevH);
-        });
-      }
-      depH[n._d]=Math.max(depH[n._d]||0,h);
-    });
+    .forEach(n=>{ depH[n._d]=Math.max(depH[n._d]||0,bsH(n)); });
   const depY={}; let cy=PAD_Y;
   Object.keys(depH).sort((a,b)=>a-b).forEach(d=>{
     depY[d]=Math.round(cy/20)*20;
@@ -3283,7 +3290,7 @@ function autoLayout(){
     const rws=p._wrap.rows.map(ids=>ids.map(id=>S.nodes.find(n=>n.id===id)).filter(Boolean));
     for(let r=1;r<rws.length;r++){
       const prev=rws[r-1]; if(!prev.length) continue;
-      const yy=Math.ceil((Math.max(...prev.map(c=>c.y+nh(c)))+ROW_GAP)/20)*20;
+      const yy=Math.ceil((Math.max(...prev.map(c=>c.y+bsH(c)))+ROW_GAP)/20)*20;
       rws[r].forEach(c=>{ c.y=yy; });
     }
   });
@@ -3294,7 +3301,7 @@ function autoLayout(){
     let prev=null;
     p._col.forEach(cid=>{
       const c=S.nodes.find(n=>n.id===cid); if(!c) return;
-      const minY=prev?prev.y+nh(prev)+20:Math.max(c.y,p.y+nh(p)+20);
+      const minY=prev?prev.y+bsH(prev)+20:Math.max(c.y,p.y+bsH(p)+20);
       c.y=Math.ceil(minY/20)*20;
       c.x=p.x+40;
       prev=c;
