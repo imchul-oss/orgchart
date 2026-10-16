@@ -137,6 +137,10 @@ body.present #tb-more,body.present #tb-more-panel{display:none!important;}
   transform-origin:0 0;
   min-width:1800px;min-height:1020px;
 }
+.tfzone{position:absolute;z-index:0;box-sizing:border-box;pointer-events:none;background:rgba(255,193,7,.10);border:2px dashed #c9a227;border-radius:16px;}
+.tfzone-t{position:absolute;left:12px;top:6px;font:bold 12px/16px sans-serif;color:#8a6d00;white-space:nowrap;}
+.tfowner{position:absolute;z-index:0;box-sizing:border-box;height:16px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:11px/16px sans-serif;color:#8a6d00;pointer-events:none;}
+@media print{.tfzone,.tfowner{display:block!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
 /* dot grid — fixed overlay, dynamically positioned via JS */
 #grid-bg{
   position:fixed;top:50px;left:0;right:0;bottom:56px;
@@ -494,6 +498,23 @@ body.present #wrap,body.present #grid-bg{top:0!important;bottom:0!important;}
 #srch-input{width:190px;padding:3px 8px;border-radius:5px;border:1px solid rgba(255,255,255,.3);font-size:12px;}
 #srch-count{color:#fff;font-size:12px;min-width:36px;}
 body.present #srch-box,body.present #srch-btn{display:none!important;}
+#treeview{position:fixed;top:50px;left:0;bottom:56px;width:360px;max-width:calc(100vw - 32px);z-index:1200;background:#fff;color:#222;box-shadow:2px 0 14px rgba(0,0,0,.3);display:none;flex-direction:column;font-size:13px;}
+#topbar.tb-hidden ~ #treeview,#treeview.tv-notb{top:0;}
+#treeview.tv-open{display:flex!important;}
+.tv-head{flex:none;display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid #eee;font-weight:700;}
+.tv-close{border:0;background:none;cursor:pointer;font-size:15px;color:#555;}
+.tv-body{flex:1;overflow-y:auto;padding:4px 0;}
+.tv-row,.tv-mem{display:flex;align-items:center;gap:6px;padding:4px 10px;white-space:nowrap;}
+.tv-row:hover{background:#f3f6f4;}
+.tv-tog{width:14px;flex:none;cursor:pointer;color:#666;text-align:center;}
+.tv-title{cursor:pointer;overflow:hidden;text-overflow:ellipsis;font-weight:600;}
+.tv-title:hover{text-decoration:underline;}
+.tv-cnt{cursor:pointer;font-size:11px;color:#2a6a4a;background:#e6f2ec;border-radius:8px;padding:0 6px;flex:none;}
+.tv-mem{color:#222;font-size:12px;}
+.tv-mem .tv-sub{color:#999;}
+.tv-head2{padding:10px 12px 4px;font-size:11px;font-weight:700;color:#8a6d00;border-top:1px solid #eee;margin-top:6px;}
+body.present #treeview,body.present #btn-tree{display:none!important;}
+@media print{#treeview,#treeview.tv-open{display:none!important;}}
 @media print{
   #srch-box,#srch-btn{display:none!important;}
   .nd.srch-hit,.nd.srch-hit.srch-cur{outline:none!important;}
@@ -529,6 +550,7 @@ body.present #srch-box,body.present #srch-btn{display:none!important;}
   <button class="tb tb-g" onclick="fitScreen()">⊡ 화면 맞춤</button>
   <button id="lint-badge" class="tb tb-g" onclick="toggleLintPanel()">✓ 배치 이상 없음</button>
   <button id="srch-btn" class="tb tb-g" type="button" title="검색 (Ctrl+F)">🔍 검색</button>
+  <button id="btn-tree" class="tb tb-g" type="button" title="목록 보기">☰ 목록</button>
   <button id="btn-expand-all" class="tb tb-g" type="button" title="접은 조직 모두 펼치기" style="display:none">⊞ 모두 펼치기</button>
   <span id="srch-box" style="display:none"><input id="srch-input" type="search" placeholder="이름·직무·직책·조직 검색"><span id="srch-count"></span></span>
   <button id="btn-cmp" class="tb tb-g">⇄ 비교</button>
@@ -642,6 +664,7 @@ body.present #srch-box,body.present #srch-btn{display:none!important;}
 
 <!-- Sheet tabs (엑셀식) -->
 <div id="sheetbar"></div>
+<div id="treeview" style="display:none"><div class="tv-head"><span class="tv-sheet"></span><button type="button" class="tv-close" title="닫기">✕</button></div><div class="tv-body"></div></div>
 
 <!-- Status bar -->
 <div id="stbar">
@@ -857,6 +880,15 @@ body.present #srch-box,body.present #srch-btn{display:none!important;}
       <div class="opt-sec">
         <div class="opt-sec-title">배치 간격</div>
         <div class="opt-row">
+          <span class="opt-lbl">차트 방향</span>
+          <select id="opt-orient" class="opt-orient-sel"
+            onchange="OPT.orient=this.value;autoLayout();saveOptLS()">
+            <option value="down">위에서 아래로</option>
+            <option value="right">왼쪽에서 오른쪽으로</option>
+            <option value="left">오른쪽에서 왼쪽으로</option>
+          </select>
+        </div>
+        <div class="opt-row">
           <span class="opt-lbl">상하 간격</span>
           <input type="range" class="opt-slider" id="opt-rg" min="40" max="200" step="10"
             oninput="OPT.rowGap=+this.value;document.getElementById('opt-rg-v').textContent=this.value+'px';scheduleOptLayout()">
@@ -1024,7 +1056,7 @@ const OPT = {
   lhH:1.2, lhC:1.2, hdrH:0, rowH:0,
   // 카드/배치
   nw:228, bandW:12,
-  rowGap:80, colGap:44, padX:80, padY:60, wrapN:0,
+  rowGap:80, colGap:44, padX:80, padY:60, wrapN:0, orient:'down',
   // 선
   strokeW:1.8, strokeDashW:1.5,
   // 브랜드 / UI 액센트
@@ -1101,6 +1133,7 @@ function switchSheet(i){
   if(S.nodes.length&&!_hasPositions(S.nodes)) autoLayout();
   else { render(); if(S.nodes.length) fitScreen(); }
   renderSheetTabs();
+  if(typeof tvRefresh==='function') tvRefresh(true);
   scheduleSave(); // activeSheet 위치도 저장 대상 (관리자 모드에서만 실제 기록)
 }
 // 시트 이름은 감시 리로드의 위치 복원 키로도 쓰이므로 중복을 만들지 않는다 (리뷰 지적)
@@ -1180,7 +1213,7 @@ function updateGrid(){
 }
 
 // ═══ Render
-function render() { drawConns(); drawNodes(); updateCanvas(); updateSt(); renderAnchors(); updateGrid(); scheduleSave(); runLint(); cmpRun(); if(typeof srchApply==='function') srchApply(false); }
+function render() { drawTfZone(); drawConns(); drawNodes(); updateCanvas(); updateSt(); renderAnchors(); updateGrid(); scheduleSave(); runLint(); cmpRun(); if(typeof srchApply==='function') srchApply(false); }
 /* ===== 비교 모드 (저장 대상 아님) ===== */
 var CMP=null; // {file, data:{sheets:[...]}, single:bool, err:string}
 function cmpTrim(v){return String(v==null?'':v).trim();}
@@ -1396,9 +1429,85 @@ function lintGo(el){
   if(c){ c.classList.add('lint-flash'); setTimeout(()=>c.classList.remove('lint-flash'),900); }
 }
 
+// ─── TF 그룹: 부모가 없거나 하위 트리가 있는 side 카드 + 그 아래로 이어진 카드들
+function tfGroups(skip){
+  const byId=id=>S.nodes.find(n=>n.id===id);
+  const nonSide=id=>{const n=byId(id);return !!n&&n.type!=='side';};
+  const roots=S.nodes.filter(n=>n.type==='side'&&!sideBesideParent(n.id));
+  const R=new Set();
+  const st=roots.map(r=>r.id);
+  while(st.length){ const u=st.pop(); if(R.has(u)) continue; R.add(u); S.conns.forEach(c=>{ if(c.f===u&&!R.has(c.t)) st.push(c.t); }); }
+  const seen=new Set(), groups=[];
+  roots.forEach(root=>{
+    if(seen.has(root.id)) return;
+    const g={root:root.id,ids:[root.id],kids:{}};
+    seen.add(root.id);
+    const walk=u=>{
+      g.kids[u]=[];
+      S.conns.forEach(c=>{
+        if(c.f!==u||seen.has(c.t)) return;
+        const t=byId(c.t); if(!t) return;
+        if(skip&&skip(t)) return;
+        if(t.type!=='side'&&S.conns.some(k=>k.t===t.id&&nonSide(k.f)&&!R.has(k.f))) return;
+        seen.add(t.id); g.ids.push(t.id); g.kids[u].push(t.id); walk(t.id);
+      });
+    };
+    walk(root.id);
+    groups.push(g);
+  });
+  return groups;
+}
+function tfOwnerOf(sid){
+  const k=S.conns.find(k=>k.t===sid&&S.nodes.some(n=>n.id===k.f&&n.type!=='side'));
+  return k?S.nodes.find(n=>n.id===k.f):null;
+}
+// 현재 카드 위치 기준 존 프레임/라벨 계산 (없으면 null)
+function tfZoneInfo(){
+  const gs=tfGroups(); if(!gs.length) return null;
+  const _H=collHidden();
+  let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
+  const owners=[];
+  gs.forEach(g=>{
+    g.ids.forEach(id=>{
+      const n=S.nodes.find(q=>q.id===id); if(!n||_H.has(id)) return;
+      x0=Math.min(x0,n.x); y0=Math.min(y0,n.y); x1=Math.max(x1,n.x+NW); y1=Math.max(y1,n.y+nh(n));
+    });
+    const s=S.nodes.find(q=>q.id===g.root), p=tfOwnerOf(g.root);
+    if(s&&p&&!_H.has(s.id)) owners.push({x:s.x,y:s.y-22,text:'주관: '+(p.ko||p.en||'')});
+  });
+  if(!isFinite(x0)) return null;
+  const PAD=24, TOP=24;
+  let fy=y0-PAD-TOP;
+  owners.forEach(o=>{ fy=Math.min(fy,o.y-PAD+0); });
+  return {x:x0-PAD,y:Math.max(0,fy),w:x1-x0+PAD*2,h:0,y1:y1+PAD,owners,
+    fin(){ this.h=this.y1-this.y; return this; }}.fin();
+}
+function drawTfZone(){
+  const cvs=document.getElementById('canvas'); if(!cvs) return;
+  cvs.querySelectorAll('.tfzone,.tfowner').forEach(e=>e.remove());
+  const z=tfZoneInfo(); if(!z) return;
+  const d=document.createElement('div'); d.className='tfzone';
+  d.style.left=z.x+'px'; d.style.top=z.y+'px'; d.style.width=z.w+'px'; d.style.height=z.h+'px';
+  const t=document.createElement('div'); t.className='tfzone-t'; t.textContent='TF · 임시 조직';
+  d.appendChild(t);
+  cvs.insertBefore(d,cvs.firstChild);
+  z.owners.forEach(o=>{
+    const e=document.createElement('div'); e.className='tfowner'; e.textContent=o.text;
+    e.style.left=o.x+'px'; e.style.top=o.y+'px';
+    cvs.insertBefore(e,cvs.firstChild.nextSibling);
+  });
+}
+// P→(TF 그룹 카드) 연결은 선을 그리지 않는다
+function tfHiddenConnSet(){
+  const gs=tfGroups(); if(!gs.length) return null;
+  const inG=new Set(); gs.forEach(g=>g.ids.forEach(i=>inG.add(i)));
+  return {inG};
+}
+
 function updateCanvas() {
   let mx=0,my=0;
   S.nodes.forEach(n=>{ mx=Math.max(mx,n.x+NW+80); my=Math.max(my,n.y+nh(n)+80); });
+  { const z=tfZoneInfo(); if(z){ mx=Math.max(mx,z.x+z.w+80); my=Math.max(my,z.y+z.h+80); } }
   const c=document.getElementById('canvas');
   c.style.width=Math.max(mx,1800)+'px';
   c.style.height=Math.max(my,1020)+'px';
@@ -1610,6 +1719,9 @@ const besideCols=P=>(P&&(P.ac===2||P.ac===3))?P.ac:1;
 
 // ─── Draw connections (SVG) — 실선·점선 모두 버스 패턴 (스타일만 구분)
 function drawConns() {
+  // 현재 위치를 만든 방향(시트별 posOrient) 기준으로 그린다 — OPT.orient는 다음 배치의 방향일 뿐
+  const _po=(SHEETS[CUR_SHEET]&&SHEETS[CUR_SHEET].posOrient)||'down';
+  if(_po==='right'||_po==='left') return _drawConnsSide(_po);
   const svg=document.getElementById('svgl');
   svg.innerHTML='';
   const _H=collHidden();
@@ -1618,8 +1730,10 @@ function drawConns() {
   const sideNodeIds=new Set(S.nodes.filter(n=>n.type==='side').map(n=>n.id));
 
   const solidGroups={}, dashGroups={};
+  const _tfh=tfHiddenConnSet();
   S.conns.forEach(c=>{
     if(_H.has(c.f)||_H.has(c.t)) return;
+    if(_tfh&&_tfh.inG.has(c.t)&&!_tfh.inG.has(c.f)) return;
     const g=c.d?dashGroups:solidGroups;
     if(!g[c.f]) g[c.f]=[];
     g[c.f].push(c);
@@ -1986,6 +2100,184 @@ function addPath(svg,d,cls){
   const g=document.createElementNS('http://www.w3.org/2000/svg','g');
   g.innerHTML=`<path class="${cls}" d="${d}" style="pointer-events:none;"/>`;
   svg.appendChild(g);
+}
+
+// ═══ 가로 방향 배치 (OPT.orient 'right' | 'left')
+function _sideLayout(cx){
+  const {po,root,nk,tfg,tfSet,sideIds,orphans,PAD_X,PAD_Y,COL_GAP,ROW_GAP}=cx;
+  const byId=id=>S.nodes.find(n=>n.id===id);
+  const gap=Math.max(60,COL_GAP), step=Math.ceil((NW+gap)/20)*20, VG=30, AG=20;
+  const colX=d=>PAD_X+d*step;
+  const pos={}, dep={}, asidesOf={};
+  const kidsOf=n=>nk(n.id).map(byId).filter(k=>k&&k._lx!==undefined&&!sideIds.has(k.id)).sort((a,b)=>a._lx-b._lx);
+  const asFn=n=>(n._asides||[]).map(byId).filter(Boolean);
+  const noAs=()=>[];
+  function shiftSub(n,dy,kf){ pos[n.id]+=dy; kf(n).forEach(k=>shiftSub(k,dy,kf)); }
+  function lay(n,top,kf,af,dfn,dd){
+    dep[n.id]=dfn(n,dd);
+    const as=af(n), ch=kf(n);
+    asidesOf[n.id]=as;
+    const own=nh(n)+as.reduce((s,a)=>s+AG+nh(a),0);
+    if(!ch.length){ pos[n.id]=top; return top+own; }
+    let y=top, last=top;
+    ch.forEach(c=>{ last=lay(c,y,kf,af,dfn,dd+1); y=last+VG; });
+    const c1=ch[0], c2=ch[ch.length-1];
+    let py=Math.round(((pos[c1.id]+nh(c1)/2)+(pos[c2.id]+nh(c2)/2))/2-nh(n)/2);
+    if(py<top){ const dl=top-py; ch.forEach(c=>shiftSub(c,dl,kf)); last+=dl; py=top; }
+    pos[n.id]=py;
+    return Math.max(last,py+own);
+  }
+  let bottom=lay(root,PAD_Y,kidsOf,asFn,n=>n._d,0);
+  // 남은 카드(자유 side, 고아): 트리 바로 아래 격자 — TF 구역보다 위에 두어 트리에서 오는 점선이 구역을 가로지르지 않게
+  const inAs=new Set(); Object.values(asidesOf).forEach(l=>l.forEach(a=>inAs.add(a.id)));
+  const rest=S.nodes.filter(n=>pos[n.id]===undefined&&!inAs.has(n.id)&&!tfSet.has(n.id));
+  if(rest.length){
+    const maxD=Math.max(0,...Object.values(dep));
+    const cols=Math.max(1,maxD+1);
+    rest.sort((a,b)=>((a._d??9)-(b._d??9))||_posCmp(po,a,b));
+    let y=Math.ceil((bottom+ROW_GAP)/20)*20;
+    for(let i=0;i<rest.length;i+=cols){
+      const row=rest.slice(i,i+cols);
+      row.forEach((n,j)=>{ n.x=Math.round(colX(j)/20)*20; n.y=y; });
+      y+=Math.ceil((Math.max(...row.map(nh))+AG+10)/20)*20;
+    }
+    bottom=y;
+  }
+  // TF 구역: 트리(와 남은 카드) 아래
+  tfg.forEach(g=>{
+    const kd=n=>((g.kids&&g.kids[n.id])||[]).map(byId).filter(Boolean).sort((a,b)=>_posCmp(po,a,b));
+    const r=byId(g.root); if(!r) return;
+    const top=Math.ceil((bottom+ROW_GAP)/20)*20;
+    bottom=lay(r,top,kd,noAs,(n,d)=>d,0);
+  });
+  Object.keys(pos).forEach(id=>{
+    const n=byId(id); if(!n) return;
+    n.x=Math.round(colX(dep[id])/20)*20; n.y=Math.round(pos[id]);
+    let y=n.y+nh(n)+AG;
+    (asidesOf[id]||[]).forEach(a=>{ a.x=n.x; a.y=y; y+=nh(a)+AG; pos[a.id]=y; });
+  });
+  let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
+  S.nodes.forEach(n=>{ x0=Math.min(x0,n.x); y0=Math.min(y0,n.y); x1=Math.max(x1,n.x+NW); y1=Math.max(y1,n.y+nh(n)); });
+  if(OPT.orient==='left') S.nodes.forEach(n=>{ n.x=x0+x1-NW-n.x; });
+  const w=document.getElementById('wrap');
+  const vw=w.clientWidth, vh=w.clientHeight;
+  const sc=Math.max(0.2,Math.min(vw/(x1-x0+PAD_X*2),vh/(y1-y0+PAD_Y*2),1.2)*0.9);
+  S.scale=sc;
+  const rnd=byId(root.id);
+  const cvs=document.getElementById('canvas');
+  cvs.style.marginLeft='';
+  cvs.style.transform=`scale(${sc})`;
+  render();
+  const _tx=Math.max(0,Math.round((rnd.x+NW/2)*sc-vw/2));
+  const _ty=Math.max(0,Math.round((rnd.y+nh(rnd)/2)*sc-vh/2));
+  requestAnimationFrame(()=>{ w.scrollLeft=_tx; w.scrollTop=_ty; updateGrid(); statsflAvoidCards(); });
+  updateSt();
+}
+
+// 가로 방향 연결선 (실선 버스는 옆으로 누운 엘보, 그 외는 카드를 피하는 직접 엘보)
+function _drawConnsSide(po){
+  const svg=document.getElementById('svgl');
+  svg.innerHTML='';
+  const _H=collHidden();
+  const dir=po==='left'?-1:1;
+  const nodes=S.nodes.filter(n=>!_H.has(n.id));
+  const sideIds=new Set(S.nodes.filter(n=>n.type==='side').map(n=>n.id));
+  const _tfh=tfHiddenConnSet();
+  const hitsCard=pts=>{
+    for(let i=0;i+1<pts.length;i++){
+      const x1=Math.min(pts[i][0],pts[i+1][0]),x2=Math.max(pts[i][0],pts[i+1][0]);
+      const y1=Math.min(pts[i][1],pts[i+1][1]),y2=Math.max(pts[i][1],pts[i+1][1]);
+      if(nodes.some(n=>x2>n.x+3&&x1<n.x+NW-3&&y2>n.y+3&&y1<n.y+nh(n)-3)) return true;
+    }
+    return false;
+  };
+  // 열 사이 세로 통로(카드가 없는 x)
+  const xs=[...new Set(nodes.map(n=>n.x))].sort((a,b)=>a-b);
+  const gut=[];
+  if(xs.length){
+    gut.push(xs[0]-30);
+    for(let i=1;i<xs.length;i++) if(xs[i]-xs[i-1]>=NW+30) gut.push(Math.round((xs[i-1]+NW+xs[i])/2));
+    gut.push(xs[xs.length-1]+NW+30);
+  }
+  const maxY=nodes.length?Math.max(...nodes.map(n=>n.y+nh(n))):0;
+  const ptsStr=pts=>pts.map((p,i)=>(i?'L':'M')+Math.round(p[0])+' '+Math.round(p[1])).join(' ');
+  const emit=(c,vis,hit,pCls,hlCls)=>{
+    const sel=S.selConn===c.id;
+    const g=document.createElementNS('http://www.w3.org/2000/svg','g');
+    g.innerHTML=
+      (sel?`<path class="${hlCls}" d="${hit}" style="pointer-events:none;"/>`:'')+
+      `<path class="chit" d="${hit}" onclick="selectConn('${c.id}')" oncontextmenu="connContextMenu(event,'${c.id}');return false;" style="pointer-events:stroke;cursor:pointer;"/>`+
+      `<path class="${pCls}" d="${vis}" style="pointer-events:none;"/>`;
+    svg.appendChild(g);
+  };
+  const route=(f,t,c)=>{
+    const mid=n=>n.y+nh(n)/2;
+    const cands=[];
+    const fSide=c.fromSide||autoSide(f,t,'f'), tSide=c.toSide||autoSide(f,t,'t');
+    const fa=connAnchor(f,fSide), ta=connAnchor(t,tSide);
+    if(Math.abs(fa.x-ta.x)<2||Math.abs(fa.y-ta.y)<2) cands.push([[fa.x,fa.y],[ta.x,ta.y]]);
+    else if(fSide==='top'||fSide==='bottom'){ const by=(fa.y+ta.y)/2; cands.push([[fa.x,fa.y],[fa.x,by],[ta.x,by],[ta.x,ta.y]]); }
+    else { const bx=(fa.x+ta.x)/2; cands.push([[fa.x,fa.y],[bx,fa.y],[bx,ta.y],[ta.x,ta.y]]); }
+    // 마주보는 가장자리 + 통로 세로선
+    const right=(t.x+NW/2)>(f.x+NW/2);
+    const fx=right?f.x+NW:f.x, tx=right?t.x:t.x+NW;
+    if(Math.abs(t.x-f.x)>=2){
+      gut.slice().sort((a,b)=>Math.abs(a-(fx+tx)/2)-Math.abs(b-(fx+tx)/2)).forEach(gx=>{
+        cands.push([[fx,mid(f)],[gx,mid(f)],[gx,mid(t)],[tx,mid(t)]]);
+      });
+    }
+    // 바깥 우회: 각 카드 왼쪽 통로 → 맨 아래 → 대상 왼쪽 통로
+    const gl=x=>{ let g=null; gut.forEach(v=>{ if(v<x&&(g===null||v>g)) g=v; }); return g===null?x-30:g; };
+    const g1=gl(f.x), g2=gl(t.x), yb=maxY+24;
+    if(g1===g2) cands.push([[f.x,mid(f)],[g1,mid(f)],[g1,mid(t)],[t.x,mid(t)]]);
+    else cands.push([[f.x,mid(f)],[g1,mid(f)],[g1,yb],[g2,yb],[g2,mid(t)],[t.x,mid(t)]]);
+    return cands.find(p=>!hitsCard(p))||cands[cands.length-1];
+  };
+
+  const solidGroups={}, dashGroups={};
+  S.conns.forEach(c=>{
+    if(_H.has(c.f)||_H.has(c.t)) return;
+    if(_tfh&&_tfh.inG.has(c.t)&&!_tfh.inG.has(c.f)) return;
+    const g=c.d?dashGroups:solidGroups;
+    (g[c.f]||(g[c.f]=[])).push(c);
+  });
+  [[solidGroups,'cpath','cpath-hl'],[dashGroups,'cpath-dash','cpath-hl-dash']].forEach(([groups,pCls,hlCls])=>{
+    Object.entries(groups).forEach(([fid,conns])=>{
+      const f=S.nodes.find(n=>n.id===fid); if(!f) return;
+      const all=conns.map(c=>({c,t:S.nodes.find(n=>n.id===c.t)})).filter(x=>x.t&&!_H.has(x.t.id));
+      const isAside=x=>x.t.aside===true&&!sideIds.has(x.t.id)&&!S.conns.some(k=>k.f===x.t.id&&!sideIds.has(k.t));
+      const isBeside=x=>isAside(x)||(sideIds.has(x.t.id)&&sideBesideParent(x.t.id)===fid);
+      const busItems=all.filter(x=>!isBeside(x)&&!sideIds.has(x.t.id)&&((x.t.x-f.x)*dir>NW/2));
+      const busSet=new Set(busItems);
+      const fy=f.y+nh(f)/2;
+      all.filter(x=>!busSet.has(x)).forEach(({c,t})=>{
+        let pts=null;
+        if(isBeside({c,t})&&Math.abs(t.x-f.x)<2&&t.y>f.y){
+          const xt=dir>0?f.x-14:f.x+NW+14, ex=dir>0?f.x:f.x+NW, tx=dir>0?t.x:t.x+NW, ty=t.y+nh(t)/2;
+          pts=[[ex,fy],[xt,fy],[xt,ty],[tx,ty]];
+          if(hitsCard(pts)) pts=null;
+        }
+        if(!pts) pts=route(f,t,c);
+        const d=ptsStr(pts);
+        emit(c,d,d,pCls,hlCls);
+      });
+      if(!busItems.length) return;
+      const fx=dir>0?f.x+NW:f.x;
+      const edge=t=>dir>0?t.x:t.x+NW;
+      const near=Math.min(...busItems.map(x=>Math.abs(edge(x.t)-fx)));
+      const bx=Math.round(fx+dir*near/2);
+      const cys=busItems.map(x=>x.t.y+nh(x.t)/2);
+      const top=Math.min(fy,...cys), bot=Math.max(fy,...cys);
+      addPath(svg,`M${Math.round(fx)} ${Math.round(fy)} L${bx} ${Math.round(fy)}`,pCls);
+      if(bot-top>0.5) addPath(svg,`M${bx} ${Math.round(top)} L${bx} ${Math.round(bot)}`,pCls);
+      busItems.forEach(({c,t})=>{
+        const cy=Math.round(t.y+nh(t)/2), tx=Math.round(edge(t));
+        const vis=`M${bx} ${cy} L${tx} ${cy}`;
+        const hit=Math.abs(cy-Math.round(fy))<1?`M${Math.round(fx)} ${Math.round(fy)} L${tx} ${cy}`:`M${Math.round(fx)} ${Math.round(fy)} L${bx} ${Math.round(fy)} L${bx} ${cy} L${tx} ${cy}`;
+        emit(c,vis,hit,pCls,hlCls);
+      });
+    });
+  });
 }
 
 // ═══ Drag
@@ -2628,7 +2920,13 @@ function statsflAvoidCards(){
 //   - DFS 재귀 depth를 Y 행으로 사용 → 연결이 잘못되면 타입과 무관한 위치
 //   - grpGap도 DFS depth 기반 → 타입 레벨과 불일치
 //   - 고아 Y = nearestGapY (임의) → 타입 레벨 무시
+// 현재 위치가 어떤 방향 배치에서 나왔는지에 따라 형제 순서를 읽는 축 (가로: 위→아래 y, 세로: x)
+function _posCmp(po,a,b){
+  if(po==='right'||po==='left') return (a.y-b.y)||(a.x-b.x);
+  return (a.x-b.x)||(a.y-b.y);
+}
 function autoLayout(){
+  const _po=(SHEETS[CUR_SHEET]&&SHEETS[CUR_SHEET].posOrient)||'down';
   const COL_GAP=OPT.colGap, ROW_GAP=OPT.rowGap, PAD_X=OPT.padX, PAD_Y=OPT.padY;
   const r20=v=>Math.round(v/20)*20, c20=v=>Math.ceil(v/20)*20, STEP=c20(NW+COL_GAP);
   const sideKids={};
@@ -2706,14 +3004,16 @@ function autoLayout(){
       const readOrder=allLeaves&&ys.some(y=>y!==ys[0]);
       kids[n.id].sort((a,b)=>{
         const na=S.nodes.find(x=>x.id===a), nb=S.nodes.find(x=>x.id===b);
-        if(readOrder){
+        if(readOrder||_po==='right'||_po==='left'){
           const dy=(na?na.y:0)-(nb?nb.y:0);
           if(dy) return dy;
         }
+        if(_po==='right'||_po==='left'){ return ((na?na.y:0)-(nb?nb.y:0))||((na?na.x:0)-(nb?nb.x:0)); }
         return (na?na.x:0)-(nb?nb.x:0);
       });
     }
   });
+  if(SHEETS[CUR_SHEET]) SHEETS[CUR_SHEET].posOrient=OPT.orient;
 
   // X 배치 (DFS). _d = Y 행 결정용 깊이
   // 규칙: 자식 _d > 부모 _d (타입 레벨 기준이지만 같거나 낮으면 강제로 +1)
@@ -2830,6 +3130,8 @@ function autoLayout(){
     return fin(lastR);
   }
   place(root.id,PAD_X,undefined);
+  const tfg=tfGroups(n=>n._lx!==undefined||besideSide.has(n.id));
+  const tfSet=new Set(); tfg.forEach(g=>g.ids.forEach(i=>tfSet.add(i)));
 
   // beside 카드 좌우 분배 (현재 위치 기준, 위치 적용 전에 확정)
   S.nodes.forEach(n=>{
@@ -2911,8 +3213,13 @@ function autoLayout(){
   })();
 
   // 고아 노드: 타입 레벨로 _d 설정 (depH에 포함시켜 행 높이 반영)
-  const orphans=S.nodes.filter(n=>n._d===undefined&&!sideIds.has(n.id));
+  const orphans=S.nodes.filter(n=>n._d===undefined&&!sideIds.has(n.id)&&!tfSet.has(n.id));
   orphans.forEach(n=>{ n._d=TYPE_LV[n.type]??1; });
+
+  // 가로 방향(오른쪽/왼쪽으로 성장): 별도 배치 함수로 분기
+  if(OPT.orient==='right'||OPT.orient==='left'){
+    return _sideLayout({po:_po,root,nk,tfg,tfSet,sideIds,orphans,PAD_X,PAD_Y,COL_GAP,ROW_GAP});
+  }
 
   // 레벨별 행 높이 (트리+고아 포함, side 제외)
   const depH={};
@@ -2991,29 +3298,60 @@ function autoLayout(){
 
   // side 노드: L1 행 우측
   const sideY=depY[1]??PAD_Y;
-  const freeSides=[...sideIds].filter(sid=>!besideSide.has(sid));
+  // 고아 노드 기준 X는 아래에서 계산
+  let zoneR=null;
+  const freeSides=[...sideIds].filter(sid=>!besideSide.has(sid)&&!tfSet.has(sid));
+  const sideBase=treeR+COL_GAP*2;
+  let freeR=treeR;
   freeSides.forEach((sid,i)=>{
     const snd=S.nodes.find(n=>n.id===sid);
-    if(snd){ snd.x=Math.round((treeR+COL_GAP*2+i*(NW+COL_GAP))/20)*20; snd.y=sideY; }
+    if(snd){ snd.x=Math.round((sideBase+i*(NW+COL_GAP))/20)*20; snd.y=sideY; freeR=Math.max(freeR,snd.x+NW); }
   });
-
+  // TF 그룹: 작은 트리로 배치, 그룹끼리 좌→우 (자유 side 행 우측)
+  if(tfg.length){
+    let gL=(freeSides.length?freeR:treeR)+COL_GAP*2;
+    tfg.forEach(g=>{
+      const nd=id=>S.nodes.find(n=>n.id===id);
+      const kd=id=>(g.kids[id]||[]).slice().sort((a,b)=>_posCmp(_po,nd(a),nd(b)));
+      const rowH=[];
+      const dep=(id,d)=>{ const n=nd(id); n._tfd=d; rowH[d]=Math.max(rowH[d]||0,nh(n)); kd(id).forEach(k=>dep(k,d+1)); };
+      dep(g.root,0);
+      const rowY=[sideY];
+      for(let d=1;d<rowH.length;d++) rowY[d]=rowY[d-1]+Math.ceil((rowH[d-1]+ROW_GAP)/20)*20;
+      const pl=(id,L)=>{
+        const n=nd(id), ch=kd(id);
+        if(!ch.length){ n._tfx=L; return L+NW; }
+        let x=L, last=L;
+        ch.forEach((k,i)=>{ last=pl(k,x); x=last+COL_GAP; });
+        const xs=ch.map(k=>nd(k)._tfx);
+        n._tfx=(Math.min(...xs)+Math.max(...xs)+NW)/2-NW/2;
+        return last;
+      };
+      const right=pl(g.root,Math.round(gL/20)*20);
+      let gr=-Infinity;
+      g.ids.forEach(id=>{ const n=nd(id); n.x=Math.round(n._tfx/20)*20; n.y=rowY[n._tfd]; gr=Math.max(gr,n.x+NW); delete n._tfx; delete n._tfd; });
+      gL=Math.max(gr,right)+COL_GAP*2;
+      zoneR=Math.max(gr,right);
+    });
+  }
+  const freeBase=(zoneR!==null?zoneR:treeR)+COL_GAP*2;
   // 고아 노드: 타입 레벨 행 Y, 트리+사이드 우측 X (결정론적 — shiftX 누적 없음)
   // 같은 타입 레벨끼리 나란히 배치
-  const sideCount=freeSides.length;
+  const sideCount=zoneR!==null?0:freeSides.length;
   const orphanByLv={};
   orphans.forEach(n=>{ (orphanByLv[n._d]||(orphanByLv[n._d]=[])).push(n); });
   let oi=sideCount;
   Object.keys(orphanByLv).sort((a,b)=>a-b).forEach(d=>{
-    orphanByLv[d].sort((a,b)=>a.x-b.x);
+    orphanByLv[d].sort((a,b)=>_posCmp(_po,a,b));
     orphanByLv[d].forEach(n=>{
-      n.x=Math.round((treeR+COL_GAP*2+oi*(NW+COL_GAP))/20)*20;
+      n.x=Math.round((freeBase+oi*(NW+COL_GAP))/20)*20;
       n.y=depY[n._d]??PAD_Y;
       oi++;
     });
   });
 
   // 바운딩 박스 (트리+사이드만 — 고아는 shiftX/scale에 영향 없도록)
-  const layoutNodes=[...treeNodes,...[...sideIds].map(sid=>S.nodes.find(n=>n.id===sid)).filter(Boolean)];
+  const layoutNodes=[...treeNodes,...[...sideIds].map(sid=>S.nodes.find(n=>n.id===sid)).filter(Boolean),...S.nodes.filter(n=>tfSet.has(n.id)&&!sideIds.has(n.id))];
   let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
   (layoutNodes.length?layoutNodes:S.nodes).forEach(n=>{
     x0=Math.min(x0,n.x); y0=Math.min(y0,n.y);
@@ -3395,6 +3733,7 @@ function openOptions(){
   const _shav=document.getElementById('opt-sha-v'); if(_shav) _shav.textContent=Math.round(OPT.shadowA*100)+'%';
   {const w=document.getElementById('opt-wrap'),wv=document.getElementById('opt-wrap-v');
    if(w) w.value=OPT.wrapN||0; if(wv) wv.textContent=OPT.wrapN?OPT.wrapN+'개':'끔';}
+  sv('opt-orient',OPT.orient||'down');
   sl('opt-rg',OPT.rowGap); sl('opt-cg',OPT.colGap); sl('opt-px',OPT.padX);
   sl('opt-py', OPT.padY);
   // 높이
@@ -3438,7 +3777,7 @@ function resetOptions(){
   if(!confirm('모든 옵션을 초기값으로 되돌릴까요?')) return;
   Object.assign(OPT,{
     fsEn:12,fsKo:8,fsMn:11,fsMf:9,fsMr2:9,fsMa:9,lhH:1.2,lhC:1.2,hdrH:0,rowH:0,
-    nw:228,bandW:12,rowGap:80,colGap:44,padX:80,padY:60,wrapN:0,
+    nw:228,bandW:12,rowGap:80,colGap:44,padX:80,padY:60,wrapN:0,orient:'down',
     strokeW:1.8,strokeDashW:1.5,
     uiMint:'#40D2A7',uiSky:'#60DCF8',uiCoral:'#FF8770',topbarBg:'#2C2C2C',
     statsBg:'#1C1C20',stbarBg:'#1A1A1A',
@@ -3778,6 +4117,7 @@ async function saveDataToFile(){
 function _applyOptObj(d){
   const numKeys=['fsEn','fsKo','fsMn','fsMf','fsMr2','fsMa','lhH','lhC','hdrH','rowH','nw','bandW','rowGap','colGap','padX','padY','strokeW','strokeDashW','cardRadius','shadowA','wrapN'];
   numKeys.forEach(k=>{if(d[k]!=null){OPT[k]=+d[k];_applyOptCSS(k,+d[k]);}});
+  OPT.orient=(d.orient==='right'||d.orient==='left')?d.orient:'down';
   const colKeys=['uiMint','uiSky','uiCoral','topbarBg','statsBg','stbarBg','hdrTop','hdrL1','hdrL2','hdrL3','hdrL4','hdrL5','hdrTf','hdrSide','bandTop','bandL1','bandL2','bandL3','bandL4','bandL5','bandTf','bandSide','canvasBg','cardBg','rowEven','rowBorder','connSolid','connDash','gridDot','txtHdrEn','txtHdrKo','txtMn','txtMf','txtMr2','txtMa'];
   colKeys.forEach(k=>{if(d[k]&&/^#[0-9a-fA-F]{3,8}$/.test(String(d[k]))){OPT[k]=d[k];_applyOptCSS(k,d[k]);}});
   if(d.statusItems){
@@ -3834,7 +4174,8 @@ function _sanitizeSheet(sh){
   });
   const busY={};
   Object.entries(sh.busY||{}).forEach(([k,v])=>{ if(Number.isFinite(+v)) busY[k]=+v; });
-  return {name:String(sh.name||'조직도').slice(0,30), nodes:sh.nodes||[], conns:sh.conns||[], busY};
+  return {name:String(sh.name||'조직도').slice(0,30), nodes:sh.nodes||[], conns:sh.conns||[], busY,
+    ...((sh.posOrient==='right'||sh.posOrient==='left')?{posOrient:sh.posOrient}:{})};
 }
 function _adoptData(d,keepView=false){
   // v2 {sheets:[...]} / v1 {nodes,conns,busY} 모두 수용
@@ -3970,6 +4311,8 @@ function _chartBounds(){
     x0=Math.min(x0,n.x); y0=Math.min(y0,n.y);
     x1=Math.max(x1,n.x+NW); y1=Math.max(y1,n.y+nh(n));
   });
+  // TF 존 프레임(카드보다 24px 바깥)도 인쇄 범위에 넣는다
+  { const z=tfZoneInfo(); if(z){ x0=Math.min(x0,z.x); y0=Math.min(y0,z.y); x1=Math.max(x1,z.x+z.w); y1=Math.max(y1,z.y+z.h); } }
   return {x0,y0,x1,y1};
 }
 function exportPNG(){
@@ -3978,6 +4321,8 @@ function exportPNG(){
   if(!_VN.length) return;
   let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
   _VN.forEach(n=>{x0=Math.min(x0,n.x);y0=Math.min(y0,n.y);x1=Math.max(x1,n.x+NW);y1=Math.max(y1,n.y+nh(n));});
+  const _tz=tfZoneInfo();
+  if(_tz){ x0=Math.min(x0,_tz.x); y0=Math.min(y0,_tz.y); x1=Math.max(x1,_tz.x+_tz.w); y1=Math.max(y1,_tz.y+_tz.h); }
   const W=Math.round((x1-x0+80)*2), H=Math.round((y1-y0+80)*2);
   const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
   const ctx=cv.getContext('2d');
@@ -4002,6 +4347,20 @@ function exportPNG(){
     if(!ch.length) return;
     ctx.fillText(ch.join('')+'…',left,y);
   };
+  if(_tz){
+    ctx.save();
+    ctx.beginPath();
+    if(ctx.roundRect) ctx.roundRect(_tz.x,_tz.y,_tz.w,_tz.h,16); else ctx.rect(_tz.x,_tz.y,_tz.w,_tz.h);
+    ctx.fillStyle='rgba(255,193,7,0.10)'; ctx.fill();
+    ctx.strokeStyle='#c9a227'; ctx.lineWidth=2; ctx.setLineDash([6,4]); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle='#8a6d00'; ctx.textBaseline='top'; ctx.textAlign='left';
+    ctx.font='bold 12px '+font;
+    ctx.fillText('TF · 임시 조직',_tz.x+12,_tz.y+6);
+    ctx.font='11px '+font;
+    _tz.owners.forEach(o=>{ ctx.fillText(o.text,o.x,o.y+2); });
+    ctx.restore();
+  }
   document.querySelectorAll('#svgl path.cpath, #svgl path.cpath-dash').forEach(p=>{
     const d=p.getAttribute('d'); if(!d) return;
     const cs=getComputedStyle(p);
@@ -4109,6 +4468,7 @@ function enterPresent(){
   _pres={scale:S.scale,sl:w.scrollLeft,st:w.scrollTop,hidden:document.getElementById('topbar').classList.contains('tb-hidden')};
   document.querySelectorAll('.dd.show,.dd.open').forEach(d=>d.classList.remove('show','open'));
   document.body.classList.add('present');
+  if(typeof tvClose==='function') tvClose();
   fitScreen();
 }
 function exitPresent(){
@@ -4658,10 +5018,10 @@ function collDecorate(){
 function collToggle(id){
   var cs=collState();
   if(cs.has(id)) cs.delete(id); else cs.add(id);
-  collSave(); drawNodes(); drawConns();
+  collSave(); drawTfZone(); drawNodes(); drawConns();
   if(typeof SRCH!=='undefined'&&SRCH.open) srchApply(false);
 }
-function collExpandAll(){ collState().clear(); collSave(); drawNodes(); drawConns(); if(typeof SRCH!=='undefined'&&SRCH.open) srchApply(false); }
+function collExpandAll(){ collState().clear(); collSave(); drawTfZone(); drawNodes(); drawConns(); if(typeof SRCH!=='undefined'&&SRCH.open) srchApply(false); }
 function collRevealFor(id){
   var cs=collState(), ch=false;
   Array.from(cs).forEach(function(p){ if(collDesc(p).has(id)){ cs.delete(p); ch=true; } });
@@ -4702,7 +5062,7 @@ function srchApply(recenter){
   SRCH.ids=hits.map(function(n){return n.id;});
   if(SRCH.idx>=SRCH.ids.length||SRCH.idx<0) SRCH.idx=0;
   if(!hits.length){ cnt.textContent='0건'; return; }
-  if(collRevealFor(SRCH.ids[SRCH.idx])){ drawNodes(); drawConns(); }
+  if(collRevealFor(SRCH.ids[SRCH.idx])){ drawTfZone(); drawNodes(); drawConns(); }
   hits.forEach(function(nd,k){
     var el=document.getElementById('n'+nd.id); if(!el) return;
     el.classList.add('srch-hit');
@@ -4735,6 +5095,167 @@ function srchStep(d){
 }
 document.getElementById('srch-btn').addEventListener('click',srchOpen);
 document.getElementById('srch-input').addEventListener('input',function(){ SRCH.idx=0; srchApply(true); });
+
+// ═══ Tree (folder-style list) view
+var TV={open:false,fold:new Set(),mem:new Set()};
+function tvPos(){
+  var tv=document.getElementById('treeview'), tb=document.getElementById('topbar');
+  if(tv&&tb) tv.classList.toggle('tv-notb',tb.classList.contains('tb-hidden'));
+}
+function tvOrder(){
+  // returns [{kind:'row',id,depth}|{kind:'head',text}] following autoLayout's tree rules
+  var nodes=S.nodes, conns=S.conns, po=(SHEETS[CUR_SHEET]&&SHEETS[CUR_SHEET].posOrient)||'down';
+  var byId={}; nodes.forEach(function(n){byId[n.id]=n;});
+  var sideIds=new Set(nodes.filter(function(n){return n.type==='side';}).map(function(n){return n.id;}));
+  var TL={top:0,l1:1,l2:2,l3:3,l4:4,l5:5,tf:4};
+  var lv=function(id){var n=byId[id];return n?(TL[n.type]!==undefined?TL[n.type]:1):1;};
+  var kids={}, pars={};
+  nodes.forEach(function(n){kids[n.id]=[];pars[n.id]=null;});
+  conns.forEach(function(c){
+    if(sideIds.has(c.f)||sideIds.has(c.t)||!kids[c.f]||!byId[c.t]) return;
+    if(kids[c.f].indexOf(c.t)<0) kids[c.f].push(c.t);
+    var cl=lv(c.t), sl=lv(c.f), curl=pars[c.t]!==null?lv(pars[c.t]):999;
+    var nd=Math.abs(sl-(cl-1)), cd=Math.abs(curl-(cl-1));
+    if(pars[c.t]===null||nd<cd||(nd===cd&&sl>curl)) pars[c.t]=c.f;
+  });
+  var root=nodes.find(function(n){return n.type==='top'&&!pars[n.id];})||nodes.find(function(n){return !pars[n.id]&&!sideIds.has(n.id);});
+  var out=[], seen=new Set();
+  if(root){
+    var reach=new Set([root.id]), q=[root.id];
+    while(q.length){ var b=q.shift(); (kids[b]||[]).forEach(function(k){ if(pars[k]===b&&!reach.has(k)){reach.add(k);q.push(k);} }); }
+    var rep=true;
+    while(rep){ rep=false; conns.forEach(function(c){
+      if(sideIds.has(c.f)||sideIds.has(c.t)||!reach.has(c.f)||reach.has(c.t)||!byId[c.t]) return;
+      var cl=lv(c.t), sl=lv(c.f), curl=pars[c.t]!==null?lv(pars[c.t]):999;
+      if(Math.abs(sl-(cl-1))<=Math.abs(curl-(cl-1))){ pars[c.t]=c.f; if(kids[c.f].indexOf(c.t)<0) kids[c.f].push(c.t); reach.add(c.t); rep=true; }
+    }); }
+    var xy=function(a,b){ // x then y (down layout)
+      var na=byId[a], nb=byId[b]; return ((na?na.x:0)-(nb?nb.x:0))||((na?na.y:0)-(nb?nb.y:0)); };
+    var yx=function(a,b){ var na=byId[a], nb=byId[b]; return ((na?na.y:0)-(nb?nb.y:0))||((na?na.x:0)-(nb?nb.x:0)); };
+    nodes.forEach(function(n){
+      var k=kids[n.id]; if(k.length<2) return;
+      var allLeaves=k.every(function(c){return !(kids[c]&&kids[c].length);});
+      var ys=k.map(function(c){return byId[c]?byId[c].y:0;});
+      var ro=allLeaves&&ys.some(function(y){return y!==ys[0];});
+      if(po==='right'||po==='left') k.sort(yx);
+      else if(ro) k.sort(function(a,b){ return (byId[a].y-byId[b].y)||(byId[a].x-byId[b].x); });
+      else k.sort(xy);
+    });
+    var sideKids={};
+    nodes.forEach(function(n){ if(n.type!=='side') return; var pid=sideBesideParent(n.id); if(pid) (sideKids[pid]=sideKids[pid]||[]).push(n.id); });
+    var tk=function(id){return (kids[id]||[]).filter(function(k){return pars[k]===id;});};
+    var isAside=function(id){var n=byId[id];return !!n&&n.aside===true&&tk(id).length===0;};
+    var walk=function(id,d){
+      if(seen.has(id)||!byId[id]) return;
+      seen.add(id); out.push({kind:'row',id:id,depth:d});
+      var t=tk(id), nk=t.filter(function(k){return !isAside(k);}), ak=t.filter(isAside).sort(yx);
+      nk.forEach(function(k){walk(k,d+1);});
+      ak.forEach(function(k){walk(k,d+1);});
+      (sideKids[id]||[]).forEach(function(k){walk(k,d+1);});
+    };
+    walk(root.id,0);
+  }
+  var gs=tfGroups();
+  if(gs.length){
+    var tfOut=[];
+    gs.forEach(function(g){
+      var w=function(id,d){ if(seen.has(id)||!byId[id]) return; seen.add(id); tfOut.push({kind:'row',id:id,depth:d}); (g.kids[id]||[]).forEach(function(k){w(k,d+1);}); };
+      w(g.root,0);
+    });
+    if(tfOut.length){ out.push({kind:'head',text:'TF · 임시 조직'}); out=out.concat(tfOut); }
+  }
+  var rest=nodes.filter(function(n){return !seen.has(n.id);});
+  if(rest.length){ out.push({kind:'head',text:'기타'}); rest.forEach(function(n){ out.push({kind:'row',id:n.id,depth:0}); }); }
+  return out;
+}
+function tvBuild(){
+  var tv=document.getElementById('treeview'); if(!tv) return;
+  tvPos();
+  var sh=SHEETS[CUR_SHEET]; tv.querySelector('.tv-sheet').textContent=sh?sh.name:'';
+  var body=tv.querySelector('.tv-body'); body.innerHTML='';
+  var list=tvOrder();
+  var hasKid=function(i){ return list[i+1]&&list[i+1].kind==='row'&&list[i+1].depth>list[i].depth; };
+  // visibility: hidden if any ancestor folded
+  var stack=[]; // [{depth,folded}]
+  list.forEach(function(it,i){
+    if(it.kind==='head'){ stack=[]; var h=document.createElement('div'); h.className='tv-head2'; h.textContent=it.text; body.appendChild(h); return; }
+    var nd=S.nodes.find(function(n){return n.id===it.id;}); if(!nd) return;
+    while(stack.length&&stack[stack.length-1].depth>=it.depth) stack.pop();
+    var hidden=stack.some(function(s){return s.folded;});
+    var folded=TV.fold.has(it.id)&&hasKid(i);
+    var row=document.createElement('div'); row.className='tv-row';
+    row.setAttribute('data-id',nd.id); row.setAttribute('data-depth',it.depth);
+    row.style.paddingLeft=(10+it.depth*18)+'px';
+    if(hidden) row.style.display='none';
+    if(hasKid(i)){ var tg=document.createElement('span'); tg.className='tv-tog'; tg.textContent=folded?'▸':'▾'; row.appendChild(tg); }
+    else { var sp=document.createElement('span'); sp.style.cssText='width:14px;flex:none'; row.appendChild(sp); }
+    var ti=document.createElement('span'); ti.className='tv-title'; ti.textContent=nd.ko||nd.en||''; row.appendChild(ti);
+    var cn=OPT.showCnt!==false?headCount(nd):0;
+    if(cn>0){ var c=document.createElement('span'); c.className='tv-cnt'; c.textContent=cn+'명'; row.appendChild(c); }
+    body.appendChild(row);
+    stack.push({depth:it.depth,folded:folded});
+    if((nd.m||[]).length){
+      (nd.m||[]).forEach(function(m){
+        var mr=document.createElement('div'); mr.className='tv-mem'; mr.setAttribute('data-for',nd.id);
+        mr.style.paddingLeft=(10+(it.depth+1)*18+20)+'px';
+        mr.style.display=(!hidden&&!folded&&TV.mem.has(nd.id))?'':'none';
+        var nm=document.createElement('span'); nm.textContent=m.n||''; mr.appendChild(nm);
+        var sub=[m.r,m.f].filter(Boolean).join(' · ');
+        if(sub){ var s=document.createElement('span'); s.className='tv-sub'; s.textContent=sub; mr.appendChild(s); }
+        body.appendChild(mr);
+      });
+    }
+  });
+}
+function tvRefresh(reset){
+  if(!TV.open) return;
+  if(reset){ TV.fold.clear(); TV.mem.clear(); }
+  tvBuild();
+}
+function tvOpen(){
+  TV.open=true; TV.fold.clear(); TV.mem.clear();
+  document.getElementById('treeview').classList.add('tv-open');
+  tvBuild();
+}
+function tvClose(){
+  TV.open=false;
+  var tv=document.getElementById('treeview'); if(tv) tv.classList.remove('tv-open');
+}
+function tvGo(id){
+  var nd=S.nodes.find(function(n){return n.id===id;}); if(!nd) return;
+  tvClose();
+  if(collRevealFor(id)){ drawTfZone(); drawNodes(); drawConns(); }
+  var w=document.getElementById('wrap');
+  w.scrollLeft=Math.max(0,(nd.x+NW/2)*S.scale-w.clientWidth/2);
+  if(nh(nd)*S.scale>w.clientHeight*0.6) w.scrollTop=Math.max(0,nd.y*S.scale-40);
+  else w.scrollTop=Math.max(0,(nd.y+nh(nd)/2)*S.scale-w.clientHeight/2);
+  var el=document.getElementById('n'+id);
+  if(el){ el.classList.add('lint-flash'); setTimeout(function(){ el.classList.remove('lint-flash'); },900); }
+}
+document.getElementById('btn-tree').addEventListener('click',function(){ if(TV.open) tvClose(); else tvOpen(); });
+document.querySelector('#treeview .tv-close').addEventListener('click',tvClose);
+document.getElementById('treeview').addEventListener('click',function(e){
+  var t=e.target, row=t.closest?t.closest('.tv-row'):null; if(!row) return;
+  var id=row.getAttribute('data-id');
+  if(t.classList.contains('tv-tog')){
+    if(TV.fold.has(id)) TV.fold.delete(id); else TV.fold.add(id);
+    tvBuild();
+  } else if(t.classList.contains('tv-cnt')){
+    if(TV.mem.has(id)) TV.mem.delete(id); else TV.mem.add(id);
+    tvBuild();
+  } else if(t.classList.contains('tv-title')){ tvGo(id); }
+});
+document.addEventListener('keydown',function(e){
+  if(e.key!=='Escape'||!TV.open) return;
+  var dlg=['pwov','cloudov','dataov','optov','ov'].some(function(i){var o=document.getElementById(i);return o&&o.classList.contains('show');});
+  if(!dlg) tvClose();
+});
+(function(){
+  var _r=render;
+  render=function(){ var r=_r.apply(this,arguments); if(TV.open) tvBuild(); return r; };
+  var tb=document.getElementById('topbar');
+  if(tb&&window.MutationObserver) new MutationObserver(tvPos).observe(tb,{attributes:true,attributeFilter:['class']});
+})();
 document.getElementById('srch-input').addEventListener('keydown',function(e){
   if(e.key==='Enter'){ e.preventDefault(); srchStep(e.shiftKey?-1:1); }
   else if(e.key==='Escape'){ e.preventDefault(); srchClose(); }
