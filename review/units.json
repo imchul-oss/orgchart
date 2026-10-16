@@ -1,0 +1,5 @@
+{"polish": {"judge": "VERIFY_polish.js", "ref": "refs/base.html", "new": true},
+ "tb": {"judge": "VERIFY_tb.js", "ref": null},
+ "tf": {"judge": "VERIFY_tf.js", "ref": "refs/v1-tb.html"},
+ "rot": {"judge": "VERIFY_rot.js", "ref": "refs/v2-tf.html"},
+ "tree": {"judge": "VERIFY_tree.js", "ref": "refs/v3-rot.html"}}
