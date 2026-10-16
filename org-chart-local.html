@@ -1544,11 +1544,47 @@ function mkNode(nd) {
   return el;
 }
 
+function _cpParse(css){
+  const c=document.createElement('canvas').getContext('2d');
+  c.fillStyle='#808080'; c.fillStyle=String(css||'');
+  const s=c.fillStyle;
+  if(s[0]==='#') return [parseInt(s.slice(1,3),16),parseInt(s.slice(3,5),16),parseInt(s.slice(5,7),16),1];
+  const m=/rgba?\(([^)]+)\)/.exec(s);
+  const p=m?m[1].split(',').map(parseFloat):[128,128,128,1];
+  return [p[0],p[1],p[2],p.length>3?p[3]:1];
+}
+function _cpLum(c){
+  const f=v=>{v/=255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4);};
+  return .2126*f(c[0])+.7152*f(c[1])+.0722*f(c[2]);
+}
+function _cpRatio(a,b){const x=_cpLum(a),y=_cpLum(b);return (Math.max(x,y)+.05)/(Math.min(x,y)+.05);}
+function cntPillColors(headerCss){
+  let h=_cpParse(headerCss);
+  if(h[3]<1) h=[0,1,2].map(i=>h[i]*h[3]+255*(1-h[3])).concat([1]);
+  const dark={bg:'rgba(0,0,0,.55)',fg:'#ffffff',a:[0,0,0,.55],t:[255,255,255]};
+  const light={bg:'rgba(255,255,255,.85)',fg:'#1b1b1b',a:[255,255,255,.85],t:[27,27,27]};
+  const ok=o=>{
+    const p=[0,1,2].map(i=>o.a[i]*o.a[3]+h[i]*(1-o.a[3]));
+    return _cpRatio(o.t,p)>=4.5 && _cpRatio(p,h)>=1.5;
+  };
+  const first=_cpLum(h)<.06?light:dark, second=first===dark?light:dark;
+  const r=ok(first)?first:(ok(second)?second:first);
+  return {bg:r.bg,fg:r.fg};
+}
+function _applyCntPill(el,nd){
+  const pill=el.querySelector('.ncnt'), hd=el.querySelector('.nh');
+  if(!pill||!hd) return;
+  let col=nd.color||'';
+  if(!col){ col=getComputedStyle(hd).backgroundColor; if(!col||col==='transparent'||/rgba\(.*,\s*0\)$/.test(col)) col='#808080'; }
+  const k=cntPillColors(col);
+  pill.style.background=k.bg; pill.style.color=k.fg;
+}
 function bindNode(el,nd) {
   el.className='nd t-'+nd.type;
   if(nd.color) el.style.setProperty('--band-color',nd.color);
   else el.style.removeProperty('--band-color');
   {const _nh=el.querySelector('.nh'); if(_nh) _nh.style.background=nd.color?nd.color:'';}
+  _applyCntPill(el,nd);
   // 카드 전체에서 드래그 가능 — 단, 멤버 행(.mr)·액션 버튼(.nact) 위는 각자 핸들러로 양보
   // 빈 카드(멤버 0)도 본문 영역에서 드래그 시작 가능
   el.onmousedown=e=>{
@@ -2870,10 +2906,13 @@ document.addEventListener('keydown',e=>{
 function fitScreen(){
   if(!S.nodes.length) return;
   let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
-  S.nodes.forEach(n=>{
+  const _H=collHidden();
+  S.nodes.filter(n=>!_H.has(n.id)).forEach(n=>{
     x0=Math.min(x0,n.x); y0=Math.min(y0,n.y);
     x1=Math.max(x1,n.x+NW); y1=Math.max(y1,n.y+nh(n));
   });
+  { const z=tfZoneInfo(); if(z){ x0=Math.min(x0,z.x); y0=Math.min(y0,z.y); x1=Math.max(x1,z.x+z.w); y1=Math.max(y1,z.y+z.h); } }
+  if(!isFinite(x0)) return;
   const w=document.getElementById('wrap');
   const cvs=document.getElementById('canvas');
   const sc=Math.min(w.clientWidth/(x1-x0+160), w.clientHeight/(y1-y0+160), 1.4)*.88;
@@ -4447,8 +4486,9 @@ function exportPNG(){
       if(_c>0){
         ctx.save(); ctx.font='9px sans-serif'; ctx.textBaseline='middle'; ctx.textAlign='right';
         const _t=_c+'명', _w=ctx.measureText(_t).width+12, _rx=x+NW-7;
-        ctx.fillStyle='rgba(0,0,0,0.55)'; ctx.fillRect(_rx-_w,y+3,_w,12);  // 화면의 .ncnt와 같은 어두운 반투명 알약
-        ctx.fillStyle='#fff'; ctx.fillText(_t,_rx-6,y+9.5);
+        const _k=cntPillColors((hcs&&hcs.backgroundColor)||'#eee');
+        ctx.fillStyle=_k.bg; ctx.fillRect(_rx-_w,y+3,_w,12);  // 화면의 .ncnt와 같은 색 규칙
+        ctx.fillStyle=_k.fg; ctx.fillText(_t,_rx-6,y+9.5);
         ctx.restore();
       }
     }
