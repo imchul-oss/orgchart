@@ -274,8 +274,7 @@ body.present #tb-more,body.present #tb-more-panel{display:none!important;}
 .ncnt{z-index:3;}
 .ncnt-br{top:calc(var(--hh) - 16px);}
 body.ro .ncnt,body.present .ncnt{right:7px;}
-.ncnt.ncnt-tc,.ncnt.ncnt-bc,body.ro .ncnt.ncnt-tc,body.ro .ncnt.ncnt-bc,body.present .ncnt.ncnt-tc,body.present .ncnt.ncnt-bc{left:50%;right:auto;transform:translateX(-50%);}
-.ncnt.ncnt-bc,body.ro .ncnt.ncnt-bc,body.present .ncnt.ncnt-bc{top:calc(var(--hh) - 16px);}
+.ncnt.ncnt-mr{top:calc(var(--hh) / 2 - 6px);}
 .ncnt.ncnt-badge,body.ro .ncnt.ncnt-badge,body.present .ncnt.ncnt-badge{top:0;right:0;transform:translate(50%,-50%);z-index:6;}
 #mtip{position:fixed;display:none;z-index:99999;background:rgba(20,20,24,.95);color:#fff;font-size:11px;line-height:1.5;padding:7px 10px;border-radius:6px;max-width:260px;pointer-events:none;word-break:break-all;box-shadow:0 2px 8px rgba(0,0,0,.35);}
 #mtip b{font-size:12px;}
@@ -860,7 +859,7 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
         </div>
         <div class="opt-row">
           <label class="opt-lbl" style="min-width:0"><input type="checkbox" id="opt-showcnt" checked onchange="OPT.showCnt=this.checked;render();saveOptLS()"> 카드에 인원 수 표시</label>
-          <label class="opt-lbl" style="min-width:0">위치 <select id="opt-cntpos" onchange="OPT.cntPos=this.value;render();saveOptLS()"><option value="tr">오른쪽 위</option><option value="tc">가운데 위</option><option value="br">오른쪽 아래</option><option value="bc">가운데 아래</option><option value="badge">모서리 배지</option></select></label>
+          <label class="opt-lbl" style="min-width:0">위치 <select id="opt-cntpos" onchange="OPT.cntPos=this.value;render();saveOptLS()"><option value="tr">오른쪽 위</option><option value="mr">오른쪽 가운데</option><option value="br">오른쪽 아래</option><option value="badge">모서리 배지</option></select></label>
           <label class="opt-lbl" style="min-width:0">색 <input type="color" id="opt-cntcol" value="#808080" oninput="OPT.cntColor=this.value;render();saveOptLS()"> <button type="button" id="opt-cntcol-auto" onclick="OPT.cntColor='';_setCntCtl();render();saveOptLS()">자동</button></label>
         </div>
         <div class="opt-row">
@@ -1738,7 +1737,7 @@ function _setCntCtl(){
   const a=document.getElementById('opt-cntpos'), b=document.getElementById('opt-cntcol');
   if(a)a.value=_cntPosVal(); if(b)b.value=_cntColorVal()||'#808080';
 }
-function _cntPosVal(){return ['tc','br','bc','badge'].indexOf(OPT.cntPos)>=0?OPT.cntPos:'tr';}
+function _cntPosVal(){return ['mr','br','badge'].indexOf(OPT.cntPos)>=0?OPT.cntPos:'tr';}
 function _cntColorVal(){return /^#[0-9a-fA-F]{6}$/.test(OPT.cntColor||'')?OPT.cntColor:'';}
 function cntFixedColors(hex){
   const c=_cpParse(hex), t=[255,255,255], d=[27,27,27];
@@ -4231,7 +4230,7 @@ function _applyOptObj(d){
     applyAllStatusCSS();
   }
   OPT.showCnt=d.showCnt!==false;{const _c=document.getElementById('opt-showcnt');if(_c)_c.checked=OPT.showCnt;}
-  OPT.cntPos=(d.cntPos==='tr'||d.cntPos==='tc'||d.cntPos==='br'||d.cntPos==='bc'||d.cntPos==='badge')?d.cntPos:'tr';
+  OPT.cntPos=(d.cntPos==='tr'||d.cntPos==='mr'||d.cntPos==='br'||d.cntPos==='badge')?d.cntPos:'tr';
   OPT.cntColor=(typeof d.cntColor==='string'&&/^#[0-9a-fA-F]{6}$/.test(d.cntColor))?d.cntColor:'';
   _setCntCtl();
   if(d.nw) NW=d.nw;
@@ -4509,8 +4508,8 @@ function exportPNG(){
       if(_c>0){
         ctx.save(); ctx.font='9px sans-serif'; ctx.textBaseline='middle'; ctx.textAlign='right';
         const _t=_c+'명', _w=ctx.measureText(_t).width+12, _pos=_cntPosVal();
-        const _rx=_pos==='badge'?x+NW+_w/2:((_pos==='tc'||_pos==='bc')?x+NW/2+_w/2:x+NW-7);
-        const _py=_pos==='badge'?y-6:((_pos==='br'||_pos==='bc')?y+CUR_HH-16:y+3);
+        const _rx=_pos==='badge'?x+NW+_w/2:x+NW-7;
+        const _py=_pos==='badge'?y-6:(_pos==='br'?y+CUR_HH-16:(_pos==='mr'?y+CUR_HH/2-6:y+3));
         const _fx=_cntColorVal();
         const _k=_fx?cntFixedColors(_fx):cntPillColors((hcs&&hcs.backgroundColor)||'#eee');
         ctx.fillStyle=_k.bg; ctx.fillRect(_rx-_w,_py,_w,12);  // 화면의 .ncnt와 같은 위치/색 규칙
