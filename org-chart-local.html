@@ -4406,7 +4406,7 @@ function exportPNG(){
       if(_c>0){
         ctx.save(); ctx.font='9px sans-serif'; ctx.textBaseline='middle'; ctx.textAlign='right';
         const _t=_c+'명', _w=ctx.measureText(_t).width+12, _rx=x+NW-7;
-        ctx.fillStyle='rgba(255,255,255,0.22)'; ctx.fillRect(_rx-_w,y+3,_w,12);
+        ctx.fillStyle='rgba(0,0,0,0.55)'; ctx.fillRect(_rx-_w,y+3,_w,12);  // 화면의 .ncnt와 같은 어두운 반투명 알약
         ctx.fillStyle='#fff'; ctx.fillText(_t,_rx-6,y+9.5);
         ctx.restore();
       }
