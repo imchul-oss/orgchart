@@ -271,7 +271,10 @@ body.present #tb-more,body.present #tb-more-panel{display:none!important;}
 /* Action buttons (hover) */
 .nact{position:absolute;top:6px;right:7px;opacity:0;transition:.15s;}
 .ncnt{position:absolute;top:3px;right:36px;font-size:9px;line-height:12px;padding:0 6px;border-radius:8px;background:rgba(0,0,0,.55);color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.28);pointer-events:none;white-space:nowrap;}  /* 흰 글자 대비 4.5 이상: 흰 헤더 위에서도 4.76 */
+.ncnt{z-index:3;}
+.ncnt-br{top:calc(var(--hh) - 16px);}
 body.ro .ncnt,body.present .ncnt{right:7px;}
+.ncnt.ncnt-badge,body.ro .ncnt.ncnt-badge,body.present .ncnt.ncnt-badge{top:0;right:0;transform:translate(50%,-50%);z-index:6;}
 #mtip{position:fixed;display:none;z-index:99999;background:rgba(20,20,24,.95);color:#fff;font-size:11px;line-height:1.5;padding:7px 10px;border-radius:6px;max-width:260px;pointer-events:none;word-break:break-all;box-shadow:0 2px 8px rgba(0,0,0,.35);}
 #mtip b{font-size:12px;}
 body.present #mtip{display:none!important;}
@@ -529,11 +532,12 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
   #canvas{min-width:0!important;min-height:0!important;}
 }
 
-.ctog{position:absolute;left:50%;top:100%;transform:translateX(-50%) scale(var(--ctog-k,1));transform-origin:50% 0;min-width:16px;height:16px;padding:0 4px;box-sizing:border-box;border-radius:8px;border:1px solid #888;background:#fff;color:#333;font:10px/14px sans-serif;text-align:center;cursor:pointer;z-index:5;}
+.ctog{position:absolute;left:50%;top:100%;transform:translateX(-50%) scale(var(--ctog-k,1));transform-origin:50% 0;min-width:18px;height:18px;padding:0 4px;box-sizing:border-box;border-radius:9px;border:0;background:#3a3a3a;color:#fff;font:11px/16px sans-serif;text-align:center;cursor:pointer;z-index:5;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .15s;}
 /* 가로 배치(posOrient right/left)에서는 자식이 있는 쪽 가장자리에, 세로 중앙으로 — 멤버 행을 덮지 않도록 가장자리 바깥에 붙인다 */
 .ctog-r{left:100%;top:50%;transform:translateY(-50%) scale(var(--ctog-k,1));transform-origin:0 50%;}
 .ctog-l{left:auto;right:100%;top:50%;transform:translateY(-50%) scale(var(--ctog-k,1));transform-origin:100% 50%;}
-.ctog:hover{background:#eef;}
+.nd:hover .ctog,.ctog.ctog-on{opacity:1;visibility:visible;pointer-events:auto;}
+.ctog:hover{background:#000;}
 @media print{.ctog,#btn-expand-all{display:none!important;}}
 </style>
 </head>
@@ -854,6 +858,8 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
         </div>
         <div class="opt-row">
           <label class="opt-lbl" style="min-width:0"><input type="checkbox" id="opt-showcnt" checked onchange="OPT.showCnt=this.checked;render();saveOptLS()"> 카드에 인원 수 표시</label>
+          <label class="opt-lbl" style="min-width:0">위치 <select id="opt-cntpos" onchange="OPT.cntPos=this.value;render();saveOptLS()"><option value="tr">오른쪽 위</option><option value="br">오른쪽 아래</option><option value="badge">모서리 배지</option></select></label>
+          <label class="opt-lbl" style="min-width:0">색 <input type="color" id="opt-cntcol" value="#808080" oninput="OPT.cntColor=this.value;render();saveOptLS()"> <button type="button" id="opt-cntcol-auto" onclick="OPT.cntColor='';_setCntCtl();render();saveOptLS()">자동</button></label>
         </div>
         <div class="opt-row">
           <span class="opt-lbl">카드 너비</span>
@@ -1067,7 +1073,7 @@ const OPT = {
   uiMint:'#40D2A7', uiSky:'#60DCF8', uiCoral:'#FF8770', topbarBg:'#2C2C2C',
   statsBg:'#1C1C20', stbarBg:'#1A1A1A',
   // 카드 스타일
-  cardRadius:8, shadowA:0.11, showCnt:true,
+  cardRadius:8, shadowA:0.11, showCnt:true, cntPos:'tr', cntColor:'',
   // 헤더 배경색
   hdrTop:'#1A1A1A', hdrL1:'#2C2C2C', hdrL2:'#383838', hdrL3:'#424242',
   hdrL4:'#4A4A4A', hdrL5:'#525252', hdrTf:'#30304A', hdrSide:'#323232',
@@ -1574,6 +1580,8 @@ function cntPillColors(headerCss){
 function _applyCntPill(el,nd){
   const pill=el.querySelector('.ncnt'), hd=el.querySelector('.nh');
   if(!pill||!hd) return;
+  const fx=_cntColorVal();
+  if(fx){ const f=cntFixedColors(fx); pill.style.background=f.bg; pill.style.color=f.fg; return; }
   let col=nd.color||'';
   if(!col){ col=getComputedStyle(hd).backgroundColor; if(!col||col==='transparent'||/rgba\(.*,\s*0\)$/.test(col)) col='#808080'; }
   const k=cntPillColors(col);
@@ -1716,14 +1724,23 @@ function nodeHTML(nd) {
   const _cn=OPT.showCnt!==false?headCount(nd):0;
   return `
     <div class="nh">
-      ${_cn>0?`<span class="ncnt">${_cn}명</span>`:''}
       <div class="nen">${esc(nd.en||'')}</div>
       <div class="nko">${esc(nd.ko||'')}</div>
       <div class="nact">
         <button class="nab" onclick="openEdit('${nd.id}')" title="수정">✏</button>
       </div>
     </div>
-    <div class="nb">${av}</div>`;
+    <div class="nb">${av}</div>${_cn>0?`<span class="ncnt ncnt-${_cntPosVal()}">${_cn}명</span>`:''}`;
+}
+function _setCntCtl(){
+  const a=document.getElementById('opt-cntpos'), b=document.getElementById('opt-cntcol');
+  if(a)a.value=_cntPosVal(); if(b)b.value=_cntColorVal()||'#808080';
+}
+function _cntPosVal(){return (OPT.cntPos==='br'||OPT.cntPos==='badge')?OPT.cntPos:'tr';}
+function _cntColorVal(){return /^#[0-9a-fA-F]{6}$/.test(OPT.cntColor||'')?OPT.cntColor:'';}
+function cntFixedColors(hex){
+  const c=_cpParse(hex), t=[255,255,255], d=[27,27,27];
+  return {bg:hex,fg:_cpRatio(t,c)>=_cpRatio(d,c)?'#ffffff':'#1b1b1b'};
 }
 
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
@@ -3813,6 +3830,7 @@ function openOptions(){
   sl('opt-nw',OPT.nw); sl('opt-bw',OPT.bandW);
   sl('opt-cr', OPT.cardRadius);
   {const el=document.getElementById('opt-showcnt');if(el)el.checked=OPT.showCnt!==false;}
+  _setCntCtl();
   sv('opt-sha', OPT.shadowA);
   const _shav=document.getElementById('opt-sha-v'); if(_shav) _shav.textContent=Math.round(OPT.shadowA*100)+'%';
   {const w=document.getElementById('opt-wrap'),wv=document.getElementById('opt-wrap-v');
@@ -4211,6 +4229,9 @@ function _applyOptObj(d){
     applyAllStatusCSS();
   }
   OPT.showCnt=d.showCnt!==false;{const _c=document.getElementById('opt-showcnt');if(_c)_c.checked=OPT.showCnt;}
+  OPT.cntPos=(d.cntPos==='tr'||d.cntPos==='br'||d.cntPos==='badge')?d.cntPos:'tr';
+  OPT.cntColor=(typeof d.cntColor==='string'&&/^#[0-9a-fA-F]{6}$/.test(d.cntColor))?d.cntColor:'';
+  _setCntCtl();
   if(d.nw) NW=d.nw;
   // 카테고리·현황그룹은 배열 형태를 강제 - 문자열이 들어오면 렌더 체인이 중간에 죽는다 (리뷰 지적)
   const _strArr=a=>Array.isArray(a)?a.filter(x=>typeof x==='string').map(x=>x.slice(0,60)):null;
@@ -4485,10 +4506,13 @@ function exportPNG(){
       const _c=headCount(nd);
       if(_c>0){
         ctx.save(); ctx.font='9px sans-serif'; ctx.textBaseline='middle'; ctx.textAlign='right';
-        const _t=_c+'명', _w=ctx.measureText(_t).width+12, _rx=x+NW-7;
-        const _k=cntPillColors((hcs&&hcs.backgroundColor)||'#eee');
-        ctx.fillStyle=_k.bg; ctx.fillRect(_rx-_w,y+3,_w,12);  // 화면의 .ncnt와 같은 색 규칙
-        ctx.fillStyle=_k.fg; ctx.fillText(_t,_rx-6,y+9.5);
+        const _t=_c+'명', _w=ctx.measureText(_t).width+12, _pos=_cntPosVal();
+        const _rx=_pos==='badge'?x+NW+_w/2:x+NW-7;
+        const _py=_pos==='badge'?y-6:(_pos==='br'?y+CUR_HH-16:y+3);
+        const _fx=_cntColorVal();
+        const _k=_fx?cntFixedColors(_fx):cntPillColors((hcs&&hcs.backgroundColor)||'#eee');
+        ctx.fillStyle=_k.bg; ctx.fillRect(_rx-_w,_py,_w,12);  // 화면의 .ncnt와 같은 위치/색 규칙
+        ctx.fillStyle=_k.fg; ctx.fillText(_t,_rx-6,_py+6.5);
         ctx.restore();
       }
     }
@@ -5096,7 +5120,8 @@ function collDecorate(){
     var old=el.querySelector('.ctog'); if(old) old.remove();
     if(!(S.conns||[]).some(function(c){return c.f===nd.id;})) return;
     var b=document.createElement('div'); b.className='ctog'+(po==='right'?' ctog-r':po==='left'?' ctog-l':''); b.setAttribute('role','button');
-    b.textContent=cs.has(nd.id)?('+'+collDesc(nd.id).size):'▾';
+    if(cs.has(nd.id)) b.classList.add('ctog-on');
+    b.textContent=cs.has(nd.id)?('+'+collDesc(nd.id).size):'−';
     var stop=function(e){ e.stopPropagation(); };
     b.addEventListener('mousedown',stop); b.addEventListener('dblclick',stop);
     b.addEventListener('click',function(e){ e.stopPropagation(); e.preventDefault(); collToggle(nd.id); });
