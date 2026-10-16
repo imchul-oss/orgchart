@@ -4311,7 +4311,8 @@ function dl(data,name,type,bom=true){
 
 function _chartBounds(){
   let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
-  S.nodes.forEach(n=>{
+  const _H=collHidden();  // 접힌 하위 조직은 인쇄 범위에서 뺀다 (exportPNG와 동일)
+  S.nodes.filter(n=>!_H.has(n.id)).forEach(n=>{
     x0=Math.min(x0,n.x); y0=Math.min(y0,n.y);
     x1=Math.max(x1,n.x+NW); y1=Math.max(y1,n.y+nh(n));
   });
