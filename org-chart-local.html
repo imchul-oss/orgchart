@@ -291,6 +291,12 @@ body.present #mtip{display:none!important;}
 .nb:empty::before{content:'＋';display:flex;align-items:center;justify-content:center;height:34px;color:#C8CDD8;font-size:15px;pointer-events:none;}
 .mr{padding:4px 10px 4px calc(var(--band-w) + 8px);height:var(--mh);position:relative;display:flex;align-items:center;gap:0;border-top:1px solid var(--row-border);box-sizing:border-box;overflow:hidden;}
 .mr:nth-child(even){background:var(--row-even);}
+.nb.mcol{display:grid;padding-left:var(--band-w);background:linear-gradient(var(--band-color,var(--mint)),var(--band-color,var(--mint))) left top/var(--band-w) 100% no-repeat,var(--card-bg);}
+:where(.nb.mcol)>.mr:nth-child(even){background:none;}
+.mr.mr-ev{background:var(--row-even);}
+.nb.mcol>.mr[data-cmp="new"]{background:rgba(46,160,67,.18);}
+.nb.mcol>.mr[data-cmp="moved"]{background:rgba(56,139,253,.18);}
+.nb.mcol>.mr[data-cmp="changed"]{background:rgba(227,160,8,.22);}
 .mband{position:absolute;left:0;top:0;bottom:0;width:var(--band-w);}
 .mi{flex:1;min-width:0;overflow:hidden;}
 .mn-row{display:flex;align-items:flex-end;gap:8px;overflow:hidden;}
@@ -1208,7 +1214,11 @@ function init() {
 }
 
 // ═══ Node height
-function nh(nd) { const _m=(nd.m||[]).length; return CUR_HH + (_m ? _m*CUR_MH : 34); }  // 빈 카드는 .nb:empty min-height(34)와 일치
+function nh(nd) { const _m=(nd.m||[]).length; return CUR_HH + (_m ? Math.ceil(_m/_mcOf(nd))*CUR_MH : 34); }  // 빈 카드는 .nb:empty min-height(34)와 일치
+
+// ═══ 인원 열 수 (nd.mc: 2·3·4, 없으면 1열) — 카드 폭 = 색띠 + 열 수 × 일반 카드의 멤버 영역 폭
+function _mcOf(nd){ const c=nd&&nd.mc; return (c===2||c===3||c===4)?c:1; }
+function cardW(nd){ const c=_mcOf(nd); return c===1?NW:OPT.bandW+c*(NW-OPT.bandW); }
 
 // ═══ Grid — 스크롤·줌에 맞춰 background-position 재계산
 function updateGrid(){
@@ -1243,7 +1253,7 @@ function cmpExit(){
 function cmpFocus(id){
   const nd=S.nodes.find(n=>String(n.id)===String(id)); const w=document.getElementById('wrap');
   if(!nd||!w) return;
-  w.scrollLeft=Math.max(0,(nd.x+NW/2)*S.scale-w.clientWidth/2);
+  w.scrollLeft=Math.max(0,(nd.x+cardW(nd)/2)*S.scale-w.clientWidth/2);
   w.scrollTop=Math.max(0,(nd.y+nh(nd)/2)*S.scale-w.clientHeight/2);
 }
 function cmpRun(){
@@ -1353,7 +1363,7 @@ function layoutLint(){
   const overlaps=[];
   for(let i=0;i<nodes.length;i++) for(let j=i+1;j<nodes.length;j++){
     const A=nodes[i],B=nodes[j],ah=nh(A),bh=nh(B);
-    if(A.x<B.x+NW && B.x<A.x+NW && A.y<B.y+bh && B.y<A.y+ah) overlaps.push([A,B]);
+    if(A.x<B.x+cardW(B) && B.x<A.x+cardW(A) && A.y<B.y+bh && B.y<A.y+ah) overlaps.push([A,B]);
   }
   const crossed=[];
   nodes.forEach(n=>{
@@ -1361,7 +1371,7 @@ function layoutLint(){
     const hit=segs.some(s=>{
       const x1=Math.min(s[0][0],s[1][0]),x2=Math.max(s[0][0],s[1][0]);
       const y1=Math.min(s[0][1],s[1][1]),y2=Math.max(s[0][1],s[1][1]);
-      return x2>n.x+3 && x1<n.x+NW-3 && y2>n.y+3 && y1<n.y+h-3;
+      return x2>n.x+3 && x1<n.x+cardW(n)-3 && y2>n.y+3 && y1<n.y+h-3;
     });
     if(hit) crossed.push(n);
   });
@@ -1372,14 +1382,14 @@ function layoutLint(){
     let bad=false;
     if(!f||!t) bad=true;
     else if(t.type!=='side'){
-      const tx=t.x+NW/2, ty=t.y;
+      const tx=t.x+cardW(t)/2, ty=t.y;
       bad=!segs.some(s=>{
         if(Math.abs(s[0][0]-s[1][0])>2) return false;
         return s.some(p=>Math.abs(p[0]-tx)<=2 && Math.abs(p[1]-ty)<=2);
       }) && !segs.some(s=>{
         if(Math.abs(s[0][1]-s[1][1])>2) return false;
         const th=nh(t);
-        return s.some(p=>(Math.abs(p[0]-t.x)<=2||Math.abs(p[0]-(t.x+NW))<=2) && p[1]>=t.y && p[1]<=t.y+th);
+        return s.some(p=>(Math.abs(p[0]-t.x)<=2||Math.abs(p[0]-(t.x+cardW(t)))<=2) && p[1]>=t.y && p[1]<=t.y+th);
       });
     }
     if(bad) broken.push(c);
@@ -1434,7 +1444,7 @@ function lintGo(el){
   if(!ids.length) return;
   const n=S.nodes.find(x=>String(x.id)===ids[0]); if(!n) return;
   const w=document.getElementById('wrap');
-  w.scrollLeft=Math.max(0,(n.x+NW/2)*S.scale-w.clientWidth/2);
+  w.scrollLeft=Math.max(0,(n.x+cardW(n)/2)*S.scale-w.clientWidth/2);
   w.scrollTop=Math.max(0,(n.y+nh(n)/2)*S.scale-w.clientHeight/2);
   const c=document.getElementById('n'+n.id);
   if(c){ c.classList.add('lint-flash'); setTimeout(()=>c.classList.remove('lint-flash'),900); }
@@ -1481,7 +1491,7 @@ function tfZoneInfo(){
   gs.forEach(g=>{
     g.ids.forEach(id=>{
       const n=S.nodes.find(q=>q.id===id); if(!n||_H.has(id)) return;
-      x0=Math.min(x0,n.x); y0=Math.min(y0,n.y); x1=Math.max(x1,n.x+NW); y1=Math.max(y1,n.y+nh(n));
+      x0=Math.min(x0,n.x); y0=Math.min(y0,n.y); x1=Math.max(x1,n.x+cardW(n)); y1=Math.max(y1,n.y+nh(n));
     });
     const s=S.nodes.find(q=>q.id===g.root), p=tfOwnerOf(g.root);
     if(s&&p&&!_H.has(s.id)) owners.push({x:s.x,y:s.y-22,text:'주관: '+(p.ko||p.en||'')});
@@ -1517,7 +1527,7 @@ function tfHiddenConnSet(){
 
 function updateCanvas() {
   let mx=0,my=0;
-  S.nodes.forEach(n=>{ mx=Math.max(mx,n.x+NW+80); my=Math.max(my,n.y+nh(n)+80); });
+  S.nodes.forEach(n=>{ mx=Math.max(mx,n.x+cardW(n)+80); my=Math.max(my,n.y+nh(n)+80); });
   { const z=tfZoneInfo(); if(z){ mx=Math.max(mx,z.x+z.w+80); my=Math.max(my,z.y+z.h+80); } }
   const c=document.getElementById('canvas');
   c.style.width=Math.max(mx,1800)+'px';
@@ -1590,6 +1600,7 @@ function _applyCntPill(el,nd){
 }
 function bindNode(el,nd) {
   el.className='nd t-'+nd.type;
+  if(_mcOf(nd)>1) el.style.width=cardW(nd)+'px'; else el.style.removeProperty('width');
   if(nd.color) el.style.setProperty('--band-color',nd.color);
   else el.style.removeProperty('--band-color');
   {const _nh=el.querySelector('.nh'); if(_nh) _nh.style.background=nd.color?nd.color:'';}
@@ -1645,12 +1656,13 @@ document.addEventListener('dragend', _mrClearIndicators, true);
 document.addEventListener('drop',    _mrClearIndicators, true);
 document.addEventListener('keydown', e=>{ if(e.key==='Escape' && _mrDrag){ _mrClearIndicators(); _mrDrag=null; } });
 // Compute insert index inside this .nb based on mouse Y
-function _mrComputeIdx(nb, clientY){
+function _mrComputeIdx(nb, clientY, clientX){
   const rows = [...nb.querySelectorAll('.mr')];
   let idx = rows.length;
+  const multi = nb.classList.contains('mcol');
   for(let i=0; i<rows.length; i++){
     const r = rows[i].getBoundingClientRect();
-    if(clientY < r.top + r.height/2){ idx = i; break; }
+    if(multi ? (clientY < r.top || (clientY < r.bottom && clientX < r.left + r.width/2)) : clientY < r.top + r.height/2){ idx = i; break; }
   }
   return { idx, rows };
 }
@@ -1661,7 +1673,7 @@ function mrDragOver(e,toNid){
   e.dataTransfer.dropEffect = 'move';
   const nb = e.currentTarget;
   nb.classList.add('mr-drop-target');
-  const { idx, rows } = _mrComputeIdx(nb, e.clientY);
+  const { idx, rows } = _mrComputeIdx(nb, e.clientY, e.clientX);
   nb.dataset.dropIdx = String(idx);
   // refresh row indicators
   rows.forEach(r=>r.classList.remove('mr-drop-before','mr-drop-after'));
@@ -1685,7 +1697,7 @@ function mrDrop(e,toNid){
   let toIdx = parseInt(nb.dataset.dropIdx);
   if(!Number.isFinite(toIdx)){
     // Fallback: recompute from cursor
-    toIdx = _mrComputeIdx(nb, e.clientY).idx;
+    toIdx = _mrComputeIdx(nb, e.clientY, e.clientX).idx;
   }
   _mrClearIndicators();
   const { fromNid, fromIdx } = _mrDrag;
@@ -1711,8 +1723,9 @@ function headCount(nd){
   return (nd.m||[]).filter(m=>!exK.has(m.s||defKey)).length;
 }
 function nodeHTML(nd) {
+  const _mc=(nd.m||[]).length?_mcOf(nd):1;  // 빈 카드는 1열 본문(+) 그대로, 폭만 넓다
   const av=nd.m.map((m,i)=>`
-    <div class="mr" draggable="${ADMIN?'true':'false'}" data-nid="${nd.id}" data-mi="${i}">
+    <div class="mr${_mc>1&&Math.floor(i/_mc)%2===1?' mr-ev':''}" draggable="${ADMIN?'true':'false'}" data-nid="${nd.id}" data-mi="${i}">
       <div class="mband" style="background:${statusColor(m.s)}"></div>
       <div class="mi">
         <div class="mn-row">
@@ -1731,7 +1744,7 @@ function nodeHTML(nd) {
         <button class="nab" onclick="openEdit('${nd.id}')" title="수정">✏</button>
       </div>
     </div>
-    <div class="nb">${av}</div>${_cn>0?`<span class="ncnt ncnt-${_cntPosVal()}">${_cn}명</span>`:''}`;
+    <div class="nb${_mc>1?' mcol':''}"${_mc>1?` style="grid-template-columns:repeat(${_mc},minmax(0,1fr))"`:''}>${av}</div>${_cn>0?`<span class="ncnt ncnt-${_cntPosVal()}">${_cn}명</span>`:''}`;
 }
 function _setCntCtl(){
   const a=document.getElementById('opt-cntpos'), b=document.getElementById('opt-cntcol');
@@ -1823,10 +1836,10 @@ function drawConns() {
       if(bAll.length&&besideAllItems.length&&((bSfx==='_s')===besideAnySolid)){
         const Cn=besideCols(f);
         const ay=f.y+CUR_HH/2;
-        const pcx=f.x+NW/2;
+        const pcx=f.x+cardW(f)/2;
         const clsOf=c=>c.d?'cpath-dash':'cpath';
         const hlOf=c=>c.d?'cpath-hl-dash':'cpath-hl';
-        const sideOfT=t=>(t.x+NW/2<pcx)?-1:1;
+        const sideOfT=t=>(t.x+cardW(t)/2<pcx)?-1:1;
         const cmpT=(a,b)=>(a.y-b.y)||(Math.abs(a.x-f.x)-Math.abs(b.x-f.x));
         [1,-1].forEach(dir=>{
           const mine=besideAllItems.filter(x=>sideOfT(x.t)===dir);
@@ -1834,8 +1847,8 @@ function drawConns() {
           const ord=[];
           mine.forEach(x=>{ if(!ord.includes(x.t)) ord.push(x.t); });
           ord.sort(cmpT);
-          const E=dir>0?Math.round(f.x+NW):Math.round(f.x);
-          const xs=dir>0?Math.round(f.x+NW+Math.round(OPT.colGap/2)):Math.round(f.x-Math.round(OPT.colGap/2));
+          const E=dir>0?Math.round(f.x+cardW(f)):Math.round(f.x);
+          const xs=dir>0?Math.round(f.x+cardW(f)+Math.round(OPT.colGap/2)):Math.round(f.x-Math.round(OPT.colGap/2));
           const chits=[];
           const mkG=(c0,hlD,hitD,p,k)=>{
             chits.push({c:c0,d:hitD,hl:hlD,p,k});
@@ -1880,7 +1893,7 @@ function drawConns() {
             }
             const laterSolid=later.some(x=>!x.c.d);
             mine.forEach(({c,t})=>{
-              const bx=dir>0?Math.round(t.x):Math.round(t.x+NW), by2=by2Of(t);
+              const bx=dir>0?Math.round(t.x):Math.round(t.x+cardW(t)), by2=by2Of(t);
               const isFirst=first===t;
               const mx=Math.round((E+bx)/2);
               const full=Math.abs(ay-by2)<0.5?`M${E} ${ay} L${bx} ${by2}`:`M${E} ${ay} L${mx} ${ay} L${mx} ${by2} L${bx} ${by2}`;
@@ -1929,15 +1942,15 @@ function drawConns() {
               const ru=uniform(rm);
               if(ru){
                 let far=null;
-                rm.forEach(({t})=>{ const cx=t.x+NW/2; if(far===null||Math.abs(cx-xs)>Math.abs(far-xs)) far=cx; });
+                rm.forEach(({t})=>{ const cx=t.x+cardW(t)/2; if(far===null||Math.abs(cx-xs)>Math.abs(far-xs)) far=cx; });
                 addPath(svg,`M${xs} ${yb} L${far} ${yb}`,ru);
               } else {
                 [1,-1].forEach(sg=>{
-                  const grp=rm.filter(x=>((x.t.x+NW/2>=xs)?1:-1)===sg).sort((a,b)=>Math.abs(a.t.x+NW/2-xs)-Math.abs(b.t.x+NW/2-xs));
+                  const grp=rm.filter(x=>((x.t.x+cardW(x.t)/2>=xs)?1:-1)===sg).sort((a,b)=>Math.abs(a.t.x+cardW(a.t)/2-xs)-Math.abs(b.t.x+cardW(b.t)/2-xs));
                   if(!grp.length) return;
                   const segs=[]; let prev=xs;
                   grp.forEach((x,i)=>{
-                    const cx=x.t.x+NW/2;
+                    const cx=x.t.x+cardW(x.t)/2;
                     if(cx!==prev) segs.push({a:prev,b:cx,s:grp.slice(i).some(y=>!y.c.d)});
                     prev=cx;
                   });
@@ -1946,7 +1959,7 @@ function drawConns() {
               }
             });
             mine.forEach(({c,t})=>{
-              const cx=t.x+NW/2, yb=t.y-10;
+              const cx=t.x+cardW(t)/2, yb=t.y-10;
               const full=`M${E} ${ay} L${xs} ${ay} L${xs} ${yb} L${cx} ${yb} L${cx} ${t.y}`;
               const hit=ord[0]===t?full:`M${xs} ${ay} L${xs} ${yb} L${cx} ${yb} L${cx} ${t.y}`;
               mkG(c,full,hit,`M${cx} ${yb} L${cx} ${t.y}`,Math.abs(cx-xs));
@@ -2079,11 +2092,11 @@ function drawConns() {
         if(rowYs.length>1){
           const rowBy=rowYs.map((ry,ri)=>ri===0?by:ry-Math.round(OPT.rowGap/2));
           const yLast=rowBy[rowBy.length-1];
-          const blockedAt=x=>S.nodes.some(n=>!_H.has(n.id)&&n.x-10<x&&x<n.x+NW+10&&n.y<yLast&&n.y+nh(n)>rowBy[0]);
+          const blockedAt=x=>S.nodes.some(n=>!_H.has(n.id)&&n.x-10<x&&x<n.x+cardW(n)+10&&n.y<yLast&&n.y+nh(n)>rowBy[0]);
           let xt=fx;
-          const hitAt=S.nodes.some(n=>!_H.has(n.id)&&n.x<fx&&fx<n.x+NW&&n.y<yLast&&n.y+nh(n)>rowBy[0]);
+          const hitAt=S.nodes.some(n=>!_H.has(n.id)&&n.x<fx&&fx<n.x+cardW(n)&&n.y<yLast&&n.y+nh(n)>rowBy[0]);
           if(hitAt){
-            for(let d=10;d<=4*NW;d+=10){
+            for(let d=10,_dm=4*Math.max(NW,...S.nodes.map(cardW));d<=_dm;d+=10){
               if(!blockedAt(fx+d)){xt=fx+d;break;}
               if(!blockedAt(fx-d)){xt=fx-d;break;}
             }
@@ -2164,8 +2177,10 @@ function addPath(svg,d,cls){
 function _sideLayout(cx){
   const {po,root,nk,tfg,tfSet,sideIds,orphans,PAD_X,PAD_Y,COL_GAP,ROW_GAP}=cx;
   const byId=id=>S.nodes.find(n=>n.id===id);
-  const gap=Math.max(60,COL_GAP), step=Math.ceil((NW+gap)/20)*20, VG=30, AG=20;
-  const colX=d=>PAD_X+d*step;
+  const gap=Math.max(60,COL_GAP), VG=30, AG=20;
+  // 열 피치: 그 열에서 가장 넓은 카드 + 간격 (모두 기본 폭이면 PAD_X+d*step 그대로)
+  const colW={};
+  const colX=d=>{ let x=PAD_X; for(let i=0;i<d;i++) x+=Math.ceil(((colW[i]||NW)+gap)/20)*20; return x; };
   const pos={}, dep={}, asidesOf={};
   const kidsOf=n=>nk(n.id).map(byId).filter(k=>k&&k._lx!==undefined&&!sideIds.has(k.id)).sort((a,b)=>a._lx-b._lx);
   const asFn=n=>(n._asides||[]).map(byId).filter(Boolean);
@@ -2189,6 +2204,7 @@ function _sideLayout(cx){
   // 남은 카드(자유 side, 고아): 트리 바로 아래 격자 — TF 구역보다 위에 두어 트리에서 오는 점선이 구역을 가로지르지 않게
   const inAs=new Set(); Object.values(asidesOf).forEach(l=>l.forEach(a=>inAs.add(a.id)));
   const rest=S.nodes.filter(n=>pos[n.id]===undefined&&!inAs.has(n.id)&&!tfSet.has(n.id));
+  const restCol={};
   if(rest.length){
     const maxD=Math.max(0,...Object.values(dep));
     const cols=Math.max(1,maxD+1);
@@ -2196,7 +2212,7 @@ function _sideLayout(cx){
     let y=Math.ceil((bottom+ROW_GAP)/20)*20;
     for(let i=0;i<rest.length;i+=cols){
       const row=rest.slice(i,i+cols);
-      row.forEach((n,j)=>{ n.x=Math.round(colX(j)/20)*20; n.y=y; });
+      row.forEach((n,j)=>{ restCol[n.id]=j; n.y=y; });
       y+=Math.ceil((Math.max(...row.map(nh))+AG+10)/20)*20;
     }
     bottom=y;
@@ -2210,13 +2226,20 @@ function _sideLayout(cx){
   });
   Object.keys(pos).forEach(id=>{
     const n=byId(id); if(!n) return;
+    const d=dep[id];
+    [n,...(asidesOf[id]||[])].forEach(q=>{ colW[d]=Math.max(colW[d]||0,cardW(q)); });
+  });
+  Object.keys(restCol).forEach(id=>{ const n=byId(id), j=restCol[id]; if(n) colW[j]=Math.max(colW[j]||0,cardW(n)); });
+  Object.keys(restCol).forEach(id=>{ const n=byId(id); if(n) n.x=Math.round(colX(restCol[id])/20)*20; });
+  Object.keys(pos).forEach(id=>{
+    const n=byId(id); if(!n) return;
     n.x=Math.round(colX(dep[id])/20)*20; n.y=Math.round(pos[id]);
     let y=n.y+nh(n)+AG;
     (asidesOf[id]||[]).forEach(a=>{ a.x=n.x; a.y=y; y+=nh(a)+AG; pos[a.id]=y; });
   });
   let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
-  S.nodes.forEach(n=>{ x0=Math.min(x0,n.x); y0=Math.min(y0,n.y); x1=Math.max(x1,n.x+NW); y1=Math.max(y1,n.y+nh(n)); });
-  if(OPT.orient==='left') S.nodes.forEach(n=>{ n.x=x0+x1-NW-n.x; });
+  S.nodes.forEach(n=>{ x0=Math.min(x0,n.x); y0=Math.min(y0,n.y); x1=Math.max(x1,n.x+cardW(n)); y1=Math.max(y1,n.y+nh(n)); });
+  if(OPT.orient==='left') S.nodes.forEach(n=>{ n.x=x0+x1-cardW(n)-n.x; });
   const w=document.getElementById('wrap');
   const vw=w.clientWidth, vh=w.clientHeight;
   const sc=Math.max(0.2,Math.min(vw/(x1-x0+PAD_X*2),vh/(y1-y0+PAD_Y*2),1.2)*0.9);
@@ -2226,7 +2249,7 @@ function _sideLayout(cx){
   cvs.style.marginLeft='';
   cvs.style.transform=`scale(${sc})`;
   render();
-  const _tx=Math.max(0,Math.round((rnd.x+NW/2)*sc-vw/2));
+  const _tx=Math.max(0,Math.round((rnd.x+cardW(rnd)/2)*sc-vw/2));
   const _ty=Math.max(0,Math.round((rnd.y+nh(rnd)/2)*sc-vh/2));
   requestAnimationFrame(()=>{ w.scrollLeft=_tx; w.scrollTop=_ty; updateGrid(); statsflAvoidCards(); });
   updateSt();
@@ -2245,7 +2268,7 @@ function _drawConnsSide(po){
     for(let i=0;i+1<pts.length;i++){
       const x1=Math.min(pts[i][0],pts[i+1][0]),x2=Math.max(pts[i][0],pts[i+1][0]);
       const y1=Math.min(pts[i][1],pts[i+1][1]),y2=Math.max(pts[i][1],pts[i+1][1]);
-      if(nodes.some(n=>x2>n.x+3&&x1<n.x+NW-3&&y2>n.y+3&&y1<n.y+nh(n)-3)) return true;
+      if(nodes.some(n=>x2>n.x+3&&x1<n.x+cardW(n)-3&&y2>n.y+3&&y1<n.y+nh(n)-3)) return true;
     }
     return false;
   };
@@ -2253,9 +2276,12 @@ function _drawConnsSide(po){
   const xs=[...new Set(nodes.map(n=>n.x))].sort((a,b)=>a-b);
   const gut=[];
   if(xs.length){
+    // 각 x에서 시작하는 카드들의 실제 오른쪽 끝을 누적해 빈 통로만 고른다
+    const rOf=x=>Math.max(...nodes.filter(n=>n.x===x).map(n=>n.x+cardW(n)));
+    let rMax=rOf(xs[0]);
     gut.push(xs[0]-30);
-    for(let i=1;i<xs.length;i++) if(xs[i]-xs[i-1]>=NW+30) gut.push(Math.round((xs[i-1]+NW+xs[i])/2));
-    gut.push(xs[xs.length-1]+NW+30);
+    for(let i=1;i<xs.length;i++){ if(xs[i]-rMax>=30) gut.push(Math.round((rMax+xs[i])/2)); rMax=Math.max(rMax,rOf(xs[i])); }
+    gut.push(rMax+30);
   }
   const maxY=nodes.length?Math.max(...nodes.map(n=>n.y+nh(n))):0;
   const ptsStr=pts=>pts.map((p,i)=>(i?'L':'M')+Math.round(p[0])+' '+Math.round(p[1])).join(' ');
@@ -2277,8 +2303,8 @@ function _drawConnsSide(po){
     else if(fSide==='top'||fSide==='bottom'){ const by=(fa.y+ta.y)/2; cands.push([[fa.x,fa.y],[fa.x,by],[ta.x,by],[ta.x,ta.y]]); }
     else { const bx=(fa.x+ta.x)/2; cands.push([[fa.x,fa.y],[bx,fa.y],[bx,ta.y],[ta.x,ta.y]]); }
     // 마주보는 가장자리 + 통로 세로선
-    const right=(t.x+NW/2)>(f.x+NW/2);
-    const fx=right?f.x+NW:f.x, tx=right?t.x:t.x+NW;
+    const right=(t.x+cardW(t)/2)>(f.x+cardW(f)/2);
+    const fx=right?f.x+cardW(f):f.x, tx=right?t.x:t.x+cardW(t);
     if(Math.abs(t.x-f.x)>=2){
       gut.slice().sort((a,b)=>Math.abs(a-(fx+tx)/2)-Math.abs(b-(fx+tx)/2)).forEach(gx=>{
         cands.push([[fx,mid(f)],[gx,mid(f)],[gx,mid(t)],[tx,mid(t)]]);
@@ -2305,13 +2331,14 @@ function _drawConnsSide(po){
       const all=conns.map(c=>({c,t:S.nodes.find(n=>n.id===c.t)})).filter(x=>x.t&&!_H.has(x.t.id));
       const isAside=x=>x.t.aside===true&&!sideIds.has(x.t.id)&&!S.conns.some(k=>k.f===x.t.id&&!sideIds.has(k.t));
       const isBeside=x=>isAside(x)||(sideIds.has(x.t.id)&&sideBesideParent(x.t.id)===fid);
-      const busItems=all.filter(x=>!isBeside(x)&&!sideIds.has(x.t.id)&&((x.t.x-f.x)*dir>NW/2));
+      const lead=n=>dir>0?n.x:n.x+cardW(n);  // 열 정렬 기준 가장자리 (left는 오른쪽 끝)
+      const busItems=all.filter(x=>!isBeside(x)&&!sideIds.has(x.t.id)&&((lead(x.t)-lead(f))*dir>cardW(f)/2));
       const busSet=new Set(busItems);
       const fy=f.y+nh(f)/2;
       all.filter(x=>!busSet.has(x)).forEach(({c,t})=>{
         let pts=null;
-        if(isBeside({c,t})&&Math.abs(t.x-f.x)<2&&t.y>f.y){
-          const xt=dir>0?f.x-14:f.x+NW+14, ex=dir>0?f.x:f.x+NW, tx=dir>0?t.x:t.x+NW, ty=t.y+nh(t)/2;
+        if(isBeside({c,t})&&Math.abs(lead(t)-lead(f))<2&&t.y>f.y){
+          const xt=dir>0?f.x-14:f.x+cardW(f)+14, ex=dir>0?f.x:f.x+cardW(f), tx=dir>0?t.x:t.x+cardW(t), ty=t.y+nh(t)/2;
           pts=[[ex,fy],[xt,fy],[xt,ty],[tx,ty]];
           if(hitsCard(pts)) pts=null;
         }
@@ -2320,8 +2347,8 @@ function _drawConnsSide(po){
         emit(c,d,d,pCls,hlCls);
       });
       if(!busItems.length) return;
-      const fx=dir>0?f.x+NW:f.x;
-      const edge=t=>dir>0?t.x:t.x+NW;
+      const fx=dir>0?f.x+cardW(f):f.x;
+      const edge=t=>dir>0?t.x:t.x+cardW(t);
       const near=Math.min(...busItems.map(x=>Math.abs(edge(x.t)-fx)));
       const bx=Math.round(fx+dir*near/2);
       const cys=busItems.map(x=>x.t.y+nh(x.t)/2);
@@ -2650,6 +2677,16 @@ function openEdit(id){
       </select>
     </div>
     <div class="fg">
+      <label class="fl">인원 열 수</label>
+      <select class="fs" id="ei-mc">
+        <option value="1" ${_mcOf(nd)===1?'selected':''}>1열 (기본)</option>
+        <option value="2" ${_mcOf(nd)===2?'selected':''}>2열</option>
+        <option value="3" ${_mcOf(nd)===3?'selected':''}>3열</option>
+        <option value="4" ${_mcOf(nd)===4?'selected':''}>4열</option>
+      </select>
+      <div style="font-size:11px;color:#999;">카드가 넓어지고 낮아집니다. 자동 배치를 누르면 주변 배치에 반영됩니다.</div>
+    </div>
+    <div class="fg">
       <label class="fl" style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" id="ei-aside" ${nd.aside===true?'checked':''}> 상위 카드 옆에 붙이기 (직속)</label>
       <div style="font-size:11px;color:#999;">배치 설정은 자동 배치를 누르면 적용됩니다.</div>
     </div>
@@ -2726,6 +2763,7 @@ function saveModal(){
   { const kn=parseInt(document.getElementById('ei-kn').value,10); if(kn>=1) nd.kn=kn; else delete nd.kn; }
   { const ad=document.getElementById('ei-ad').value; if(ad==='L'||ad==='B') nd.ad=ad; else delete nd.ad; }
   { const ac=parseInt(document.getElementById('ei-ac').value,10); if(ac===2||ac===3) nd.ac=ac; else delete nd.ac; }
+  { const mcEl=document.getElementById('ei-mc'), mc=mcEl?parseInt(mcEl.value,10):NaN; if(mc===2||mc===3||mc===4) nd.mc=mc; else delete nd.mc; }
   if(document.getElementById('ei-aside').checked) nd.aside=true; else delete nd.aside;
   const defCb=document.getElementById('ei-color-def');
   nd.color=defCb&&defCb.checked?'':document.getElementById('ei-color').value;
@@ -2823,8 +2861,8 @@ function openAddModal(){
   for(let t=0; t<60; t++){
     const hit = S.nodes.some(n=>{
       const nx = n.x||0, ny = n.y||0;
-      const nhn = (CUR_HH||70) + ((n.m||[]).length * (CUR_MH||50));
-      return Math.abs(nx-x) < NW - 10 && Math.abs(ny-y) < Math.max(nhn, ndhEst) - 10;
+      const nhn = (CUR_HH||70) + (Math.ceil((n.m||[]).length/_mcOf(n)) * (CUR_MH||50));
+      return x < nx + cardW(n) - 10 && nx < x + NW - 10 && Math.abs(ny-y) < Math.max(nhn, ndhEst) - 10;
     });
     if(!hit) break;
     x += 30; y += 30;
@@ -2859,7 +2897,7 @@ function addChild(pid){
   const id='nd'+(++S.nid);
   S.nodes.push({
     id,en:'Sub-Team',ko:'하위 조직',type,
-    x:p.x+NW+20, y:p.y+nh(p)+30, m:[]
+    x:p.x+cardW(p)+20, y:p.y+nh(p)+30, m:[]
   });
   S.conns.push({id:'e'+(++S.nid),f:pid,t:id,d:0});
   autoLayout(); openEdit(id);
@@ -2927,7 +2965,7 @@ function fitScreen(){
   const _H=collHidden();
   S.nodes.filter(n=>!_H.has(n.id)).forEach(n=>{
     x0=Math.min(x0,n.x); y0=Math.min(y0,n.y);
-    x1=Math.max(x1,n.x+NW); y1=Math.max(y1,n.y+nh(n));
+    x1=Math.max(x1,n.x+cardW(n)); y1=Math.max(y1,n.y+nh(n));
   });
   { const z=tfZoneInfo(); if(z){ x0=Math.min(x0,z.x); y0=Math.min(y0,z.y); x1=Math.max(x1,z.x+z.w); y1=Math.max(y1,z.y+z.h); } }
   if(!isFinite(x0)) return;
@@ -2989,7 +3027,10 @@ function _posCmp(po,a,b){
 function autoLayout(){
   const _po=(SHEETS[CUR_SHEET]&&SHEETS[CUR_SHEET].posOrient)||'down';
   const COL_GAP=OPT.colGap, ROW_GAP=OPT.rowGap, PAD_X=OPT.padX, PAD_Y=OPT.padY;
-  const r20=v=>Math.round(v/20)*20, c20=v=>Math.ceil(v/20)*20, STEP=c20(NW+COL_GAP);
+  const r20=v=>Math.round(v/20)*20, c20=v=>Math.ceil(v/20)*20;
+  // beside 카드 슬롯 폭 = 그 카드들 중 가장 넓은 폭 (모두 기본이면 NW), 피치 = 슬롯 + 열 간격
+  const bwOf=list=>Math.max(NW,...list.map(q=>typeof q==='object'?q:S.nodes.find(n=>n.id===q)).filter(Boolean).map(cardW));
+  const stepOf=w=>c20(w+COL_GAP);
   const sideKids={};
   S.nodes.forEach(n=>{ if(n.type!=='side') return; const pid=sideBesideParent(n.id); if(pid) (sideKids[pid]||(sideKids[pid]=[])).push(n.id); });
   const besideSide=new Set();
@@ -3105,10 +3146,10 @@ function autoLayout(){
     const fin=(r)=>{
       if(!asd.length) return r;
       asd.forEach(aid=>{const an=S.nodes.find(n=>n.id===aid); if(an&&an.type!=='side'){an._d=nd._d; an._lx=0;}});
-      const n=asd.length, C=besideCols(nd);
+      const n=asd.length, C=besideCols(nd), bW=bwOf(asd), bS=stepOf(bW);
       const nR=nd.ad==='L'?0:nd.ad==='B'?Math.ceil(n/2):n, nL=n-nR;
       if(nL>0){
-        const ext=NW+COL_GAP+(Math.min(C,nL)-1)*STEP+20;
+        const ext=bW+COL_GAP+(Math.min(C,nL)-1)*bS+20;
         if(nd._lx-ext<L){
           const delta=L-(nd._lx-ext);
           nd._lx+=delta; if(nd._wrap) nd._wrap.x0+=delta;
@@ -3117,7 +3158,7 @@ function autoLayout(){
         }
       }
       if(nR>0){
-        const ar=r20(nd._lx+NW+COL_GAP)+(Math.min(C,nR)-1)*STEP+NW;
+        const ar=r20(nd._lx+cardW(nd)+COL_GAP)+(Math.min(C,nR)-1)*bS+bW;
         r=Math.max(r,ar);
       }
       return r;
@@ -3127,15 +3168,26 @@ function autoLayout(){
     const leafBeside=cn=>{
       const sk=sideKids[cn.id]||[];
       cn._asides=sk.slice(); sk.forEach(sid=>besideSide.add(sid));
-      const n=sk.length, C=besideCols(cn);
+      const n=sk.length, C=besideCols(cn), bW=bwOf(sk), bS=stepOf(bW);
       const nR=n?(cn.ad==='L'?0:cn.ad==='B'?Math.ceil(n/2):n):0, nL=n-nR;
-      return {l:nL>0?NW+COL_GAP+(Math.min(C,nL)-1)*STEP+20:0,
-              rw:nR>0?NW+(Math.min(C,nR)-1)*STEP+20:0,
-              r:lx=>nR>0?r20(lx+NW+COL_GAP)+(Math.min(C,nR)-1)*STEP+NW:0};
+      return {l:nL>0?bW+COL_GAP+(Math.min(C,nL)-1)*bS+20:0,
+              rw:nR>0?bW+(Math.min(C,nR)-1)*bS+20:0,
+              r:lx=>nR>0?r20(lx+cardW(cn)+COL_GAP)+(Math.min(C,nR)-1)*bS+bW:0};
+    };
+    // 넓은 카드(mc)가 자식 폭보다 넓으면 왼쪽 경계 L 안으로 밀고 오른쪽 끝을 카드 끝까지 예약
+    const wideFix=r=>{
+      if(!nd.mc) return r;
+      if(nd._lx<L){
+        const dl=c20(L-nd._lx);
+        nd._lx+=dl; if(nd._wrap) nd._wrap.x0+=dl;
+        nk(id).forEach(k=>shiftDesc(k,dl));
+        r+=dl;
+      }
+      return Math.max(r,nd._lx+cardW(nd));
     };
     if(!ch.length){
       nd._lx=Math.round(L/20)*20;
-      return fin(nd._lx+NW);
+      return fin(nd._lx+cardW(nd));
     }
     // ─── kl='col': 모든 일반 자식이 leaf이면 세로 1열
     if(nd.kl==='col' && ch.every(cid=>tk(cid).length===0)){
@@ -3143,7 +3195,7 @@ function autoLayout(){
       const cbs={}; let cL=0;
       ord.forEach(cid=>{ const cn=S.nodes.find(n=>n.id===cid); if(cn){ cbs[cid]=leafBeside(cn); cL=Math.max(cL,cbs[cid].l); } });
       nd._lx=L+cL;
-      let cR=L+cL+NW+40;
+      let cR=Math.max(L+cL+cardW(nd),...ord.map(cid=>{ const cn=S.nodes.find(n=>n.id===cid); return L+cL+40+(cn?cardW(cn):NW); }));
       ord.forEach(cid=>{
         const cn=S.nodes.find(n=>n.id===cid); if(!cn) return;
         cn._d=Math.max(TYPE_LV[cn.type]??0,nd._d+1);
@@ -3159,13 +3211,14 @@ function autoLayout(){
       const x0=L, nrows=Math.ceil(ch.length/WN), per=Math.ceil(ch.length/nrows), cols=per;
       const wrows=[];
       // beside 카드가 있는 열은 그만큼 넓힌다 (없으면 열 피치는 그대로 NW+COL_GAP)
-      const wbs={}, colL=[], colR=[];
+      const wbs={}, colL=[], colR=[], colW=[];
       ch.forEach((cid,i)=>{
         const cn=S.nodes.find(n=>n.id===cid); if(!cn) return;
         const j=i%per, b=leafBeside(cn); wbs[cid]=b;
+        colW[j]=Math.max(colW[j]||0,cardW(cn));
         colL[j]=Math.max(colL[j]||0,b.l); colR[j]=Math.max(colR[j]||0,b.rw);
       });
-      const colX=j=>{ let e=colL[j]||0; for(let i=0;i<j;i++) e+=(colL[i]||0)+(colR[i]||0); return x0+j*(NW+COL_GAP)+e; };
+      const colX=j=>{ let e=colL[j]||0; for(let i=0;i<j;i++) e+=(colL[i]||0)+(colR[i]||0)+(colW[i]||NW)+COL_GAP; return x0+e; };
       let wR=0;
       ch.forEach((cid,i)=>{
         const cn=S.nodes.find(n=>n.id===cid); if(!cn) return;
@@ -3176,9 +3229,9 @@ function autoLayout(){
         (wrows[r]||(wrows[r]=[])).push(cid);
       });
       const k=Math.ceil(cols/2);
-      nd._lx=(colX(k)-COL_GAP/2)-NW/2;
+      nd._lx=(colX(k)-COL_GAP/2)-cardW(nd)/2;
       nd._wrap={N:WN,x0,per,rows:wrows};
-      return fin(Math.max(colX(cols-1)+NW,wR));
+      return fin(wideFix(Math.max(colX(cols-1)+(colW[cols-1]||NW),wR)));
     }
     // 깊이별 자연스러운 감쇠: top 1.5x, l1 1.3x, l2 1.1x, l3+ 1.0x
     const grpGap=COL_GAP*Math.max(1, 1.5 - 0.2 * nd._d);
@@ -3199,9 +3252,9 @@ function autoLayout(){
         if(cn){
           const typeD = TYPE_LV[cn.type]??0;
           cn._d = Math.max(typeD, nd._d+1);
-          const slot = NW * LEAF_PAD;
+          const slot = cardW(cn) * LEAF_PAD;
           const b = leafBeside(cn);  // leaf 옆 side 카드 자리 예약 (없으면 0)
-          cn._lx = Math.round((x + b.l + slot/2 - NW/2)/20)*20;
+          cn._lx = Math.round((x + b.l + slot/2 - cardW(cn)/2)/20)*20;
           lastR = Math.max(x + b.l + slot, b.r(cn._lx));
         } else {
           lastR = x + NW;
@@ -3212,9 +3265,10 @@ function autoLayout(){
       }
       x = lastR + (i<ch.length-1 ? grpGap : 0);
     }
-    const clxs=ch.map(k=>{const n=S.nodes.find(n=>n.id===k);return n?n._lx:Math.round(L/20)*20;});
-    nd._lx=(Math.min(...clxs)+Math.max(...clxs)+NW)/2-NW/2;
-    return fin(lastR);
+    // 부모 중심 = 첫·끝 자식의 실제 중심의 가운데
+    const ccs=ch.map(k=>{const n=S.nodes.find(n=>n.id===k);return n?n._lx+cardW(n)/2:Math.round(L/20)*20+NW/2;});
+    nd._lx=(Math.min(...ccs)+Math.max(...ccs))/2-cardW(nd)/2;
+    return fin(wideFix(lastR));
   }
   place(root.id,PAD_X,undefined);
   const tfg=tfGroups(n=>n._lx!==undefined||besideSide.has(n.id));
@@ -3244,12 +3298,13 @@ function autoLayout(){
     function getSubtreeBounds(id){
       const n=S.nodes.find(x=>x.id===id);
       if(!n||n._lx===undefined) return null;
-      let left=n._lx, right=n._lx+NW;
+      let left=n._lx, right=n._lx+cardW(n);
       const sbs=sideBs(n);
       if(sbs){ // beside 카드가 차지할 폭까지 포함 (없으면 간격이 부풀려져 형제 서브트리를 밀어 겹침)
         const C=besideCols(n), nR=sbs.R.length, nL=sbs.L.length;
-        if(nR) right=Math.max(right,r20(n._lx+NW+COL_GAP)+(Math.min(C,nR)-1)*STEP+NW);
-        if(nL) left=Math.min(left,r20(n._lx-COL_GAP-NW)-(Math.min(C,nL)-1)*STEP);
+        const bR=bwOf(n._bs.R), bL=bwOf(n._bs.L);
+        if(nR) right=Math.max(right,r20(n._lx+cardW(n)+COL_GAP)+(Math.min(C,nR)-1)*stepOf(bR)+bR);
+        if(nL) left=Math.min(left,r20(n._lx-COL_GAP-bL)-(Math.min(C,nL)-1)*stepOf(bL));
       }
       (kids[id]||[]).forEach(cid=>{
         if(sideIds.has(cid)||pars[cid]!==id||isAsideC(cid)) return;
@@ -3304,8 +3359,8 @@ function autoLayout(){
         // 부모를 자식 중심으로 재정렬
         const parent=S.nodes.find(n=>n.id===pid);
         if(parent&&parent._lx!==undefined){
-          const clxs=children.map(id=>S.nodes.find(n=>n.id===id)._lx);
-          parent._lx=(Math.min(...clxs)+Math.max(...clxs)+NW)/2-NW/2;
+          const ccs=children.map(id=>{ const c=S.nodes.find(n=>n.id===id); return c._lx+cardW(c)/2; });
+          parent._lx=(Math.min(...ccs)+Math.max(...ccs))/2-cardW(parent)/2;
         }
       });
     }
@@ -3383,10 +3438,11 @@ function autoLayout(){
     const C=besideCols(p);
     [[p._bs.R,1],[p._bs.L,-1]].forEach(([cards,dir])=>{
       let prevY=p.y,prevH=0;
+      const bW=bwOf(cards), bS=stepOf(bW);
       stackRows(cards,C).forEach((cs,ri)=>{
         const y=ri===0?p.y:c20(prevY+prevH+20);
         cs.forEach((a,j)=>{
-          a.x=dir>0?r20(p.x+NW+COL_GAP)+j*STEP:r20(p.x-COL_GAP-NW)-j*STEP;
+          a.x=dir>0?r20(p.x+cardW(p)+COL_GAP)+j*bS:r20(p.x-COL_GAP-bW)-j*bS;
           a.y=y;
         });
         prevY=y; prevH=Math.max(...cs.map(nh));
@@ -3395,8 +3451,8 @@ function autoLayout(){
   });
 
   // 트리 우측 끝
-  const treeR=Math.max(treeNodes.length?Math.max(...treeNodes.map(n=>n.x+NW)):PAD_X+NW,
-    ...[...besideSide].map(id=>S.nodes.find(n=>n.id===id)).filter(Boolean).map(n=>n.x+NW));
+  const treeR=Math.max(treeNodes.length?Math.max(...treeNodes.map(n=>n.x+cardW(n))):PAD_X+NW,
+    ...[...besideSide].map(id=>S.nodes.find(n=>n.id===id)).filter(Boolean).map(n=>n.x+cardW(n)));
 
   // side 노드: L1 행 우측
   const sideY=depY[1]??PAD_Y;
@@ -3405,9 +3461,11 @@ function autoLayout(){
   const freeSides=[...sideIds].filter(sid=>!besideSide.has(sid)&&!tfSet.has(sid));
   const sideBase=treeR+COL_GAP*2;
   let freeR=treeR;
+  let sideX=sideBase;
   freeSides.forEach((sid,i)=>{
     const snd=S.nodes.find(n=>n.id===sid);
-    if(snd){ snd.x=Math.round((sideBase+i*(NW+COL_GAP))/20)*20; snd.y=sideY; freeR=Math.max(freeR,snd.x+NW); }
+    if(snd){ snd.x=Math.round(sideX/20)*20; snd.y=sideY; freeR=Math.max(freeR,snd.x+cardW(snd)); }
+    sideX+=(snd?cardW(snd):NW)+COL_GAP;
   });
   // TF 그룹: 작은 트리로 배치, 그룹끼리 좌→우 (자유 side 행 우측)
   if(tfg.length){
@@ -3422,16 +3480,20 @@ function autoLayout(){
       for(let d=1;d<rowH.length;d++) rowY[d]=rowY[d-1]+Math.ceil((rowH[d-1]+ROW_GAP)/20)*20;
       const pl=(id,L)=>{
         const n=nd(id), ch=kd(id);
-        if(!ch.length){ n._tfx=L; return L+NW; }
+        if(!ch.length){ n._tfx=L; return L+cardW(n); }
         let x=L, last=L;
         ch.forEach((k,i)=>{ last=pl(k,x); x=last+COL_GAP; });
-        const xs=ch.map(k=>nd(k)._tfx);
-        n._tfx=(Math.min(...xs)+Math.max(...xs)+NW)/2-NW/2;
+        const cs=ch.map(k=>nd(k)._tfx+cardW(nd(k))/2);
+        n._tfx=(Math.min(...cs)+Math.max(...cs))/2-cardW(n)/2;
+        if(n.mc){
+          if(n._tfx<L){ const dl=c20(L-n._tfx), sh=q=>{ nd(q)._tfx+=dl; kd(q).forEach(sh); }; sh(id); last+=dl; }
+          last=Math.max(last,n._tfx+cardW(n));
+        }
         return last;
       };
       const right=pl(g.root,Math.round(gL/20)*20);
       let gr=-Infinity;
-      g.ids.forEach(id=>{ const n=nd(id); n.x=Math.round(n._tfx/20)*20; n.y=rowY[n._tfd]; gr=Math.max(gr,n.x+NW); delete n._tfx; delete n._tfd; });
+      g.ids.forEach(id=>{ const n=nd(id); n.x=Math.round(n._tfx/20)*20; n.y=rowY[n._tfd]; gr=Math.max(gr,n.x+cardW(n)); delete n._tfx; delete n._tfd; });
       gL=Math.max(gr,right)+COL_GAP*2;
       zoneR=Math.max(gr,right);
     });
@@ -3442,11 +3504,11 @@ function autoLayout(){
   const sideCount=zoneR!==null?0:freeSides.length;
   const orphanByLv={};
   orphans.forEach(n=>{ (orphanByLv[n._d]||(orphanByLv[n._d]=[])).push(n); });
-  let oi=sideCount;
+  let oi=sideCount, ox=zoneR!==null?freeBase:sideX;
   Object.keys(orphanByLv).sort((a,b)=>a-b).forEach(d=>{
     orphanByLv[d].sort((a,b)=>_posCmp(_po,a,b));
     orphanByLv[d].forEach(n=>{
-      n.x=Math.round((freeBase+oi*(NW+COL_GAP))/20)*20;
+      n.x=Math.round(ox/20)*20; ox+=cardW(n)+COL_GAP;
       n.y=depY[n._d]??PAD_Y;
       oi++;
     });
@@ -3457,7 +3519,7 @@ function autoLayout(){
   let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
   (layoutNodes.length?layoutNodes:S.nodes).forEach(n=>{
     x0=Math.min(x0,n.x); y0=Math.min(y0,n.y);
-    x1=Math.max(x1,n.x+NW); y1=Math.max(y1,n.y+nh(n));
+    x1=Math.max(x1,n.x+cardW(n)); y1=Math.max(y1,n.y+nh(n));
   });
 
   const w=document.getElementById('wrap');
@@ -3467,7 +3529,7 @@ function autoLayout(){
 
   const rnd=S.nodes.find(n=>n.id===root.id);
   // 루트를 뷰포트 수평 중앙에 배치 — 트리 넓이 무관하게 항상 적용
-  const needLeft=Math.ceil(vw/(2*sc)-NW/2);
+  const needLeft=Math.ceil(vw/(2*sc)-cardW(rnd)/2);
   const shiftX=Math.max(0, needLeft-rnd.x);
   if(shiftX>0) S.nodes.forEach(n=>n.x+=shiftX);
 
@@ -3476,7 +3538,7 @@ function autoLayout(){
   cvs.style.transform=`scale(${sc})`;
   render();
   // DOM 페인트 후 스크롤 적용
-  const _tx=Math.max(0,Math.round((rnd.x+NW/2)*sc-vw/2));
+  const _tx=Math.max(0,Math.round((rnd.x+cardW(rnd)/2)*sc-vw/2));
   const _ty=Math.max(0,Math.round(y0*sc-60));
   requestAnimationFrame(()=>{ w.scrollLeft=_tx; w.scrollTop=_ty; updateGrid(); statsflAvoidCards(); });
   updateSt();
@@ -3488,14 +3550,14 @@ let anchorDrag=null; // {connId, role:'f'|'t'}
 
 function connAnchor(nd,side){
   switch(side){
-    case 'top':    return {x:nd.x+NW/2,        y:nd.y};
-    case 'bottom': return {x:nd.x+NW/2,        y:nd.y+nh(nd)};
+    case 'top':    return {x:nd.x+cardW(nd)/2,        y:nd.y};
+    case 'bottom': return {x:nd.x+cardW(nd)/2,        y:nd.y+nh(nd)};
     case 'left':   return {x:nd.x,              y:nd.y+nh(nd)/2};
-    case 'right':  return {x:nd.x+NW,           y:nd.y+nh(nd)/2};
+    case 'right':  return {x:nd.x+cardW(nd),           y:nd.y+nh(nd)/2};
   }
 }
 function autoSide(f,t,role){
-  const dx=(t.x+NW/2)-(f.x+NW/2), dy=(t.y+nh(t)/2)-(f.y+nh(f)/2);
+  const dx=(t.x+cardW(t)/2)-(f.x+cardW(f)/2), dy=(t.y+nh(t)/2)-(f.y+nh(f)/2);
   if(role==='f'){
     if(Math.abs(dx)>=Math.abs(dy)) return dx>=0?'right':'left';
     return dy>=0?'bottom':'top';
@@ -4277,6 +4339,7 @@ function _sanitizeSheet(sh){
   (sh.nodes||[]).forEach(n=>{
     if(n.type==='ceo')n.type='top';
     if(n.color&&!/^#[0-9a-fA-F]{3,8}$/.test(n.color)) n.color='';
+    if('mc' in n && !(n.mc===2||n.mc===3||n.mc===4)) delete n.mc;
   });
   const busY={};
   Object.entries(sh.busY||{}).forEach(([k,v])=>{ if(Number.isFinite(+v)) busY[k]=+v; });
@@ -4416,7 +4479,7 @@ function _chartBounds(){
   const _H=collHidden();  // 접힌 하위 조직은 인쇄 범위에서 뺀다 (exportPNG와 동일)
   S.nodes.filter(n=>!_H.has(n.id)).forEach(n=>{
     x0=Math.min(x0,n.x); y0=Math.min(y0,n.y);
-    x1=Math.max(x1,n.x+NW); y1=Math.max(y1,n.y+nh(n));
+    x1=Math.max(x1,n.x+cardW(n)); y1=Math.max(y1,n.y+nh(n));
   });
   // TF 존 프레임(카드보다 24px 바깥)도 인쇄 범위에 넣는다
   { const z=tfZoneInfo(); if(z){ x0=Math.min(x0,z.x); y0=Math.min(y0,z.y); x1=Math.max(x1,z.x+z.w); y1=Math.max(y1,z.y+z.h); } }
@@ -4427,7 +4490,7 @@ function exportPNG(){
   const _H=collHidden(), _VN=S.nodes.filter(n=>!_H.has(n.id));
   if(!_VN.length) return;
   let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
-  _VN.forEach(n=>{x0=Math.min(x0,n.x);y0=Math.min(y0,n.y);x1=Math.max(x1,n.x+NW);y1=Math.max(y1,n.y+nh(n));});
+  _VN.forEach(n=>{x0=Math.min(x0,n.x);y0=Math.min(y0,n.y);x1=Math.max(x1,n.x+cardW(n));y1=Math.max(y1,n.y+nh(n));});
   const _tz=tfZoneInfo();
   if(_tz){ x0=Math.min(x0,_tz.x); y0=Math.min(y0,_tz.y); x1=Math.max(x1,_tz.x+_tz.w); y1=Math.max(y1,_tz.y+_tz.h); }
   const W=Math.round((x1-x0+80)*2), H=Math.round((y1-y0+80)*2);
@@ -4486,29 +4549,29 @@ function exportPNG(){
     const hcs=hd?getComputedStyle(hd):null;
     let bw=parseFloat(ecs&&ecs.getPropertyValue('--band-w')); if(!isFinite(bw)) bw=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--band-w')); if(!isFinite(bw)) bw=12;
     const band=ecs?ecs.getPropertyValue('--band-color').trim():'';
-    const x=nd.x,y=nd.y,h=nh(nd);
-    ctx.fillStyle='#fff'; ctx.fillRect(x,y,NW,h);
+    const x=nd.x,y=nd.y,h=nh(nd),CW=cardW(nd),MC=_mcOf(nd),colW=(CW-bw)/MC;
+    ctx.fillStyle='#fff'; ctx.fillRect(x,y,CW,h);
     ctx.strokeStyle=(ecs&&ecs.borderTopColor&&ecs.borderTopWidth!=='0px')?ecs.borderTopColor:'#d0d0d0';
-    ctx.lineWidth=1; ctx.setLineDash([]); ctx.strokeRect(x+.5,y+.5,NW-1,h-1);
-    ctx.fillStyle=(hcs&&hcs.backgroundColor)||'#eee'; ctx.fillRect(x,y,NW,CUR_HH);
+    ctx.lineWidth=1; ctx.setLineDash([]); ctx.strokeRect(x+.5,y+.5,CW-1,h-1);
+    ctx.fillStyle=(hcs&&hcs.backgroundColor)||'#eee'; ctx.fillRect(x,y,CW,CUR_HH);
     if(band){ ctx.fillStyle=band; ctx.fillRect(x,y,bw,CUR_HH); }
     ctx.save();
-    ctx.beginPath(); ctx.rect(x,y,NW,CUR_HH); ctx.clip();
+    ctx.beginPath(); ctx.rect(x,y,CW,CUR_HH); ctx.clip();
     ctx.textBaseline='middle';
     const enEl=el&&el.querySelector('.nen'), koEl=el&&el.querySelector('.nko');
     const ens=enEl?getComputedStyle(enEl):null, kos=koEl?getComputedStyle(koEl):null;
     let enT=nd.en||''; if(ens&&ens.textTransform==='uppercase') enT=enT.toUpperCase();
     ctx.fillStyle=(ens&&ens.color)||'#222';
-    fitText(enT,x+bw+10,y+CUR_HH*0.35,(ens&&ens.fontWeight)||'bold',(ens&&ens.fontSize)||'13px',x+NW-6-(x+bw+10));
+    fitText(enT,x+bw+10,y+CUR_HH*0.35,(ens&&ens.fontWeight)||'bold',(ens&&ens.fontSize)||'13px',x+CW-6-(x+bw+10));
     ctx.fillStyle=(kos&&kos.color)||'#222';
-    fitText(nd.ko||'',x+bw+10,y+CUR_HH*0.72,(kos&&kos.fontWeight)||'normal',(kos&&kos.fontSize)||'11px',x+NW-6-(x+bw+10));
+    fitText(nd.ko||'',x+bw+10,y+CUR_HH*0.72,(kos&&kos.fontWeight)||'normal',(kos&&kos.fontSize)||'11px',x+CW-6-(x+bw+10));
     ctx.restore();
     if(OPT.showCnt!==false){
       const _c=headCount(nd);
       if(_c>0){
         ctx.save(); ctx.font='9px sans-serif'; ctx.textBaseline='middle'; ctx.textAlign='right';
         const _t=_c+'명', _w=ctx.measureText(_t).width+12, _pos=_cntPosVal();
-        const _rx=_pos==='badge'?x+NW+_w/2:x+NW-7;
+        const _rx=_pos==='badge'?x+CW+_w/2:x+CW-7;
         const _py=_pos==='badge'?y-6:(_pos==='br'?y+CUR_HH-16:(_pos==='mr'?y+CUR_HH/2-6:y+3));
         const _fx=_cntColorVal();
         const _k=_fx?cntFixedColors(_fx):cntPillColors((hcs&&hcs.backgroundColor)||'#eee');
@@ -4517,21 +4580,23 @@ function exportPNG(){
         ctx.restore();
       }
     }
+    if(MC>1&&band&&(nd.m||[]).length){ ctx.fillStyle=band; ctx.fillRect(x,y+CUR_HH,bw,h-CUR_HH); }
     (nd.m||[]).forEach((m,k)=>{
-      const ry=y+CUR_HH+k*CUR_MH;
-      ctx.fillStyle='#e4e4e4'; ctx.fillRect(x,ry,NW,1);
+      const ry=y+CUR_HH+Math.floor(k/MC)*CUR_MH;
+      const mx=MC>1?x+bw+(k%MC)*colW:x, MW=MC>1?colW:NW;  // 1열: 오늘과 같이 카드 전체 폭
+      ctx.fillStyle='#e4e4e4'; ctx.fillRect(mx,ry,MW,1);
       let sc=statusColor(m.s);
       const vm=/^var\((--[^)]+)\)$/.exec(sc);
       if(vm) sc=getComputedStyle(document.documentElement).getPropertyValue(vm[1]).trim()||'#999';
-      ctx.fillStyle=sc; ctx.fillRect(x,ry,bw,CUR_MH);
+      ctx.fillStyle=sc; ctx.fillRect(mx,ry,bw,CUR_MH);
       ctx.save();
-      ctx.beginPath(); ctx.rect(x,ry,NW,CUR_MH); ctx.clip();
+      ctx.beginPath(); ctx.rect(mx,ry,MW,CUR_MH); ctx.clip();
       ctx.textBaseline='middle';
       ctx.fillStyle='#222';
       const t1=(m.n||'')+(m.r?'  '+m.r:'');
-      fitText(t1,x+bw+8,ry+CUR_MH*0.33,'bold','12px',x+NW-6-(x+bw+8));
+      fitText(t1,mx+bw+8,ry+CUR_MH*0.33,'bold','12px',mx+MW-6-(mx+bw+8));
       ctx.fillStyle='#555';
-      fitText(m.f||'',x+bw+8,ry+CUR_MH*0.72,'','10px',x+NW-6-(x+bw+8));
+      fitText(m.f||'',mx+bw+8,ry+CUR_MH*0.72,'','10px',mx+MW-6-(mx+bw+8));
       ctx.restore();
     });
   });
@@ -5161,7 +5226,7 @@ function srchClear(){
 function srchCenter(){
   var nd=S.nodes.find(function(n){return n.id===SRCH.ids[SRCH.idx];}); if(!nd) return;
   var w=document.getElementById('wrap');
-  w.scrollLeft=Math.max(0,(nd.x+NW/2)*S.scale-w.clientWidth/2);
+  w.scrollLeft=Math.max(0,(nd.x+cardW(nd)/2)*S.scale-w.clientWidth/2);
   w.scrollTop=Math.max(0,(nd.y+nh(nd)/2)*S.scale-w.clientHeight/2);
 }
 function srchApply(recenter){
@@ -5341,7 +5406,7 @@ function tvGo(id){
   tvClose();
   if(collRevealFor(id)){ drawTfZone(); drawNodes(); drawConns(); }
   var w=document.getElementById('wrap');
-  w.scrollLeft=Math.max(0,(nd.x+NW/2)*S.scale-w.clientWidth/2);
+  w.scrollLeft=Math.max(0,(nd.x+cardW(nd)/2)*S.scale-w.clientWidth/2);
   if(nh(nd)*S.scale>w.clientHeight*0.6) w.scrollTop=Math.max(0,nd.y*S.scale-40);
   else w.scrollTop=Math.max(0,(nd.y+nh(nd)/2)*S.scale-w.clientHeight/2);
   var el=document.getElementById('n'+id);
