@@ -3061,38 +3061,63 @@ function autoLayout(){
       }
       return r;
     };
+    // place()를 거치지 않고 직접 배치되는 leaf 자식(혼합 그룹·줄바꿈·세로 1열)의 beside 목록과 예약 폭.
+    // l: 카드 왼쪽에 필요한 폭, rw: 오른쪽 추가 폭(열 간격용), r(lx): 카드가 lx에 놓였을 때 beside 카드의 우측 끝(없으면 0)
+    const leafBeside=cn=>{
+      const sk=sideKids[cn.id]||[];
+      cn._asides=sk.slice(); sk.forEach(sid=>besideSide.add(sid));
+      const n=sk.length, C=besideCols(cn);
+      const nR=n?(cn.ad==='L'?0:cn.ad==='B'?Math.ceil(n/2):n):0, nL=n-nR;
+      return {l:nL>0?NW+COL_GAP+(Math.min(C,nL)-1)*STEP+20:0,
+              rw:nR>0?NW+(Math.min(C,nR)-1)*STEP+20:0,
+              r:lx=>nR>0?r20(lx+NW+COL_GAP)+(Math.min(C,nR)-1)*STEP+NW:0};
+    };
     if(!ch.length){
       nd._lx=Math.round(L/20)*20;
       return fin(nd._lx+NW);
     }
     // ─── kl='col': 모든 일반 자식이 leaf이면 세로 1열
     if(nd.kl==='col' && ch.every(cid=>tk(cid).length===0)){
-      nd._lx=L;
       const ord=ch.slice().sort(xyOrd);
+      const cbs={}; let cL=0;
+      ord.forEach(cid=>{ const cn=S.nodes.find(n=>n.id===cid); if(cn){ cbs[cid]=leafBeside(cn); cL=Math.max(cL,cbs[cid].l); } });
+      nd._lx=L+cL;
+      let cR=L+cL+NW+40;
       ord.forEach(cid=>{
         const cn=S.nodes.find(n=>n.id===cid); if(!cn) return;
         cn._d=Math.max(TYPE_LV[cn.type]??0,nd._d+1);
-        cn._lx=L+40;
+        cn._lx=L+cL+40;
+        cR=Math.max(cR,cbs[cid].r(cn._lx));
       });
       nd._col=ord;
-      return fin(L+NW+40);
+      return fin(cR);
     }
     // ─── 한 줄 최대 조직 수: 모두 leaf인 넓은 그룹은 행으로 줄바꿈
     const WN=(Number.isInteger(nd.kn)&&nd.kn>0)?nd.kn:(OPT.wrapN|0);
     if(WN>0 && ch.length>WN && ch.every(cid=>tk(cid).length===0)){
       const x0=L, nrows=Math.ceil(ch.length/WN), per=Math.ceil(ch.length/nrows), cols=per;
       const wrows=[];
+      // beside 카드가 있는 열은 그만큼 넓힌다 (없으면 열 피치는 그대로 NW+COL_GAP)
+      const wbs={}, colL=[], colR=[];
+      ch.forEach((cid,i)=>{
+        const cn=S.nodes.find(n=>n.id===cid); if(!cn) return;
+        const j=i%per, b=leafBeside(cn); wbs[cid]=b;
+        colL[j]=Math.max(colL[j]||0,b.l); colR[j]=Math.max(colR[j]||0,b.rw);
+      });
+      const colX=j=>{ let e=colL[j]||0; for(let i=0;i<j;i++) e+=(colL[i]||0)+(colR[i]||0); return x0+j*(NW+COL_GAP)+e; };
+      let wR=0;
       ch.forEach((cid,i)=>{
         const cn=S.nodes.find(n=>n.id===cid); if(!cn) return;
         const r=Math.floor(i/per), j=i%per;
         cn._d=nd._d+1;
-        cn._lx=Math.round((x0+j*(NW+COL_GAP))/20)*20;
+        cn._lx=Math.round(colX(j)/20)*20;
+        wR=Math.max(wR,wbs[cid].r(cn._lx));
         (wrows[r]||(wrows[r]=[])).push(cid);
       });
       const k=Math.ceil(cols/2);
-      nd._lx=(x0+k*(NW+COL_GAP)-COL_GAP/2)-NW/2;
+      nd._lx=(colX(k)-COL_GAP/2)-NW/2;
       nd._wrap={N:WN,x0,per,rows:wrows};
-      return fin(x0+(cols-1)*(NW+COL_GAP)+NW);
+      return fin(Math.max(colX(cols-1)+NW,wR));
     }
     // 깊이별 자연스러운 감쇠: top 1.5x, l1 1.3x, l2 1.1x, l3+ 1.0x
     const grpGap=COL_GAP*Math.max(1, 1.5 - 0.2 * nd._d);
@@ -3114,8 +3139,9 @@ function autoLayout(){
           const typeD = TYPE_LV[cn.type]??0;
           cn._d = Math.max(typeD, nd._d+1);
           const slot = NW * LEAF_PAD;
-          cn._lx = Math.round((x + slot/2 - NW/2)/20)*20;
-          lastR = x + slot;
+          const b = leafBeside(cn);  // leaf 옆 side 카드 자리 예약 (없으면 0)
+          cn._lx = Math.round((x + b.l + slot/2 - NW/2)/20)*20;
+          lastR = Math.max(x + b.l + slot, b.r(cn._lx));
         } else {
           lastR = x + NW;
         }
