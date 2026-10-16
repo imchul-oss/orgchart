@@ -219,7 +219,7 @@ body.present #tb-more,body.present #tb-more-panel{display:none!important;}
   position:absolute;width:var(--nw);
   background:var(--white);border-radius:var(--card-radius);
   box-shadow:0 2px 8px rgba(0,0,0,var(--shadow-a));
-  overflow:hidden;transition:box-shadow .2s;
+  overflow:visible;transition:box-shadow .2s;  /* 접기 토글(.ctog)이 카드 가장자리 바깥에 걸치므로 모서리 클리핑은 .nh/.nb가 맡는다 */
 }
 .nd:hover{box-shadow:0 6px 20px rgba(0,0,0,var(--shadow-a));}
 .nd{cursor:move;}
@@ -253,6 +253,7 @@ body.present #tb-more,body.present #tb-more-panel{display:none!important;}
   height:var(--hh);padding:8px 12px 8px 16px;
   display:flex;flex-direction:column;justify-content:center;
   cursor:move;position:relative;
+  border-radius:var(--card-radius) var(--card-radius) 0 0;overflow:hidden;
 }
 .nh::before{content:'';position:absolute;left:0;top:0;bottom:0;width:var(--band-w);background:var(--band-color,var(--mint));}
 .t-top {--band-color:var(--band-top);} .t-top  .nh{background:var(--hdr-top);}
@@ -269,7 +270,7 @@ body.present #tb-more,body.present #tb-more-panel{display:none!important;}
 
 /* Action buttons (hover) */
 .nact{position:absolute;top:6px;right:7px;opacity:0;transition:.15s;}
-.ncnt{position:absolute;top:3px;right:36px;font-size:9px;line-height:12px;padding:0 6px;border-radius:8px;background:rgba(255,255,255,.22);color:#fff;pointer-events:none;white-space:nowrap;}
+.ncnt{position:absolute;top:3px;right:36px;font-size:9px;line-height:12px;padding:0 6px;border-radius:8px;background:rgba(0,0,0,.55);color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.28);pointer-events:none;white-space:nowrap;}  /* 흰 글자 대비 4.5 이상: 흰 헤더 위에서도 4.76 */
 body.ro .ncnt,body.present .ncnt{right:7px;}
 #mtip{position:fixed;display:none;z-index:99999;background:rgba(20,20,24,.95);color:#fff;font-size:11px;line-height:1.5;padding:7px 10px;border-radius:6px;max-width:260px;pointer-events:none;word-break:break-all;box-shadow:0 2px 8px rgba(0,0,0,.35);}
 #mtip b{font-size:12px;}
@@ -281,7 +282,7 @@ body.present #mtip{display:none!important;}
 .nab:hover{background:var(--mint);color:var(--dark);}
 
 /* Member rows */
-.nb{background:var(--card-bg);}
+.nb{background:var(--card-bg);border-radius:0 0 var(--card-radius) var(--card-radius);overflow:hidden;}
 .nb:empty{min-height:34px;}
 .nb:empty::before{content:'＋';display:flex;align-items:center;justify-content:center;height:34px;color:#C8CDD8;font-size:15px;pointer-events:none;}
 .mr{padding:4px 10px 4px calc(var(--band-w) + 8px);height:var(--mh);position:relative;display:flex;align-items:center;gap:0;border-top:1px solid var(--row-border);box-sizing:border-box;overflow:hidden;}
@@ -528,7 +529,10 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
   #canvas{min-width:0!important;min-height:0!important;}
 }
 
-.ctog{position:absolute;left:50%;bottom:1px;transform:translateX(-50%);min-width:16px;height:16px;padding:0 4px;box-sizing:border-box;border-radius:8px;border:1px solid #888;background:#fff;color:#333;font:10px/14px sans-serif;text-align:center;cursor:pointer;z-index:5;}
+.ctog{position:absolute;left:50%;top:100%;transform:translateX(-50%) scale(var(--ctog-k,1));transform-origin:50% 0;min-width:16px;height:16px;padding:0 4px;box-sizing:border-box;border-radius:8px;border:1px solid #888;background:#fff;color:#333;font:10px/14px sans-serif;text-align:center;cursor:pointer;z-index:5;}
+/* 가로 배치(posOrient right/left)에서는 자식이 있는 쪽 가장자리에, 세로 중앙으로 — 멤버 행을 덮지 않도록 가장자리 바깥에 붙인다 */
+.ctog-r{left:100%;top:50%;transform:translateY(-50%) scale(var(--ctog-k,1));transform-origin:0 50%;}
+.ctog-l{left:auto;right:100%;top:50%;transform:translateY(-50%) scale(var(--ctog-k,1));transform-origin:100% 50%;}
 .ctog:hover{background:#eef;}
 @media print{.ctog,#btn-expand-all{display:none!important;}}
 </style>
@@ -3061,38 +3065,63 @@ function autoLayout(){
       }
       return r;
     };
+    // place()를 거치지 않고 직접 배치되는 leaf 자식(혼합 그룹·줄바꿈·세로 1열)의 beside 목록과 예약 폭.
+    // l: 카드 왼쪽에 필요한 폭, rw: 오른쪽 추가 폭(열 간격용), r(lx): 카드가 lx에 놓였을 때 beside 카드의 우측 끝(없으면 0)
+    const leafBeside=cn=>{
+      const sk=sideKids[cn.id]||[];
+      cn._asides=sk.slice(); sk.forEach(sid=>besideSide.add(sid));
+      const n=sk.length, C=besideCols(cn);
+      const nR=n?(cn.ad==='L'?0:cn.ad==='B'?Math.ceil(n/2):n):0, nL=n-nR;
+      return {l:nL>0?NW+COL_GAP+(Math.min(C,nL)-1)*STEP+20:0,
+              rw:nR>0?NW+(Math.min(C,nR)-1)*STEP+20:0,
+              r:lx=>nR>0?r20(lx+NW+COL_GAP)+(Math.min(C,nR)-1)*STEP+NW:0};
+    };
     if(!ch.length){
       nd._lx=Math.round(L/20)*20;
       return fin(nd._lx+NW);
     }
     // ─── kl='col': 모든 일반 자식이 leaf이면 세로 1열
     if(nd.kl==='col' && ch.every(cid=>tk(cid).length===0)){
-      nd._lx=L;
       const ord=ch.slice().sort(xyOrd);
+      const cbs={}; let cL=0;
+      ord.forEach(cid=>{ const cn=S.nodes.find(n=>n.id===cid); if(cn){ cbs[cid]=leafBeside(cn); cL=Math.max(cL,cbs[cid].l); } });
+      nd._lx=L+cL;
+      let cR=L+cL+NW+40;
       ord.forEach(cid=>{
         const cn=S.nodes.find(n=>n.id===cid); if(!cn) return;
         cn._d=Math.max(TYPE_LV[cn.type]??0,nd._d+1);
-        cn._lx=L+40;
+        cn._lx=L+cL+40;
+        cR=Math.max(cR,cbs[cid].r(cn._lx));
       });
       nd._col=ord;
-      return fin(L+NW+40);
+      return fin(cR);
     }
     // ─── 한 줄 최대 조직 수: 모두 leaf인 넓은 그룹은 행으로 줄바꿈
     const WN=(Number.isInteger(nd.kn)&&nd.kn>0)?nd.kn:(OPT.wrapN|0);
     if(WN>0 && ch.length>WN && ch.every(cid=>tk(cid).length===0)){
       const x0=L, nrows=Math.ceil(ch.length/WN), per=Math.ceil(ch.length/nrows), cols=per;
       const wrows=[];
+      // beside 카드가 있는 열은 그만큼 넓힌다 (없으면 열 피치는 그대로 NW+COL_GAP)
+      const wbs={}, colL=[], colR=[];
+      ch.forEach((cid,i)=>{
+        const cn=S.nodes.find(n=>n.id===cid); if(!cn) return;
+        const j=i%per, b=leafBeside(cn); wbs[cid]=b;
+        colL[j]=Math.max(colL[j]||0,b.l); colR[j]=Math.max(colR[j]||0,b.rw);
+      });
+      const colX=j=>{ let e=colL[j]||0; for(let i=0;i<j;i++) e+=(colL[i]||0)+(colR[i]||0); return x0+j*(NW+COL_GAP)+e; };
+      let wR=0;
       ch.forEach((cid,i)=>{
         const cn=S.nodes.find(n=>n.id===cid); if(!cn) return;
         const r=Math.floor(i/per), j=i%per;
         cn._d=nd._d+1;
-        cn._lx=Math.round((x0+j*(NW+COL_GAP))/20)*20;
+        cn._lx=Math.round(colX(j)/20)*20;
+        wR=Math.max(wR,wbs[cid].r(cn._lx));
         (wrows[r]||(wrows[r]=[])).push(cid);
       });
       const k=Math.ceil(cols/2);
-      nd._lx=(x0+k*(NW+COL_GAP)-COL_GAP/2)-NW/2;
+      nd._lx=(colX(k)-COL_GAP/2)-NW/2;
       nd._wrap={N:WN,x0,per,rows:wrows};
-      return fin(x0+(cols-1)*(NW+COL_GAP)+NW);
+      return fin(Math.max(colX(cols-1)+NW,wR));
     }
     // 깊이별 자연스러운 감쇠: top 1.5x, l1 1.3x, l2 1.1x, l3+ 1.0x
     const grpGap=COL_GAP*Math.max(1, 1.5 - 0.2 * nd._d);
@@ -3114,8 +3143,9 @@ function autoLayout(){
           const typeD = TYPE_LV[cn.type]??0;
           cn._d = Math.max(typeD, nd._d+1);
           const slot = NW * LEAF_PAD;
-          cn._lx = Math.round((x + slot/2 - NW/2)/20)*20;
-          lastR = x + slot;
+          const b = leafBeside(cn);  // leaf 옆 side 카드 자리 예약 (없으면 0)
+          cn._lx = Math.round((x + b.l + slot/2 - NW/2)/20)*20;
+          lastR = Math.max(x + b.l + slot, b.r(cn._lx));
         } else {
           lastR = x + NW;
         }
@@ -3138,6 +3168,12 @@ function autoLayout(){
     if(!n._asides||!n._asides.length) return;
     n._bs=besideSplit(n,n._asides.map(id=>S.nodes.find(q=>q.id===id)).filter(Boolean));
   });
+  // side 타입 beside 카드만 남긴 분배 (aside 카드는 폭·높이 측정에서 제외)
+  const sideBs=n=>{
+    if(!n._bs) return null;
+    const R=n._bs.R.filter(c=>c.type==='side'), L=n._bs.L.filter(c=>c.type==='side');
+    return (R.length||L.length)?{R,L}:null;
+  };
   const stackRows=(cards,C)=>{
     const rows=[];
     cards.forEach((a,k)=>{ const r=Math.floor(k/C); (rows[r]||(rows[r]=[])).push(a); });
@@ -3152,6 +3188,12 @@ function autoLayout(){
       const n=S.nodes.find(x=>x.id===id);
       if(!n||n._lx===undefined) return null;
       let left=n._lx, right=n._lx+NW;
+      const sbs=sideBs(n);
+      if(sbs){ // beside 카드가 차지할 폭까지 포함 (없으면 간격이 부풀려져 형제 서브트리를 밀어 겹침)
+        const C=besideCols(n), nR=sbs.R.length, nL=sbs.L.length;
+        if(nR) right=Math.max(right,r20(n._lx+NW+COL_GAP)+(Math.min(C,nR)-1)*STEP+NW);
+        if(nL) left=Math.min(left,r20(n._lx-COL_GAP-NW)-(Math.min(C,nL)-1)*STEP);
+      }
       (kids[id]||[]).forEach(cid=>{
         if(sideIds.has(cid)||pars[cid]!==id||isAsideC(cid)) return;
         const b=getSubtreeBounds(cid);
@@ -3221,23 +3263,26 @@ function autoLayout(){
     return _sideLayout({po:_po,root,nk,tfg,tfSet,sideIds,orphans,PAD_X,PAD_Y,COL_GAP,ROW_GAP});
   }
 
+  // 카드 높이 + 옆에 적재되는 beside 카드 높이 (행 높이·줄바꿈 행·세로 1열 적재 기준)
+  const bsH=(n,sideOnly)=>{
+    let h=nh(n);
+    const bs=sideOnly?sideBs(n):n._bs;
+    if(bs){
+      const C=besideCols(n);
+      [bs.R,bs.L].forEach(cards=>{
+        let off=0,prevH=0,first=true;
+        stackRows(cards,C).forEach(cs=>{
+          off=first?0:c20(off+prevH+20); first=false; prevH=Math.max(...cs.map(nh));
+        });
+        if(!first) h=Math.max(h,off+prevH);
+      });
+    }
+    return h;
+  };
   // 레벨별 행 높이 (트리+고아 포함, side 제외)
   const depH={};
   S.nodes.filter(n=>n._d!==undefined&&!sideIds.has(n.id))
-    .forEach(n=>{
-      let h=nh(n);
-      if(n._bs){
-        const C=besideCols(n);
-        [n._bs.R,n._bs.L].forEach(cards=>{
-          let off=0,prevH=0,first=true;
-          stackRows(cards,C).forEach(cs=>{
-            off=first?0:c20(off+prevH+20); first=false; prevH=Math.max(...cs.map(nh));
-          });
-          if(!first) h=Math.max(h,off+prevH);
-        });
-      }
-      depH[n._d]=Math.max(depH[n._d]||0,h);
-    });
+    .forEach(n=>{ depH[n._d]=Math.max(depH[n._d]||0,bsH(n)); });
   const depY={}; let cy=PAD_Y;
   Object.keys(depH).sort((a,b)=>a-b).forEach(d=>{
     depY[d]=Math.round(cy/20)*20;
@@ -3257,7 +3302,7 @@ function autoLayout(){
     const rws=p._wrap.rows.map(ids=>ids.map(id=>S.nodes.find(n=>n.id===id)).filter(Boolean));
     for(let r=1;r<rws.length;r++){
       const prev=rws[r-1]; if(!prev.length) continue;
-      const yy=Math.ceil((Math.max(...prev.map(c=>c.y+nh(c)))+ROW_GAP)/20)*20;
+      const yy=Math.ceil((Math.max(...prev.map(c=>c.y+bsH(c,true)))+ROW_GAP)/20)*20;
       rws[r].forEach(c=>{ c.y=yy; });
     }
   });
@@ -3268,7 +3313,7 @@ function autoLayout(){
     let prev=null;
     p._col.forEach(cid=>{
       const c=S.nodes.find(n=>n.id===cid); if(!c) return;
-      const minY=prev?prev.y+nh(prev)+20:Math.max(c.y,p.y+nh(p)+20);
+      const minY=prev?prev.y+bsH(prev,true)+20:Math.max(c.y,p.y+bsH(p,true)+20);
       c.y=Math.ceil(minY/20)*20;
       c.x=p.x+40;
       prev=c;
@@ -4307,7 +4352,8 @@ function dl(data,name,type,bom=true){
 
 function _chartBounds(){
   let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
-  S.nodes.forEach(n=>{
+  const _H=collHidden();  // 접힌 하위 조직은 인쇄 범위에서 뺀다 (exportPNG와 동일)
+  S.nodes.filter(n=>!_H.has(n.id)).forEach(n=>{
     x0=Math.min(x0,n.x); y0=Math.min(y0,n.y);
     x1=Math.max(x1,n.x+NW); y1=Math.max(y1,n.y+nh(n));
   });
@@ -4401,7 +4447,7 @@ function exportPNG(){
       if(_c>0){
         ctx.save(); ctx.font='9px sans-serif'; ctx.textBaseline='middle'; ctx.textAlign='right';
         const _t=_c+'명', _w=ctx.measureText(_t).width+12, _rx=x+NW-7;
-        ctx.fillStyle='rgba(255,255,255,0.22)'; ctx.fillRect(_rx-_w,y+3,_w,12);
+        ctx.fillStyle='rgba(0,0,0,0.55)'; ctx.fillRect(_rx-_w,y+3,_w,12);  // 화면의 .ncnt와 같은 어두운 반투명 알약
         ctx.fillStyle='#fff'; ctx.fillText(_t,_rx-6,y+9.5);
         ctx.restore();
       }
@@ -4782,6 +4828,8 @@ function toggleGroupExclude(i){
 // ═══ Status
 function updateSt(){
   const pct=Math.round(S.scale*100);
+  // 접기 토글은 줌에 반비례해 키워 화면에서 최소 9px를 유지한다 (배율 1~4, 15% 줌에서 9.6px)
+  document.documentElement.style.setProperty('--ctog-k',Math.min(4,Math.max(1,1/S.scale)).toFixed(3));
   document.getElementById('zpct').textContent=pct+'%';
   const zs=document.getElementById('zslider');
   if(zs) zs.value=pct;
@@ -5001,12 +5049,13 @@ function collHidden(){
 }
 function collDecorate(){
   var h=collHidden(), cs=collState();
+  var po=(SHEETS[CUR_SHEET]&&SHEETS[CUR_SHEET].posOrient)||'down';  // 토글은 현재 위치를 만든 방향의 자식 쪽에 둔다
   S.nodes.forEach(function(nd){
     var el=document.getElementById('n'+nd.id); if(!el) return;
     el.style.display=h.has(nd.id)?'none':'';
     var old=el.querySelector('.ctog'); if(old) old.remove();
     if(!(S.conns||[]).some(function(c){return c.f===nd.id;})) return;
-    var b=document.createElement('div'); b.className='ctog'; b.setAttribute('role','button');
+    var b=document.createElement('div'); b.className='ctog'+(po==='right'?' ctog-r':po==='left'?' ctog-l':''); b.setAttribute('role','button');
     b.textContent=cs.has(nd.id)?('+'+collDesc(nd.id).size):'▾';
     var stop=function(e){ e.stopPropagation(); };
     b.addEventListener('mousedown',stop); b.addEventListener('dblclick',stop);
