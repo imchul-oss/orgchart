@@ -1037,7 +1037,14 @@ const _idb={
   _open(){ return new Promise((res,rej)=>{
     const r=indexedDB.open('ssb-orgchart',1);
     r.onupgradeneeded=()=>r.result.createObjectStore('kv');
-    r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);
+    let done=false;
+    const tm=setTimeout(()=>{ if(done) return; done=true; rej(new Error('indexedDB open timeout')); },1500);
+    r.onsuccess=()=>{
+      if(done){ try{ r.result.close(); }catch(_){} return; }
+      done=true; clearTimeout(tm); res(r.result);
+    };
+    r.onerror=()=>{ if(done) return; done=true; clearTimeout(tm); rej(r.error||new Error('indexedDB open error')); };
+    r.onblocked=()=>{ if(done) return; done=true; clearTimeout(tm); rej(new Error('indexedDB open blocked')); };
   });},
   async get(k){ const db=await this._open(); return new Promise((res,rej)=>{
     const t=db.transaction('kv').objectStore('kv').get(k);
