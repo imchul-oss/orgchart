@@ -1575,7 +1575,7 @@ function tfZoneInfo(){
       x0=Math.min(x0,n.x); y0=Math.min(y0,n.y); x1=Math.max(x1,n.x+cardW(n)); y1=Math.max(y1,n.y+nh(n));
     });
     const s=S.nodes.find(q=>q.id===g.root), p=tfOwnerOf(g.root);
-    if(s&&p&&!_H.has(s.id)) owners.push({x:s.x,y:s.y-22,text:'주관: '+(p.ko||p.en||'')});
+    if(s&&p&&!_H.has(s.id)) owners.push({x:s.x,y:s.y-22,text:'주관: '+nodeTitle(p)});
   });
   if(!isFinite(x0)) return null;
   const PAD=24, TOP=24;
@@ -1803,6 +1803,7 @@ function headCount(nd){
   const exK=new Set(OPT.statsGroups.filter(g=>g.excludeTotal).flatMap(g=>g.statuses));
   return (nd.m||[]).filter(m=>!exK.has(m.s||defKey)).length;
 }
+function nodeTitle(nd){ return (nd&&(nd.en||nd.ko))||''; }
 function _cntCcVal(){return (OPT.cntCc==='inc'||OPT.cntCc==='exc')?OPT.cntCc:'sep';}
 function cntLabel(nd){
   if(OPT.showCnt===false) return '';
@@ -1848,8 +1849,8 @@ function nodeHTML(nd) {
   const _cl=cntLabel(nd);
   return `
     <div class="nh">
-      <div class="nen">${esc(nd.en||'')}</div>
-      <div class="nko">${esc(nd.ko||'')}</div>
+      ${(!nd.en&&nd.ko)?`<div class="nen">${esc(nd.ko)}</div>`:`<div class="nen">${esc(nd.en||'')}</div>
+      <div class="nko">${esc(nd.ko||'')}</div>`}
       <div class="nact">
         <button class="nab" onclick="openEdit('${nd.id}')" title="수정">✏</button>
       </div>
@@ -6039,7 +6040,7 @@ function tvBuild(){
     if(hidden) row.style.display='none';
     if(hasKid(i)){ var tg=document.createElement('span'); tg.className='tv-tog'; tg.textContent=folded?'▸':'▾'; row.appendChild(tg); }
     else { var sp=document.createElement('span'); sp.style.cssText='width:14px;flex:none'; row.appendChild(sp); }
-    var ti=document.createElement('span'); ti.className='tv-title'; ti.textContent=nd.ko||nd.en||''; row.appendChild(ti);
+    var ti=document.createElement('span'); ti.className='tv-title'; ti.textContent=nodeTitle(nd); row.appendChild(ti);
     var cl=cntLabel(nd);
     if(cl){ var c=document.createElement('span'); c.className='tv-cnt'; c.textContent=cl; row.appendChild(c); }
     body.appendChild(row);
@@ -6129,7 +6130,7 @@ document.addEventListener('keydown',function(e){
     const defKey=OPT.statusItems[0]?.key||'active', sk=m.s||defKey;
     const si=OPT.statusItems.find(x=>x.key===sk);
     const L=[['직급',m.r],['직무',jobText(m)],['근무지',m.a],['상태',si?si.label:sk]].filter(x=>x[1]);
-    t.innerHTML='<b>'+esc(m.n||'')+'</b>'+L.map(x=>'<div>'+x[0]+' '+esc(x[1])+'</div>').join('')+'<div style="opacity:.7">'+esc(nd.ko||nd.en||'')+'</div>';
+    t.innerHTML='<b>'+esc(m.n||'')+'</b>'+L.map(x=>'<div>'+x[0]+' '+esc(x[1])+'</div>').join('')+'<div style="opacity:.7">'+esc(nodeTitle(nd))+'</div>';
     t.style.display='block';
     const w=t.offsetWidth, h=t.offsetHeight;
     let x=mx+14, y=my+16;
