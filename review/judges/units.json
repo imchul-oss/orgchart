@@ -1,0 +1,118 @@
+{
+ "beside": {
+  "kind": "verdict",
+  "ref": "r01-orgchart-beside-ref-html.html"
+ },
+ "fit": {
+  "kind": "verdict",
+  "ref": "r02-orgchart-fit-ref-html.html"
+ },
+ "fixconn": {
+  "kind": "verdict",
+  "ref": "r03-orgchart-fixconn-ref-main-html.html"
+ },
+ "fixsmall": {
+  "kind": "verdict",
+  "ref": "r04-orgchart-fixsmall-ref-fixconn-html.html"
+ },
+ "polish": {
+  "kind": "verdict",
+  "ref": "r05-orgchart-polish-ref-html.html"
+ },
+ "reg-r-cmp": {
+  "kind": "same",
+  "ref": null
+ },
+ "reg-r-exp": {
+  "kind": "same",
+  "ref": null
+ },
+ "reg-r-lay": {
+  "kind": "verdict",
+  "ref": "r06-orgchart-layout-ref-minor-g1-html.html"
+ },
+ "reg-r-lint": {
+  "kind": "same",
+  "ref": "r07-orgchart-wrap-org-chart-local-html.html"
+ },
+ "reg-r-min-align": {
+  "kind": "same",
+  "ref": null
+ },
+ "reg-run-g1": {
+  "kind": "verdict",
+  "ref": "r08-orgchart-trunk-ref-layout-g3-html.html"
+ },
+ "rot": {
+  "kind": "verdict",
+  "ref": "r09-orgchart-rot-ref-html.html"
+ },
+ "run-g2": {
+  "kind": "verdict",
+  "ref": "r10-orgchart-aside-ref-trunk-g2-html.html"
+ },
+ "tb": {
+  "kind": "verdict",
+  "ref": null
+ },
+ "tf2": {
+  "kind": "verdict",
+  "ref": "r11-orgchart-tf-ref-html.html"
+ },
+ "tree": {
+  "kind": "verdict",
+  "ref": "r12-orgchart-tree-ref-html.html"
+ },
+ "u-aside3": {
+  "kind": "verdict",
+  "ref": "r21-orgchart-aside3-ref-html.html"
+ },
+ "u-cc": {
+  "kind": "verdict",
+  "ref": "r20-orgchart-cc-ref-html.html"
+ },
+ "u-cc2": {
+  "kind": "verdict",
+  "ref": "r22-orgchart-cc2-ref-html.html"
+ },
+ "u-cols": {
+  "kind": "verdict",
+  "ref": "r19-orgchart-cols-ref-html.html"
+ },
+ "u-idb": {
+  "kind": "verdict",
+  "ref": null
+ },
+ "u-opt": {
+  "kind": "verdict",
+  "ref": "r24-orgchart-opt-ref-html.html"
+ },
+ "u-ord": {
+  "kind": "verdict",
+  "ref": "r23-orgchart-ord-ref-html.html"
+ },
+ "u-tog": {
+  "kind": "verdict",
+  "ref": "r18-orgchart-tog-ref-html.html"
+ },
+ "ux1": {
+  "kind": "verdict",
+  "ref": "r13-orgchart-ux1-ref-merged-html.html"
+ },
+ "ux2": {
+  "kind": "verdict",
+  "ref": "r14-orgchart-ux2-ref-ux1-html.html"
+ },
+ "ux3": {
+  "kind": "verdict",
+  "ref": "r15-orgchart-ux3-ref-ux2-html.html"
+ },
+ "ux4": {
+  "kind": "verdict",
+  "ref": "r16-orgchart-ux4-ref-ux3m-html.html"
+ },
+ "ux5": {
+  "kind": "verdict",
+  "ref": "r17-orgchart-ux5-ref-ux4-html.html"
+ }
+}
