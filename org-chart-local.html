@@ -1342,8 +1342,9 @@ function cmpRun(){
     if(a) cmap.set(i,a);
   });
   const mapped=new Set(cmap.values());
-  const occ=(nodes)=>{const m=new Map();nodes.forEach((nd,ni)=>(nd.m||[]).forEach((mm,mi)=>{const k=cmpTrim(mm.n);if(!m.has(k))m.set(k,[]);m.get(k).push({nd,ni,mm,mi});}));return m;};
-  const bo=occ(BN), ao=occ(AN);
+  const occ=(nodes,cc)=>{const m=new Map();nodes.forEach((nd,ni)=>(nd.m||[]).forEach((mm,mi)=>{if((mm&&mm.cc===true)!==cc)return;const k=cmpTrim(mm.n);if(!m.has(k))m.set(k,[]);m.get(k).push({nd,ni,mm,mi});}));return m;};
+  const bo=occ(BN,false), ao=occ(AN,false);
+  const bcc=occ(BN,true), acc=occ(AN,true);
   const items=[]; let c={join:0,leave:0,move:0,change:0,orgnew:0,orggone:0};
   const marks=[];
   const add=(kind,text,nid)=>{items.push({kind,text,nid});c[kind]++;};
@@ -1370,7 +1371,27 @@ function cmpRun(){
     });
   });
   AN.forEach(a=>{if(!mapped.has(a)) add('orgnew','조직 신설: '+esc(a.en||''),a.id);});
-  BN.forEach((b,i)=>{if(!cmap.has(i)) add('orggone','조직 폐지: '+esc(b.en||'')+' ('+(b.m||[]).length+'명)',null);});
+  BN.forEach((b,i)=>{if(!cmap.has(i)) add('orggone','조직 폐지: '+esc(b.en||'')+' ('+(b.m||[]).filter(mm=>!(mm&&mm.cc===true)).length+'명)',null);});
+  // 겸직(cc) 행: 이름별로 카드 기준 짝짓기
+  const ccAdds=[],ccChanges=[],ccGones=[];
+  const ccSame=(b,a)=>{const mp=cmap.get(bi.get(b.nd)); if(mp) return mp===a.nd; return cmpTrim(b.nd.en)===cmpTrim(a.nd.en);};
+  acc.forEach((alist,k)=>{
+    const blist=bcc.get(k)||[]; const used=new Set();
+    alist.forEach(a=>{
+      const j=blist.findIndex((b,x)=>!used.has(x)&&ccSame(b,a));
+      if(j<0){ccAdds.push(['겸직 추가: '+esc(k)+' ('+esc(a.nd.en||'')+')',a.nd.id]);marks.push([a,'new','']);return;}
+      used.add(j); const b=blist[j];
+      const diffs=[],tl=[];
+      F.forEach(([f,l])=>{const o=cmpTrim(b.mm[f]),n=cmpTrim(a.mm[f]);if(o!==n){const lb=v=>{if(f!=='s')return v;const it=OPT.statusItems.find(x=>x.key===v);return it?it.label:v;};const ol=lb(o),nl=lb(n);diffs.push(esc(l)+' '+esc(ol)+' → '+esc(nl));tl.push(l+' '+ol+' → '+nl);}});
+      if(diffs.length){ccChanges.push(['변경: '+esc(k)+' (겸직) '+diffs.join(', '),a.nd.id]);marks.push([a,'changed','(겸직) '+tl.join(', ')]);}
+    });
+    blist.forEach((b,x)=>{if(used.has(x))return; const mp=cmap.get(bi.get(b.nd)); ccGones.push(['겸직 해제: '+esc(k)+' ('+esc(b.nd.en||'')+')',mp?mp.id:null]);});
+  });
+  bcc.forEach((blist,k)=>{
+    if(acc.has(k)) return;
+    blist.forEach(b=>{const mp=cmap.get(bi.get(b.nd)); ccGones.push(['겸직 해제: '+esc(k)+' ('+esc(b.nd.en||'')+')',mp?mp.id:null]);});
+  });
+  ccChanges.concat(ccAdds,ccGones).forEach(([t,nid])=>add('change',t,nid));
   // 마크 적용
   marks.forEach(([a,kind,title])=>{
     const row=document.querySelector('#n'+CSS.escape(String(a.nd.id))+' .mr[data-mi="'+a.mi+'"]');
