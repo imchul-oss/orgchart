@@ -2424,8 +2424,12 @@ function _drawConnsSide(po){
       if(!busItems.length) return;
       const fx=dir>0?f.x+cardW(f):f.x;
       const edge=t=>dir>0?t.x:t.x+cardW(t);
-      const near=Math.min(...busItems.map(x=>Math.abs(edge(x.t)-fx)));
-      const bx=Math.round(fx+dir*near/2);
+      // 부모 아래에 쌓인 직속 카드가 부모보다 넓으면 버스 세로선을 그 바깥에 둔다 (넓은 카드를 가로지르지 않게)
+      let fxb=fx;
+      S.conns.forEach(k=>{ if(k.f!==fid||_H.has(k.t)) return; const t=S.nodes.find(n=>n.id===k.t);
+        if(t&&isBeside({c:k,t})&&Math.abs(lead(t)-lead(f))<2&&t.y>f.y) fxb=dir>0?Math.max(fxb,t.x+cardW(t)):Math.min(fxb,t.x); });
+      const near=Math.min(...busItems.map(x=>Math.abs(edge(x.t)-fxb)));
+      const bx=Math.round(fxb+dir*near/2);
       const cys=busItems.map(x=>x.t.y+nh(x.t)/2);
       const top=Math.min(fy,...cys), bot=Math.max(fy,...cys);
       addPath(svg,`M${Math.round(fx)} ${Math.round(fy)} L${bx} ${Math.round(fy)}`,pCls);
