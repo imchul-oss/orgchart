@@ -5768,10 +5768,29 @@ function applyLogo(){
 (async function boot(){
   document.body.classList.add('ro'); // 기본 = 읽기 전용
   applyRO();
-  let fileLoaded=false;
+  let fileLoaded=false, localLoaded=false;
+  const drawLocal=function(){ if(localLoaded) return; localLoaded=true; loadFromLocal(); };
   if(FSA_OK){
     try{
-      const h=await _idb.get('handle');
+      const lookup=Promise.resolve().then(function(){ return _idb.get('handle'); });
+      const TIMEOUT={};
+      let tmr;
+      const first=await Promise.race([
+        lookup.then(function(v){ return {v:v}; }, function(e){ return {e:e}; }),
+        new Promise(function(res){ tmr=setTimeout(function(){ res(TIMEOUT); },150); })
+      ]);
+      clearTimeout(tmr);
+      let h;
+      if(first===TIMEOUT){
+        drawLocal();
+        _updateFileBtn();
+        applyLogo();
+        h=await lookup; // 백그라운드에서 계속 대기 (throw 시 아래 catch)
+      } else if(first.e){
+        throw first.e;
+      } else {
+        h=first.v;
+      }
       if(h){
         FILE_HANDLE=h;
         const p=await h.queryPermission({mode:'read'});
@@ -5794,7 +5813,7 @@ function applyLogo(){
       }
     }catch(e){ console.warn('file boot:',e); }
   }
-  if(!fileLoaded) loadFromLocal();
+  if(!fileLoaded) drawLocal();
   _updateFileBtn();
   applyLogo();
 })();
