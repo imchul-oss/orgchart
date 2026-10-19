@@ -340,6 +340,16 @@ body.present #mtip{display:none!important;}
 .mer.drag-over-top{border-top:2px solid var(--mint);}
 .mer.drag-over-bot{border-bottom:2px solid var(--mint);}
 .mer-r{display:flex;gap:5px;align-items:center;}
+.ord-lbl{font-size:11px;color:#777;margin:6px 0 3px;}
+.ord-l{border:1.5px solid #EBEBEB;border-radius:7px;overflow:hidden;}
+.ord-row{display:flex;align-items:center;gap:6px;padding:5px 8px;border-bottom:1px solid #F2F2F2;font-size:12px;background:#fff;}
+.ord-row:last-child{border-bottom:none;}
+.ord-row .ord-h{cursor:grab;color:#aaa;}
+.ord-row .ord-n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ord-row button{border:1px solid #DDD;background:#fff;border-radius:4px;font-size:10px;padding:1px 5px;cursor:pointer;}
+.ord-row.dragging{opacity:0.4;background:#F5F8FF;}
+.ord-row.drag-over-top{border-top:2px solid var(--mint);}
+.ord-row.drag-over-bot{border-bottom:2px solid var(--mint);}
 .mer input,.mer select{padding:5px 7px;border:1px solid #DDD;border-radius:4px;font-size:12px;background:#fff;}
 .mer-name{flex:1;min-width:0;}
 .mer-sel{flex:0 0 auto;font-size:11px;}
@@ -2685,6 +2695,156 @@ const DEF_COLORS={
   get l4(){ return OPT.bandL4; },  get l5(){ return OPT.bandL5; },
   get tf(){ return OPT.bandTf; },  get side(){ return OPT.bandSide; }
 };
+// ═══ 하위 조직 순서 — autoLayout()이 쓰는 트리(kids/pars)와 순서를 그대로 재현
+function _ordTree(){
+  const _po=(SHEETS[CUR_SHEET]&&SHEETS[CUR_SHEET].posOrient)||'down';
+  const byId=id=>S.nodes.find(n=>n.id===id);
+  const sideIds=new Set(S.nodes.filter(n=>n.type==='side').map(n=>n.id));
+  const TYPE_LV={top:0,l1:1,l2:2,l3:3,l4:4,l5:5,tf:4};
+  const typeLv=id=>{const n=byId(id);return n?(TYPE_LV[n.type]??1):1;};
+  const kids={}, pars={};
+  S.nodes.forEach(n=>{kids[n.id]=[];pars[n.id]=null;});
+  S.conns.forEach(c=>{
+    if(sideIds.has(c.f)||sideIds.has(c.t)) return;
+    if(!kids[c.f]||!(c.t in pars)) return;
+    if(!kids[c.f].includes(c.t)) kids[c.f].push(c.t);
+    const cl=typeLv(c.t), sl=typeLv(c.f);
+    const curl=pars[c.t]!==null?typeLv(pars[c.t]):999;
+    const nd=Math.abs(sl-(cl-1)), cd=Math.abs(curl-(cl-1));
+    if(pars[c.t]===null||nd<cd||(nd===cd&&sl>curl)) pars[c.t]=c.f;
+  });
+  {
+    const tmpRoot=S.nodes.find(n=>n.type==='top'&&!pars[n.id])||S.nodes.find(n=>!pars[n.id]&&!sideIds.has(n.id));
+    if(tmpRoot){
+      const reachable=new Set([tmpRoot.id]), q=[tmpRoot.id];
+      while(q.length){ const b=q.shift(); (kids[b]||[]).forEach(k=>{ if(pars[k]===b&&!sideIds.has(k)&&!reachable.has(k)){reachable.add(k);q.push(k);} }); }
+      let repaired=true;
+      while(repaired){
+        repaired=false;
+        S.conns.forEach(c=>{
+          if(sideIds.has(c.f)||sideIds.has(c.t)) return;
+          if(!kids[c.f]||!(c.t in pars)) return;
+          if(!reachable.has(c.f)||reachable.has(c.t)) return;
+          const cl=typeLv(c.t),sl=typeLv(c.f);
+          const curl=pars[c.t]!==null?typeLv(pars[c.t]):999;
+          if(Math.abs(sl-(cl-1))<=Math.abs(curl-(cl-1))){
+            pars[c.t]=c.f; if(!kids[c.f].includes(c.t)) kids[c.f].push(c.t);
+            reachable.add(c.t); repaired=true;
+          }
+        });
+      }
+    }
+  }
+  S.nodes.forEach(n=>{
+    if(kids[n.id]&&kids[n.id].length>1){
+      const allLeaves=kids[n.id].every(c=>!(kids[c]&&kids[c].length));
+      const ys=kids[n.id].map(c=>{const m=byId(c);return m?m.y:0;});
+      const readOrder=allLeaves&&ys.some(y=>y!==ys[0]);
+      kids[n.id].sort((a,b)=>{
+        const na=byId(a), nb=byId(b);
+        if(readOrder||_po==='right'||_po==='left'){ const dy=(na?na.y:0)-(nb?nb.y:0); if(dy) return dy; }
+        if(_po==='right'||_po==='left'){ return ((na?na.y:0)-(nb?nb.y:0))||((na?na.x:0)-(nb?nb.x:0)); }
+        return (na?na.x:0)-(nb?nb.x:0);
+      });
+    }
+  });
+  const tk=id=>(kids[id]||[]).filter(k=>!sideIds.has(k)&&pars[k]===id);
+  const isAsideC=id=>{const n=byId(id);return !!n&&n.aside===true&&tk(id).length===0;};
+  // 일반 하위 조직: autoLayout의 place()와 같은 순서 (세로 1열 + 모두 leaf → x, y 순)
+  const ordKids=id=>{
+    const nd=byId(id), ch=tk(id).filter(k=>!isAsideC(k));
+    if(nd&&nd.kl==='col'&&ch.every(c=>tk(c).length===0)){
+      ch.sort((a,b)=>{const na=byId(a),nb=byId(b);return ((na?na.x:0)-(nb?nb.x:0))||((na?na.y:0)-(nb?nb.y:0));});
+    }
+    return ch;
+  };
+  // 직속 카드: aside leaf 자식 + side 타입 beside 카드, 읽는 순서 (besideSplit의 R 다음 L)
+  const ordBes=id=>{
+    const P=byId(id); if(!P) return [];
+    const asd=tk(id).filter(isAsideC).sort((a,b)=>{const na=byId(a),nb=byId(b);return ((na?na.y:0)-(nb?nb.y:0))||((na?na.x:0)-(nb?nb.x:0));});
+    S.nodes.forEach(n=>{ if(n.type==='side'&&sideBesideParent(n.id)===id) asd.push(n.id); });
+    const bs=besideSplit(P,asd.map(byId).filter(Boolean));
+    return bs.R.concat(bs.L).map(n=>n.id);
+  };
+  return {ordKids,ordBes};
+}
+function _ordRow(n){
+  return `<div class="ord-row" data-id="${esc(n.id)}" draggable="true"><span class="ord-h" title="드래그로 순서 변경">⠿</span><span class="ord-n">${esc(n.en||n.ko||'')}${n.en&&n.ko?`<span style="color:#aaa;margin-left:6px;font-size:11px;">${esc(n.ko)}</span>`:''}</span><button class="ord-up" type="button" onclick="ordMove(this,-1)">▲</button><button class="ord-dn" type="button" onclick="ordMove(this,1)">▼</button></div>`;
+}
+function _ordBlock(nd){
+  const t=_ordTree(), ks=t.ordKids(nd.id), bs=t.ordBes(nd.id);
+  S._ordInit={id:nd.id,kids:ks.slice(),bes:bs.slice()};
+  if(ks.length<2&&bs.length<2) return '';
+  const rows=ids=>ids.map(i=>S.nodes.find(n=>n.id===i)).filter(Boolean).map(_ordRow).join('');
+  return `<div class="fg" id="ei-ord">
+      <label class="fl">하위 조직 순서</label>
+      ${ks.length>=2?`<div class="ord-lbl">하위 조직</div><div class="ord-l" id="ei-ord-kids">${rows(ks)}</div>`:''}
+      ${bs.length>=2?`<div class="ord-lbl">직속 카드</div><div class="ord-l" id="ei-ord-bes">${rows(bs)}</div>`:''}
+      <div style="font-size:11px;color:#999;margin-top:4px;">순서를 바꾸고 저장하면 자동 배치가 함께 실행됩니다.</div>
+    </div>`;
+}
+function ordMove(btn,dir){
+  const row=btn.closest('.ord-row'); if(!row) return;
+  if(dir<0){ const p=row.previousElementSibling; if(p&&p.classList.contains('ord-row')) p.before(row); }
+  else { const q=row.nextElementSibling; if(q&&q.classList.contains('ord-row')) q.after(row); }
+}
+function initOrdDnd(){
+  ['ei-ord-kids','ei-ord-bes'].forEach(lid=>{
+    const list=document.getElementById(lid);
+    if(!list) return;
+    let drag=null;
+    const clr=()=>list.querySelectorAll('.drag-over-top,.drag-over-bot').forEach(el=>el.classList.remove('drag-over-top','drag-over-bot'));
+    list.addEventListener('dragstart',e=>{
+      drag=e.target.closest?e.target.closest('.ord-row'):null;
+      if(!drag||drag.parentElement!==list){ drag=null; return; }
+      e.dataTransfer.effectAllowed='move';
+      try{ e.dataTransfer.setData('text/plain',drag.dataset.id||''); }catch(_){}
+      setTimeout(()=>drag&&drag.classList.add('dragging'),0);
+    });
+    list.addEventListener('dragend',()=>{ if(drag) drag.classList.remove('dragging'); clr(); drag=null; });
+    list.addEventListener('dragover',e=>{
+      if(!drag) return;
+      e.preventDefault();
+      const target=e.target.closest('.ord-row');
+      if(!target||target===drag||target.parentElement!==list) return;
+      clr();
+      const r=target.getBoundingClientRect();
+      target.classList.add(e.clientY<r.top+r.height/2?'drag-over-top':'drag-over-bot');
+    });
+    list.addEventListener('drop',e=>{
+      if(!drag) return;
+      e.preventDefault();
+      const target=e.target.closest('.ord-row');
+      if(target&&target!==drag&&target.parentElement===list){
+        const r=target.getBoundingClientRect();
+        if(e.clientY<r.top+r.height/2) list.insertBefore(drag,target); else target.after(drag);
+      }
+      clr(); drag.classList.remove('dragging'); drag=null;
+    });
+  });
+}
+// 모달에서 정한 순서를 현재 x/y에 인코딩 → autoLayout()이 어느 방향·정렬 기준으로도 그 순서를 쓰게 한다
+function _ordApply(P,kidsOrd,besOrd){
+  const byId=id=>S.nodes.find(n=>n.id===id);
+  const t=_ordTree();
+  // 일반 하위 조직: x·y 모두 단조 증가 (x 우선·y 우선 어느 정렬에도 같은 순서). 각자의 직속 카드는 함께 이동 (좌우 분배 유지)
+  const kn=kidsOrd.map(byId).filter(Boolean);
+  if(kn.length){
+    const x0=Math.min(...kn.map(n=>n.x||0)), y0=Math.min(...kn.map(n=>n.y||0));
+    const moves=kn.map((n,i)=>({n,dx:x0+i*20-(n.x||0),dy:y0+i*20-(n.y||0),bes:t.ordBes(n.id).map(byId).filter(Boolean)}));
+    moves.forEach(m=>{
+      m.n.x=(m.n.x||0)+m.dx; m.n.y=(m.n.y||0)+m.dy;
+      m.bes.forEach(b=>{ b.x=(b.x||0)+m.dx; b.y=(b.y||0)+m.dy; });
+    });
+  }
+  // 직속 카드: 목록 순서대로 y 증가, 앞 nR개는 부모 오른쪽, 나머지는 왼쪽 (besideSplit과 같은 분배)
+  const bn=besOrd.map(byId).filter(Boolean), n=bn.length;
+  const nR=P.ad==='L'?0:P.ad==='B'?Math.ceil(n/2):n;
+  bn.forEach((b,i)=>{
+    b.y=(P.y||0)+i*20;
+    b.x=i<nR?(P.x||0)+cardW(P)+40:(P.x||0)-cardW(b)-40;
+  });
+}
 function openEdit(id){
   if(!ADMIN) return;
   const nd=S.nodes.find(n=>n.id===id); if(!nd) return;
@@ -2750,6 +2910,7 @@ function openEdit(id){
       </select>
       <div style="font-size:11px;color:#999;">카드가 넓어지고 낮아집니다. 자동 배치를 누르면 주변 배치에 반영됩니다.</div>
     </div>
+    ${_ordBlock(nd)}
     <div class="fg">
       <label class="fl" style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" id="ei-aside" ${nd.aside===true?'checked':''}> 상위 카드 옆에 붙이기 (직속)</label>
       <div style="font-size:11px;color:#999;">배치 설정은 자동 배치를 누르면 적용됩니다.</div>
@@ -2771,6 +2932,7 @@ function openEdit(id){
     </div>`;
   document.getElementById('ov').classList.add('show');
   initMerDnd();
+  initOrdDnd();
 }
 function syncBandDefault(){
   const def=document.getElementById('ei-color-def');
@@ -2841,6 +3003,11 @@ function saveModal(){
     if(/\(겸\)$/.test(f)){ f=f.replace(/\s*\(겸\)$/,''); cc=true; }
     if(n||f||r||a) nd.m.push(cc?{n,f,r,a,s,cc:true}:{n,f,r,a,s});
   });
+  // 하위 조직 순서 (모달 DOM이 닫히기 전에 읽는다)
+  const ordIds=lid=>{ const el=document.getElementById(lid); return el?[...el.querySelectorAll('.ord-row')].map(r=>r.dataset.id):null; };
+  const oi=(S._ordInit&&S._ordInit.id===nd.id)?S._ordInit:{kids:[],bes:[]};
+  const ordK=ordIds('ei-ord-kids')||oi.kids, ordB=ordIds('ei-ord-bes')||oi.bes;
+  const ordChanged=JSON.stringify(ordK)!==JSON.stringify(oi.kids)||JSON.stringify(ordB)!==JSON.stringify(oi.bes);
   // Sync connection dash style: connections TO this node follow the new type
   if(oldType!==nd.type){
     S.conns.forEach(c=>{
@@ -2848,7 +3015,8 @@ function saveModal(){
     });
   }
   closeModal();
-  render();
+  if(ordChanged){ _ordApply(nd,ordK,ordB); autoLayout(); }
+  else render();
 }
 function closeModal(){
   document.getElementById('ov').classList.remove('show');
