@@ -4118,10 +4118,12 @@ function _optColorRows(rows){ // [{lbl, key, cssVar, val}]
     </div>`).join('');
 }
 var OPTSEC_DEF={layout:1,card:1,count:1,font:0,line:0,logo:0};
+var _optSecMem=null; // localStorage를 읽지 못하는(막힌) 환경에서만 쓰는 세션 내 섹션 상태 - 읽을 수 있으면 저장소가 기준
 function _optSecLoad(){
-  var o={};
-  try{ var v=JSON.parse(localStorage.getItem('ssb-optsec')||'null'); if(v&&typeof v==='object') o=v; }catch(e){}
-  return o;
+  var o=null;
+  try{ var v=JSON.parse(localStorage.getItem('ssb-optsec')||'null'); o=(v&&typeof v==='object')?v:{}; }catch(e){}
+  if(o){ _optSecMem=o; return o; }
+  return _optSecMem||(_optSecMem={});
 }
 function applyOptSecs(){
   var st=_optSecLoad();
