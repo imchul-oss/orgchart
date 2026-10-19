@@ -431,6 +431,19 @@ body.present #mtip{display:none!important;}
 .sfl-row.cur .sfl-lbl{opacity:1;font-weight:700;}
 .sfl-sub{font-size:9px;opacity:.5;}
 .sfl-cc{font-size:9px;opacity:.6;color:var(--mint);}
+.sfl-scopes{display:flex;gap:4px;margin-bottom:6px;}
+.sfl-scope{flex:1;padding:3px 0;border:1px solid rgba(255,255,255,.14);border-radius:5px;background:rgba(255,255,255,.05);color:rgba(255,255,255,.5);font-size:10px;font-weight:600;cursor:pointer;}
+.sfl-scope:hover{background:rgba(255,255,255,.12);color:rgba(255,255,255,.8);}
+.sfl-scope.on{background:rgba(255,255,255,.18);color:#fff;border-color:rgba(255,255,255,.35);}
+.sfl-fold,.sfl-fsp{width:12px;flex:none;font-size:10px;text-align:center;}
+.sfl-fold{cursor:pointer;opacity:.6;user-select:none;}
+.sfl-fold:hover{opacity:1;}
+.sfl-jump{cursor:pointer;}
+.sfl-jump:hover{opacity:1;text-decoration:underline;}
+.sfl-own{font-size:9px;opacity:.45;white-space:nowrap;}
+.sfl-par .sfl-lbl{font-weight:700;opacity:.9;}
+.sfl-par0,.sfl-par1{border-top:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);border-radius:3px;margin-top:3px;}
+.sfl-par0 .sfl-lbl{opacity:1;}
 .sfl-dup{font-size:10px;opacity:.55;margin-top:4px;text-align:right;}
 .sfl-total{border-top:1px solid rgba(255,255,255,.12);margin-top:6px;padding-top:7px;display:flex;justify-content:space-between;align-items:center;}
 .sfl-total-lbl{font-size:10px;opacity:.5;}
@@ -2931,6 +2944,7 @@ function openEdit(id){
       <label class="fl" style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" id="ei-aside" ${nd.aside===true?'checked':''}> 상위 카드 옆에 붙이기 (직속)</label>
       <div style="font-size:11px;color:#999;">배치 설정은 자동 배치를 누르면 적용됩니다.</div>
     </div>
+    ${_sflSumField(nd)}
     <div class="fg">
       <label class="fl">색상띠 <small style="color:#aaa">— 왼쪽 강조 바</small></label>
       <div style="display:flex;align-items:center;gap:10px;">
@@ -3011,6 +3025,7 @@ function saveModal(){
   { const ac=parseInt(document.getElementById('ei-ac').value,10); if(ac===2||ac===3) nd.ac=ac; else delete nd.ac; }
   { const mcEl=document.getElementById('ei-mc'), mc=mcEl?parseInt(mcEl.value,10):NaN; if(mc===2||mc===3||mc===4) nd.mc=mc; else delete nd.mc; }
   if(document.getElementById('ei-aside').checked) nd.aside=true; else delete nd.aside;
+  { const se=document.getElementById('ei-sum'); if(se){ if(se.value) nd.sum=se.value; else delete nd.sum; } }
   const defCb=document.getElementById('ei-color-def');
   nd.color=defCb&&defCb.checked?'':document.getElementById('ei-color').value;
   // Collect members from modal rows (must happen before closeModal removes DOM)
@@ -5189,6 +5204,175 @@ function _sflCountNodes(nodes){
   return c;
 }
 
+// ── 팀 탭: 범위(현재/전체 시트), 접기, 카드로 이동
+var _sflScope='cur', _sflFold=new Set();
+function _sflSheetNodes(i){ return i===CUR_SHEET?S.nodes:((SHEETS[i]&&SHEETS[i].nodes)||[]); }
+function _sflSheetConns(i){ return i===CUR_SHEET?S.conns:((SHEETS[i]&&SHEETS[i].conns)||[]); }
+function _sflNames(nodes,cc){
+  const st=new Set();
+  nodes.forEach(n=>(n&&n.m||[]).forEach(m=>{ if(cc?(m.cc===true&&_sflStatusOk(m)):_sflCounted(m)) st.add(m.n); }));
+  return st;
+}
+function _sflLabel(n){ return (n&&(n.en||n.ko))||''; }
+// tvOrder()를 시트 i 기준으로 계산 (S를 잠시 바꿔 끼우고 반드시 되돌린다)
+function _sflOrderOf(i){
+  if(i===CUR_SHEET||!SHEETS[i]) return tvOrder();
+  const sn=S.nodes, sc=S.conns, cs=CUR_SHEET;
+  try{ S.nodes=SHEETS[i].nodes||[]; S.conns=SHEETS[i].conns||[]; CUR_SHEET=i; return tvOrder(); }
+  finally{ S.nodes=sn; S.conns=sc; CUR_SHEET=cs; }
+}
+// 각 부모 아래에서 aside 잎 카드(하위 없음)를 먼저 둔다 (그룹 내 순서 유지)
+function _sflAsideFirst(ord,byId){
+  const out=[]; let sec=[];
+  const flush=()=>{
+    const roots=[], st=[];
+    sec.forEach(e=>{
+      const t={e,kids:[]};
+      while(st.length&&st[st.length-1].e.depth>=e.depth) st.pop();
+      if(st.length) st[st.length-1].kids.push(t); else roots.push(t);
+      st.push(t);
+    });
+    const isA=k=>{ const n=byId[String(k.e.id)]; return !!n&&n.aside===true&&k.kids.length===0; };
+    const emit=t=>{
+      out.push(t.e);
+      t.kids.filter(isA).concat(t.kids.filter(k=>!isA(k))).forEach(emit);
+    };
+    roots.forEach(emit); sec=[];
+  };
+  ord.forEach(e=>{ if(e.kind==='row') sec.push(e); else { flush(); out.push(e); } });
+  flush();
+  return out;
+}
+// 다른 시트 카드 → 시트0 카드 매핑: sum → 같은 이름(유일) → 상위의 매핑 → 없음
+function _sflMapAll(){
+  const base=_sflSheetNodes(0), baseById={}, byName={};
+  base.forEach(n=>{
+    baseById[String(n.id)]=n;
+    const k=String(n.en||'').trim()||String(n.ko||'').trim();
+    if(k) (byName[k]=byName[k]||[]).push(String(n.id));
+  });
+  const own={}, cc={}, unmatched=[];
+  base.forEach(n=>{ const id=String(n.id); own[id]=_sflNames([n],false); cc[id]=_sflNames([n],true); });
+  for(let i=1;i<SHEETS.length;i++){
+    const nodes=_sflSheetNodes(i), conns=_sflSheetConns(i), byId={}, memo={};
+    nodes.forEach(n=>{ byId[String(n.id)]=n; });
+    const par=id=>{ const c=conns.find(c=>String(c.t)===id&&byId[String(c.f)]); return c?String(c.f):null; };
+    const map=(id,vis)=>{
+      if(id in memo) return memo[id];
+      if(vis.has(id)) return null;
+      vis.add(id);
+      const n=byId[id]; let r=null;
+      if(n){
+        if(n.sum!=null&&n.sum!==''&&baseById[String(n.sum)]) r=String(n.sum);
+        else {
+          const k=String(n.en||'').trim()||String(n.ko||'').trim();
+          if(k&&byName[k]&&byName[k].length===1) r=byName[k][0];
+          else { const p=par(id); r=p?map(p,vis):null; }
+        }
+      }
+      memo[id]=r; return r;
+    };
+    nodes.forEach(n=>{
+      const id=String(n.id), b=map(id,new Set());
+      if(b){ _sflNames([n],false).forEach(x=>own[b].add(x)); _sflNames([n],true).forEach(x=>cc[b].add(x)); }
+      else unmatched.push({sheet:i,n});
+    });
+  }
+  return {own,cc,unmatched,baseById};
+}
+function _sflTeamHtml(){
+  const all=_sflScope==='all';
+  let html=`<div class="sfl-scopes"><button class="sfl-scope${all?'':' on'}" data-scope="cur" onclick="_sflSetScope('cur')">현재 시트</button><button class="sfl-scope${all?' on':''}" data-scope="all" onclick="_sflSetScope('all')">전체 시트</button></div>`;
+  const si=all?0:CUR_SHEET;
+  const nodes=_sflSheetNodes(si), byId={};
+  nodes.forEach(n=>{ byId[String(n.id)]=n; });
+  let own, cc, mp=null;
+  if(all){ mp=_sflMapAll(); own=id=>mp.own[id]||new Set(); cc=id=>mp.cc[id]||new Set(); }
+  else { own=id=>_sflNames([byId[id]],false); cc=id=>_sflNames([byId[id]],true); }
+  const ord=_sflAsideFirst(_sflOrderOf(si),byId);
+  const rows=[];
+  ord.forEach(e=>{
+    if(e.kind!=='row'){ rows.push(e); return; }
+    const id=String(e.id); if(!byId[id]) return;
+    rows.push({kind:'row',id,depth:e.depth,own:own(id),cc:cc(id)});
+  });
+  let stack=[];
+  rows.forEach((r,idx)=>{
+    if(r.kind!=='row'){ stack=[]; if(r.kind==='head') html+=`<div class="sfl-sec-lbl">${esc(r.text||'')}</div>`; return; }
+    const n=byId[r.id];
+    while(stack.length&&stack[stack.length-1].depth>=r.depth) stack.pop();
+    const hidden=stack.some(x=>x.folded);
+    const nx=rows[idx+1], par=!!(nx&&nx.kind==='row'&&nx.depth>r.depth);
+    const key=_sflScope+':'+r.id, folded=par&&_sflFold.has(key);
+    let num=r.own.size, ownH='';
+    if(par){
+      const t=new Set(r.own);
+      for(let j=idx+1;j<rows.length;j++){ const x=rows[j]; if(x.kind!=='row'||x.depth<=r.depth) break; x.own.forEach(v=>t.add(v)); }
+      num=t.size; ownH=`<span class="sfl-own">직속 ${r.own.size}</span>`;
+    }
+    const ccH=r.cc.size>0?`<span class="sfl-cc">+${r.cc.size}겸</span>`:'';
+    const fold=par?`<span class="sfl-fold" onclick="_sflFoldTog(this)">${folded?'▸':'▾'}</span>`:`<span class="sfl-fsp"></span>`;
+    const cls='sfl-row'+(par?' sfl-par'+(r.depth<=1?' sfl-par'+r.depth:''):'');
+    html+=`<div class="${cls}" data-id="${esc(r.id)}" data-depth="${r.depth}"${hidden?' style="display:none"':''}>${fold}<span class="sfl-lbl sfl-ell sfl-jump" style="padding-left:${r.depth*12}px" onclick="_sflJump(this)">${esc(_sflLabel(n))}</span>${ownH}${ccH}<span class="sfl-num">${num}</span></div>`;
+    stack.push({depth:r.depth,folded});
+  });
+  if(all){
+    if(mp.unmatched.length){
+      html+=`<div class="sfl-sec-lbl">짝 없음</div>`;
+      mp.unmatched.forEach(u=>{
+        const sn=SHEETS[u.sheet]?SHEETS[u.sheet].name:'';
+        html+=`<div class="sfl-row" data-sheet="${u.sheet}" data-id="${esc(String(u.n.id))}"><span class="sfl-fsp"></span><span class="sfl-lbl sfl-ell sfl-jump" onclick="_sflJump(this)">${esc(sn+' · '+_sflLabel(u.n))}</span><span class="sfl-num">${_sflNames([u.n],false).size}</span></div>`;
+      });
+    }
+    const names=new Set();
+    SHEETS.forEach((_,i)=>_sflNames(_sflSheetNodes(i),false).forEach(x=>names.add(x)));
+    html+=`<div class="sfl-total"><span class="sfl-total-lbl sfl-ell">전체</span><span class="sfl-total-num">${names.size}</span></div>`;
+  } else {
+    html+=`<div class="sfl-total"><span class="sfl-total-lbl sfl-ell">${esc(SHEETS[CUR_SHEET]?SHEETS[CUR_SHEET].name:'')}</span><span class="sfl-total-num">${_sflNames(S.nodes,false).size}</span></div>`;
+  }
+  return html;
+}
+function _sflSetScope(sc){
+  if(sc!=='all'&&sc!=='cur') return;
+  _sflScope=sc; updateStatsPanel();
+}
+function _sflFoldTog(el){
+  const row=el.closest('.sfl-row'); if(!row) return;
+  const key=_sflScope+':'+row.getAttribute('data-id');
+  if(_sflFold.has(key)) _sflFold.delete(key); else _sflFold.add(key);
+  updateStatsPanel();
+}
+// tvGo와 같은 스크롤 계산 (트리 뷰는 건드리지 않음)
+function _sflScrollTo(id){
+  const nd=S.nodes.find(n=>String(n.id)===String(id)); if(!nd) return;
+  if(collRevealFor(nd.id)){ drawTfZone(); drawNodes(); drawConns(); }
+  const w=document.getElementById('wrap'); if(!w) return;
+  w.scrollLeft=Math.max(0,(nd.x+cardW(nd)/2)*S.scale-w.clientWidth/2);
+  if(nh(nd)*S.scale>w.clientHeight*0.6) w.scrollTop=Math.max(0,nd.y*S.scale-40);
+  else w.scrollTop=Math.max(0,(nd.y+nh(nd)/2)*S.scale-w.clientHeight/2);
+  const el=document.getElementById('n'+nd.id);
+  if(el){ el.classList.add('lint-flash'); setTimeout(()=>el.classList.remove('lint-flash'),900); }
+}
+function _sflJump(el){
+  const row=el.closest('.sfl-row'); if(!row) return;
+  const id=row.getAttribute('data-id');
+  const ds=row.getAttribute('data-sheet');
+  const sheet=ds!=null?+ds:(_sflScope==='all'?0:CUR_SHEET);
+  if(sheet!==CUR_SHEET&&SHEETS[sheet]){
+    switchSheet(sheet);
+    requestAnimationFrame(()=>requestAnimationFrame(()=>_sflScrollTo(id)));
+  } else _sflScrollTo(id);
+}
+function _sflSumField(nd){
+  if(CUR_SHEET===0||!SHEETS[0]) return '';
+  const cur=nd.sum!=null?String(nd.sum):'';
+  const opts=(SHEETS[0].nodes||[]).map(n=>`<option value="${esc(String(n.id))}"${String(n.id)===cur?' selected':''}>${esc(_sflLabel(n))}</option>`).join('');
+  return `<div class="fg">
+      <label class="fl">전체 시트 합산 위치</label>
+      <select class="fs" id="ei-sum"><option value=""${cur?'':' selected'}>자동 (이름이 같은 조직, 없으면 상위를 따름)</option>${opts}</select>
+    </div>`;
+}
+
 function updateStatsPanel(){
   const body=document.getElementById('statsfl-body');
   const grpSel=document.getElementById('statsfl-grp');
@@ -5308,32 +5492,7 @@ function updateStatsPanel(){
     if(dup>0) html+=`<div class="sfl-dup">시트 중복 ${dup}명</div>`;
 
   } else if(_statTab==='team'){
-    const ord=tvOrder();
-    const byId={}; S.nodes.forEach(n=>{byId[n.id]=n;});
-    const own=e=>{ const n=byId[e.id]; return n?_sflCountNodes([n]):0; };
-    ord.forEach((e,idx)=>{
-      if(e.kind!=='row'){
-        if(e.kind==='head') html+=`<div class="sfl-sec-lbl">${esc(e.text||'')}</div>`;
-        return;
-      }
-      const n=byId[e.id]; if(!n) return;
-      const c=own(e);
-      let sub='';
-      const nx=ord[idx+1];
-      if(nx&&nx.kind==='row'&&nx.depth>e.depth){
-        let t=c;
-        for(let j=idx+1;j<ord.length;j++){
-          const x=ord[j];
-          if(x.kind!=='row'||x.depth<=e.depth) break;
-          t+=own(x);
-        }
-        sub=`<span class="sfl-sub">계 ${t}</span>`;
-      }
-      const ccN=(n.m||[]).filter(m=>m.cc===true&&_sflStatusOk(m)).length;
-      const cc=ccN>0?`<span class="sfl-cc">+${ccN}겸</span>`:'';
-      html+=`<div class="sfl-row" data-id="${esc(String(e.id))}" data-depth="${e.depth}"><span class="sfl-lbl sfl-ell" style="padding-left:${e.depth*12}px">${esc(n.en||n.ko||'')}</span>${sub}${cc}<span class="sfl-num">${c}</span></div>`;
-    });
-    html+=`<div class="sfl-total"><span class="sfl-total-lbl sfl-ell">${esc(SHEETS[CUR_SHEET]?SHEETS[CUR_SHEET].name:'')}</span><span class="sfl-total-num">${_sflCountNodes(S.nodes)}</span></div>`;
+    html+=_sflTeamHtml();
 
   } else if(_statTab==='area'){
     // ── 분야 탭: 분야 카테고리별 인원 (현황그룹 필터 적용 가능)
