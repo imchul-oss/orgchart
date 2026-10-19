@@ -543,6 +543,7 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
   #srch-box,#srch-btn{display:none!important;}
   .nd.srch-hit,.nd.srch-hit.srch-cur{outline:none!important;}
   .mr.srch-row{background:inherit!important;}
+  .ncnt{right:calc(7px + var(--cnt-dx,0px));}  /* 인쇄에는 ✏ 버튼이 없으므로 읽기 전용과 같은 자리 */
   @page{size:A4 landscape;margin:0}
   body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
   *{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
@@ -2424,8 +2425,12 @@ function _drawConnsSide(po){
       if(!busItems.length) return;
       const fx=dir>0?f.x+cardW(f):f.x;
       const edge=t=>dir>0?t.x:t.x+cardW(t);
-      const near=Math.min(...busItems.map(x=>Math.abs(edge(x.t)-fx)));
-      const bx=Math.round(fx+dir*near/2);
+      // 부모 아래에 쌓인 직속 카드가 부모보다 넓으면 버스 세로선을 그 바깥에 둔다 (넓은 카드를 가로지르지 않게)
+      let fxb=fx;
+      S.conns.forEach(k=>{ if(k.f!==fid||_H.has(k.t)) return; const t=S.nodes.find(n=>n.id===k.t);
+        if(t&&isBeside({c:k,t})&&Math.abs(lead(t)-lead(f))<2&&t.y>f.y) fxb=dir>0?Math.max(fxb,t.x+cardW(t)):Math.min(fxb,t.x); });
+      const near=Math.min(...busItems.map(x=>Math.abs(edge(x.t)-fxb)));
+      const bx=Math.round(fxb+dir*near/2);
       const cys=busItems.map(x=>x.t.y+nh(x.t)/2);
       const top=Math.min(fy,...cys), bot=Math.max(fy,...cys);
       addPath(svg,`M${Math.round(fx)} ${Math.round(fy)} L${bx} ${Math.round(fy)}`,pCls);
@@ -2740,7 +2745,8 @@ function _ordTree(){
     if(kids[n.id]&&kids[n.id].length>1){
       const allLeaves=kids[n.id].every(c=>!(kids[c]&&kids[c].length));
       const ys=kids[n.id].map(c=>{const m=byId(c);return m?m.y:0;});
-      const readOrder=allLeaves&&ys.some(y=>y!==ys[0]);
+      // 읽는 순서(y 우선)는 같은 타입의 leaf가 여러 행에 걸칠 때(줄바꿈)만. 타입 행 차이만으로 y가 다른 형제(TF 등)는 x 순서
+      const readOrder=allLeaves&&kids[n.id].some((a,i)=>kids[n.id].some((b,j)=>j>i&&typeLv(a)===typeLv(b)&&ys[i]!==ys[j]));
       kids[n.id].sort((a,b)=>{
         const na=byId(a), nb=byId(b);
         if(readOrder||_po==='right'||_po==='left'){ const dy=(na?na.y:0)-(nb?nb.y:0); if(dy) return dy; }
@@ -3339,7 +3345,8 @@ function autoLayout(){
     if(kids[n.id]&&kids[n.id].length>1){
       const allLeaves=kids[n.id].every(c=>!(kids[c]&&kids[c].length));
       const ys=kids[n.id].map(c=>{const m=S.nodes.find(x=>x.id===c);return m?m.y:0;});
-      const readOrder=allLeaves&&ys.some(y=>y!==ys[0]);
+      // 읽는 순서(y 우선)는 같은 타입의 leaf가 여러 행에 걸칠 때(줄바꿈)만. 타입 행 차이만으로 y가 다른 형제(TF 등)는 x 순서
+      const readOrder=allLeaves&&kids[n.id].some((a,i)=>kids[n.id].some((b,j)=>j>i&&typeLv(a)===typeLv(b)&&ys[i]!==ys[j]));
       kids[n.id].sort((a,b)=>{
         const na=S.nodes.find(x=>x.id===a), nb=S.nodes.find(x=>x.id===b);
         if(readOrder||_po==='right'||_po==='left'){
@@ -4118,9 +4125,12 @@ function _optColorRows(rows){ // [{lbl, key, cssVar, val}]
     </div>`).join('');
 }
 var OPTSEC_DEF={layout:1,card:1,count:1,font:0,line:0,logo:0};
+var _optSecMem=null; // 세션 내 섹션 상태 - localStorage가 막힌 환경에서도 접기/펼치기가 동작하도록 메모리에 든다
 function _optSecLoad(){
+  if(_optSecMem) return _optSecMem;
   var o={};
   try{ var v=JSON.parse(localStorage.getItem('ssb-optsec')||'null'); if(v&&typeof v==='object') o=v; }catch(e){}
+  _optSecMem=o;
   return o;
 }
 function applyOptSecs(){
@@ -4218,7 +4228,8 @@ function resetOptions(){
     strokeW:1.8,strokeDashW:1.5,
     uiMint:'#40D2A7',uiSky:'#60DCF8',uiCoral:'#FF8770',topbarBg:'#2C2C2C',
     statsBg:'#1C1C20',stbarBg:'#1A1A1A',
-    cardRadius:8,shadowA:0.11,canvasBg:'#ECEEF3',cardBg:'#FFFFFF',rowEven:'#FAFBFD',rowBorder:'#F2F3F6',
+    cardRadius:8,shadowA:0.11,showCnt:true,cntPos:'tr',cntColor:'',cntCc:'sep',cntSize:9,cntDx:0,cntDy:0,
+    canvasBg:'#ECEEF3',cardBg:'#FFFFFF',rowEven:'#FAFBFD',rowBorder:'#F2F3F6',
     hdrTop:'#1A1A1A',hdrL1:'#2C2C2C',hdrL2:'#383838',hdrL3:'#424242',
     hdrL4:'#4A4A4A',hdrL5:'#525252',hdrTf:'#30304A',hdrSide:'#323232',
     bandTop:'#40D2A7',bandL1:'#40D2A7',bandL2:'#60DCF8',bandL3:'#60DCF8',
@@ -5516,7 +5527,7 @@ function srchApply(recenter){
   var q=srchQ();
   if(!q){ SRCH.ids=[]; SRCH.idx=0; cnt.textContent=''; return; }
   var hits=S.nodes.filter(function(nd){
-    return srchHas(nd.en,q)||srchHas(nd.ko,q)||(nd.m||[]).some(function(m){return srchHas(m.n,q)||srchHas(m.f,q)||srchHas(m.r,q);});
+    return srchHas(nd.en,q)||srchHas(nd.ko,q)||(nd.m||[]).some(function(m){return srchHas(m.n,q)||srchHas(jobText(m),q)||srchHas(m.r,q);});
   }).sort(function(a,b){return (a.y-b.y)||(a.x-b.x);});
   SRCH.ids=hits.map(function(n){return n.id;});
   if(SRCH.idx>=SRCH.ids.length||SRCH.idx<0) SRCH.idx=0;
@@ -5528,7 +5539,7 @@ function srchApply(recenter){
     if(k===SRCH.idx) el.classList.add('srch-cur');
     el.querySelectorAll('.mr').forEach(function(r){
       var m=(nd.m||[])[+r.getAttribute('data-mi')];
-      if(m&&(srchHas(m.n,q)||srchHas(m.f,q)||srchHas(m.r,q))) r.classList.add('srch-row');
+      if(m&&(srchHas(m.n,q)||srchHas(jobText(m),q)||srchHas(m.r,q))) r.classList.add('srch-row');
     });
   });
   cnt.textContent=(SRCH.idx+1)+'/'+hits.length;
@@ -5595,7 +5606,7 @@ function tvOrder(){
       var k=kids[n.id]; if(k.length<2) return;
       var allLeaves=k.every(function(c){return !(kids[c]&&kids[c].length);});
       var ys=k.map(function(c){return byId[c]?byId[c].y:0;});
-      var ro=allLeaves&&ys.some(function(y){return y!==ys[0];});
+      var ro=allLeaves&&k.some(function(a,i){return k.some(function(b,j){return j>i&&lv(a)===lv(b)&&ys[i]!==ys[j];});});
       if(po==='right'||po==='left') k.sort(yx);
       else if(ro) k.sort(function(a,b){ return (byId[a].y-byId[b].y)||(byId[a].x-byId[b].x); });
       else k.sort(xy);
