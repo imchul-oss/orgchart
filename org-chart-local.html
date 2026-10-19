@@ -4854,9 +4854,10 @@ function applyAllFontHeights(){
 function exportCSV(){
   // id 컬럼은 실제 노드 id 사용 — 영문명(en)은 중복·공란이 흔해 re-import 시 멤버·연결이 섞임
   const cid=n=>q(n.id);
-  const rows=['NODES','id,en,ko,type,x,y,color'];
+  const rows=['NODES','id,en,ko,type,x,y,color,mc,kl,kn,ad,ac,aside,sum'];
   S.nodes.forEach(n=>{
-    rows.push([cid(n),q(n.en),q(n.ko),n.type,n.x,n.y,n.color||''].join(','));
+    rows.push([cid(n),q(n.en),q(n.ko),n.type,n.x,n.y,n.color||'',
+      n.mc||'',n.kl||'',n.kn||'',n.ad||'',n.ac||'',n.aside?'1':'',q(n.sum||'')].join(','));
   });
   rows.push('');
   rows.push('MEMBERS','node_id,name,func,role,area,status,concurrent');
@@ -5080,17 +5081,36 @@ function importCSV(inp){
     try{
       const lines=e.target.result.replace(/\r/g,'').split('\n');
       let sec='',nodes=[],conns=[];
+      let hdrSeen=false,colIdx={id:0,en:1,ko:2,type:3,x:4,y:5,color:6};
       lines.forEach(raw=>{
         const l=raw.trim(); if(!l) return;
         if(l==='NODES'){sec='nodes';return;}
         if(l==='MEMBERS'){sec='mems';return;}
         if(l==='CONNECTIONS'){sec='conns';return;}
+        if(sec==='nodes'&&!hdrSeen){
+          const hc=parseCSVLine(l);
+          if(hc.some(h=>String(h).trim()==='id')){ // header-driven: id may sit in any column (session fix 10-20)
+            hdrSeen=true; colIdx={};
+            hc.forEach((h,i)=>{ const k=String(h).trim(); if(!(k in colIdx)) colIdx[k]=i; });
+            return;
+          }
+        }
         if(l.startsWith('id,')||l.startsWith('node_id,')) return;
         const cols=parseCSVLine(l);
         if(sec==='nodes'){
+          const g=k=>{ const i=colIdx[k]; return i===undefined?undefined:cols[i]; };
           // id 컬럼 = 영문명: 그대로 id로 사용
-          nodes.push({id:cols[0],en:cols[1],ko:cols[2],type:cols[3]||'l2',
-            x:+cols[4]||0,y:+cols[5]||0,color:cols[6]||'',m:[]});
+          const nn={id:g('id'),en:g('en'),ko:g('ko'),type:g('type')||'l2',
+            x:+g('x')||0,y:+g('y')||0,color:g('color')||'',m:[]};
+          const t=v=>String(v==null?'':v).trim();
+          const mc=t(g('mc')); if(/^[2-4]$/.test(mc)) nn.mc=+mc;
+          if(t(g('kl'))==='col') nn.kl='col';
+          const kn=t(g('kn')); if(/^\d+$/.test(kn)&&+kn>=1) nn.kn=+kn;
+          const ad=t(g('ad')); if(ad==='L'||ad==='B') nn.ad=ad;
+          const ac=t(g('ac')); if(ac==='2'||ac==='3') nn.ac=+ac;
+          const as=t(g('aside')); if(as==='1'||as==='true') nn.aside=true;
+          const sm=t(g('sum')); if(sm&&_ID_RE.test(sm)) nn.sum=sm;
+          nodes.push(nn);
         } else if(sec==='mems'){
           const nd=nodes.find(n=>n.id===cols[0]);
           if(nd){ const mm={n:cols[1],f:cols[2],r:cols[3],a:cols[4]||'',s:cols[5]||OPT.statusItems[0]?.key||'active'}; if(cols[6]==='1') mm.cc=true; nd.m.push(mm); }
