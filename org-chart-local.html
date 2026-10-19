@@ -1044,8 +1044,10 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
             oninput="OPT.logoSubColor=this.value;applyLogo();document.getElementById('opt-logo-subcol-v').textContent=this.value.toUpperCase();saveOptLS()">
           <span class="opt-val" id="opt-logo-subcol-v" style="font-family:monospace;letter-spacing:0.5px;">#808080</span>
         </div>
+        <div class="opt-sub" style="font-size:11px;font-weight:700;color:#777;margin:8px 0 2px;">글자</div>
+        <div id="opt-txt-colors"></div>
         <div id="opt-ui-colors"></div>
-        <p style="font-size:11px;color:#999;">카드 헤더·띠·텍스트 색상은 <b>◈ 데이터</b> 패널에 있습니다.</p>
+        <p style="font-size:11px;color:#999;">카드 헤더·띠 색상은 <b>◈ 데이터</b> 패널에 있습니다.</p>
       </div>
     </div>
     <div class="opt-foot">
@@ -1835,6 +1837,7 @@ function jobText(m){
   if(!f) return '겸직';
   return /\(겸\)$/.test(f)?f:f+'(겸)';
 }
+function _txtSt(c){return /^#[0-9a-fA-F]{6}$/.test(c||'')?` style="color:${c}"`:'';}
 function nodeHTML(nd) {
   const _mc=(nd.m||[]).length?_mcOf(nd):1;  // 빈 카드는 1열 본문(+) 그대로, 폭만 넓다
   const av=nd.m.map((m,i)=>`
@@ -1851,8 +1854,8 @@ function nodeHTML(nd) {
   const _cl=cntLabel(nd);
   return `
     <div class="nh">
-      ${(!nd.en&&nd.ko)?`<div class="nen">${esc(nd.ko)}</div>`:`<div class="nen">${esc(nd.en||'')}</div>
-      <div class="nko">${esc(nd.ko||'')}</div>`}
+      ${(!nd.en&&nd.ko)?`<div class="nen"${_txtSt(nd.tc)}>${esc(nd.ko)}</div>`:`<div class="nen"${_txtSt(nd.tc)}>${esc(nd.en||'')}</div>
+      <div class="nko"${_txtSt(nd.tk)}>${esc(nd.ko||'')}</div>`}
       <div class="nact">
         <button class="nab" onclick="openEdit('${nd.id}')" title="수정">✏</button>
       </div>
@@ -2980,6 +2983,24 @@ function openEdit(id){
       </div>
     </div>
     <div class="fg">
+      <label class="fl">제목 글자색</label>
+      <div style="display:flex;align-items:center;gap:10px;">
+        ${mkHexInp(nd.tc||OPT.txtHdrEn,"document.getElementById('ei-tc-def').checked=false",'id="ei-tc"')}
+        <label style="font-size:12px;color:#555;display:flex;align-items:center;gap:5px;cursor:pointer;">
+          <input type="checkbox" id="ei-tc-def" ${!nd.tc?'checked':''}> 자동
+        </label>
+      </div>
+    </div>
+    <div class="fg">
+      <label class="fl">부제 글자색</label>
+      <div style="display:flex;align-items:center;gap:10px;">
+        ${mkHexInp(nd.tk||OPT.txtHdrKo,"document.getElementById('ei-tk-def').checked=false",'id="ei-tk"')}
+        <label style="font-size:12px;color:#555;display:flex;align-items:center;gap:5px;cursor:pointer;">
+          <input type="checkbox" id="ei-tk-def" ${!nd.tk?'checked':''}> 자동
+        </label>
+      </div>
+    </div>
+    <div class="fg">
       <label class="fl">소속 멤버</label>
       <div class="ml" id="mlist">${mrows}</div>
       <button class="bam" onclick="addMRow()">＋ 멤버 추가</button>
@@ -3052,6 +3073,10 @@ function saveModal(){
   { const se=document.getElementById('ei-sum'); if(se){ if(se.value) nd.sum=se.value; else delete nd.sum; } }
   const defCb=document.getElementById('ei-color-def');
   nd.color=defCb&&defCb.checked?'':document.getElementById('ei-color').value;
+  [['tc','ei-tc'],['tk','ei-tk']].forEach(([k,i])=>{
+    const cb=document.getElementById(i+'-def'), inp=document.getElementById(i);
+    if(!cb||!inp||cb.checked) delete nd[k]; else nd[k]=inp.value;
+  });
   // Collect members from modal rows (must happen before closeModal removes DOM)
   nd.m=[];
   document.querySelectorAll('#mlist .mer').forEach(row=>{
@@ -4336,6 +4361,15 @@ function openOptions(){
     {lbl:'실선 색상', key:'connSolid', cssVar:'--conn-solid', val:OPT.connSolid},
     {lbl:'점선 색상', key:'connDash',  cssVar:'--conn-dash',  val:OPT.connDash},
   ]);
+  // 글자 색상
+  {const tcEl=document.getElementById('opt-txt-colors'); if(tcEl) tcEl.innerHTML=_optColorRows([
+    {lbl:'헤더 제목', key:'txtHdrEn', cssVar:'--txt-hdr-en', val:OPT.txtHdrEn},
+    {lbl:'헤더 부제', key:'txtHdrKo', cssVar:'--txt-hdr-ko', val:OPT.txtHdrKo},
+    {lbl:'멤버 이름', key:'txtMn',    cssVar:'--txt-mn',     val:OPT.txtMn},
+    {lbl:'직무',      key:'txtMf',    cssVar:'--txt-mf',     val:OPT.txtMf},
+    {lbl:'직책',      key:'txtMr2',   cssVar:'--txt-mr2',    val:OPT.txtMr2},
+    {lbl:'분야',      key:'txtMa',    cssVar:'--txt-ma',     val:OPT.txtMa},
+  ]);}
   // UI 색상
   document.getElementById('opt-ui-colors').innerHTML=_optColorRows([
     {lbl:'민트 (액센트)',    key:'uiMint',   cssVar:'--mint',      val:OPT.uiMint},
@@ -4882,10 +4916,10 @@ function applyAllFontHeights(){
 function exportCSV(){
   // id 컬럼은 실제 노드 id 사용 — 영문명(en)은 중복·공란이 흔해 re-import 시 멤버·연결이 섞임
   const cid=n=>q(n.id);
-  const rows=['NODES','id,en,ko,type,x,y,color,mc,kl,kn,ad,ac,aside,sum'];
+  const rows=['NODES','id,en,ko,type,x,y,color,mc,kl,kn,ad,ac,aside,sum,tc,tk'];
   S.nodes.forEach(n=>{
     rows.push([cid(n),q(n.en),q(n.ko),n.type,n.x,n.y,n.color||'',
-      n.mc||'',n.kl||'',n.kn||'',n.ad||'',n.ac||'',n.aside?'1':'',q(n.sum||'')].join(','));
+      n.mc||'',n.kl||'',n.kn||'',n.ad||'',n.ac||'',n.aside?'1':'',q(n.sum||''),n.tc||'',n.tk||''].join(','));
   });
   rows.push('');
   rows.push('MEMBERS','node_id,name,func,role,area,status,concurrent');
@@ -5138,6 +5172,8 @@ function importCSV(inp){
           const ac=t(g('ac')); if(ac==='2'||ac==='3') nn.ac=+ac;
           const as=t(g('aside')); if(as==='1'||as==='true') nn.aside=true;
           const sm=t(g('sum')); if(sm&&_ID_RE.test(sm)) nn.sum=sm;
+          const tc=t(g('tc')); if(/^#[0-9a-fA-F]{6}$/.test(tc)) nn.tc=tc;
+          const tk=t(g('tk')); if(/^#[0-9a-fA-F]{6}$/.test(tk)) nn.tk=tk;
           nodes.push(nn);
         } else if(sec==='mems'){
           const nd=nodes.find(n=>n.id===cols[0]);
