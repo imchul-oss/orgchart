@@ -2744,7 +2744,7 @@ function _ordTree(){
     if(kids[n.id]&&kids[n.id].length>1){
       const allLeaves=kids[n.id].every(c=>!(kids[c]&&kids[c].length));
       const ys=kids[n.id].map(c=>{const m=byId(c);return m?m.y:0;});
-      const readOrder=allLeaves&&ys.some(y=>y!==ys[0]);
+      const readOrder=allLeaves&&ys.some(y=>y!==ys[0])&&kids[n.id].every(c=>typeLv(c)===typeLv(kids[n.id][0]));  // 타입 행이 섞이면(TF 등) y가 아니라 x 순서
       kids[n.id].sort((a,b)=>{
         const na=byId(a), nb=byId(b);
         if(readOrder||_po==='right'||_po==='left'){ const dy=(na?na.y:0)-(nb?nb.y:0); if(dy) return dy; }
@@ -3343,7 +3343,7 @@ function autoLayout(){
     if(kids[n.id]&&kids[n.id].length>1){
       const allLeaves=kids[n.id].every(c=>!(kids[c]&&kids[c].length));
       const ys=kids[n.id].map(c=>{const m=S.nodes.find(x=>x.id===c);return m?m.y:0;});
-      const readOrder=allLeaves&&ys.some(y=>y!==ys[0]);
+      const readOrder=allLeaves&&ys.some(y=>y!==ys[0])&&kids[n.id].every(c=>typeLv(c)===typeLv(kids[n.id][0]));  // 타입 행이 섞이면(TF 등) y가 아니라 x 순서
       kids[n.id].sort((a,b)=>{
         const na=S.nodes.find(x=>x.id===a), nb=S.nodes.find(x=>x.id===b);
         if(readOrder||_po==='right'||_po==='left'){
@@ -5602,7 +5602,7 @@ function tvOrder(){
       var k=kids[n.id]; if(k.length<2) return;
       var allLeaves=k.every(function(c){return !(kids[c]&&kids[c].length);});
       var ys=k.map(function(c){return byId[c]?byId[c].y:0;});
-      var ro=allLeaves&&ys.some(function(y){return y!==ys[0];});
+      var ro=allLeaves&&ys.some(function(y){return y!==ys[0];})&&k.every(function(c){return lv(c)===lv(k[0]);});
       if(po==='right'||po==='left') k.sort(yx);
       else if(ro) k.sort(function(a,b){ return (byId[a].y-byId[b].y)||(byId[a].x-byId[b].x); });
       else k.sort(xy);
