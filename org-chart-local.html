@@ -2961,11 +2961,14 @@ function applyAllStatusCSS(){
 }
 function mkStatusSel(cur){
   const opts=OPT.statusItems.map(x=>`<option value="${x.key}"${x.key===cur?' selected':''}>${esc(x.label)}</option>`).join('');
-  return `<select data-f="s" style="font-size:11px;padding:3px 4px;border:1px solid #DDD;border-radius:4px;background:#fff;cursor:pointer;">${opts}</select>`;
+  const extra=(typeof cur==='string'&&cur&&!OPT.statusItems.some(x=>x.key===cur))?`<option value="${esc(cur)}" selected>${esc(cur)} (목록 밖)</option>`:'';
+  return `<select data-f="s" style="font-size:11px;padding:3px 4px;border:1px solid #DDD;border-radius:4px;background:#fff;cursor:pointer;">${opts}${extra}</select>`;
 }
 function mkCatSel(cats,val,df){
   const opts=cats.map(c=>`<option value="${esc(c)}"${c===val?' selected':''}>${esc(c)}</option>`).join('');
-  return `<select data-f="${df}" class="mer-sel">${opts}<option value="__other__"${!cats.includes(val)?' selected':''}>미입력</option></select>`;
+  const out=(typeof val==='string'&&val&&!cats.includes(val));
+  const extra=out?`<option value="${esc(val)}" selected>${esc(val)} (목록 밖)</option>`:'';
+  return `<select data-f="${df}" class="mer-sel">${opts}${extra}<option value="__other__"${(!out&&!cats.includes(val))?' selected':''}>미입력</option></select>`;
 }
 function merRow(m){
   return `<div class="mer" draggable="true">
