@@ -1969,18 +1969,23 @@ function drawConns() {
             });
             if(firstConns.length&&firstConns.every(x=>x.c.d)&&laterSolid) addPath(svg,`M${E} ${ay} L${xs} ${ay}`,'cpath');
           } else {
-            const ybMax=Math.max(...mine.map(x=>x.t.y-10));
+            // 행 버스: 최상단 행이 부모 헤더 중심(ay)보다 아래면 그 행 버스는 ay, 나머지는 행 y-10
+            const rowYs=[...new Set(mine.map(x=>x.t.y))].sort((a,b)=>a-b);
+            const topRowY=rowYs[0];
+            const busY=ry=>(ry===topRowY&&ry>ay)?ay:ry-10;
+            const busOf=t=>busY(t.y);
+            const buses=rowYs.map(busY);
             const stubCls=mine.some(x=>!x.c.d)?'cpath':'cpath-dash';
             addPath(svg,`M${E} ${ay} L${xs} ${ay}`,stubCls);
-            const top=f.y-10, end=Math.max(ay,ybMax);
+            const tTop=Math.min(ay,...buses), end=Math.max(ay,...buses);
             const u=uniform(mine);
-            if(u) addPath(svg,`M${xs} ${top} L${xs} ${end}`,u);
+            if(u){ if(end>tTop) addPath(svg,`M${xs} ${tTop} L${xs} ${end}`,u); }
             else {
-              const pts=[...new Set([top,ay,end,...mine.map(x=>x.t.y-10)])].sort((a,b)=>a-b).filter(v=>v>=top&&v<=end);
+              const pts=[...new Set([tTop,ay,end,...buses])].sort((a,b)=>a-b).filter(v=>v>=tTop&&v<=end);
               const segs=[];
               for(let i=0;i+1<pts.length;i++){
                 const a=pts[i], b=pts[i+1];
-                let lead=a>=ay?mine.filter(x=>x.t.y-10>=b):mine.filter(x=>x.t.y-10<=a);
+                let lead=a>=ay?mine.filter(x=>busOf(x.t)>=b):mine.filter(x=>busOf(x.t)<=a);
                 if(!lead.length) lead=mine;
                 segs.push({a,b,s:lead.some(x=>!x.c.d)});
               }
@@ -1992,7 +1997,7 @@ function drawConns() {
               rows.get(x.t.y).push(x);
             });
             rows.forEach((rm,ry)=>{
-              const yb=ry-10;
+              const yb=busY(ry);
               const ru=uniform(rm);
               if(ru){
                 let far=null;
@@ -2013,7 +2018,7 @@ function drawConns() {
               }
             });
             mine.forEach(({c,t})=>{
-              const cx=t.x+cardW(t)/2, yb=t.y-10;
+              const cx=t.x+cardW(t)/2, yb=busOf(t);
               const full=`M${E} ${ay} L${xs} ${ay} L${xs} ${yb} L${cx} ${yb} L${cx} ${t.y}`;
               const hit=ord[0]===t?full:`M${xs} ${ay} L${xs} ${yb} L${cx} ${yb} L${cx} ${t.y}`;
               mkG(c,full,hit,`M${cx} ${yb} L${cx} ${t.y}`,Math.abs(cx-xs));
@@ -3439,8 +3444,9 @@ function autoLayout(){
       const C=besideCols(n);
       [bs.R,bs.L].forEach(cards=>{
         let off=0,prevH=0,first=true;
+        const off0=C>1?c20(CUR_HH/2+10):0; // 다열: 첫 행은 부모 헤더 중심 아래에서 시작
         stackRows(cards,C).forEach(cs=>{
-          off=first?0:c20(off+prevH+20); first=false; prevH=Math.max(...cs.map(nh));
+          off=first?off0:c20(off+prevH+20); first=false; prevH=Math.max(...cs.map(nh));
         });
         if(!first) h=Math.max(h,off+prevH);
       });
@@ -3496,7 +3502,7 @@ function autoLayout(){
       let prevY=p.y,prevH=0;
       const bW=bwOf(cards), bS=stepOf(bW);
       stackRows(cards,C).forEach((cs,ri)=>{
-        const y=ri===0?p.y:c20(prevY+prevH+20);
+        const y=ri===0?(C>1?c20(p.y+CUR_HH/2+10):p.y):c20(prevY+prevH+20);
         cs.forEach((a,j)=>{
           a.x=dir>0?r20(p.x+cardW(p)+COL_GAP)+j*bS:r20(p.x-COL_GAP-bW)-j*bS;
           a.y=y;
