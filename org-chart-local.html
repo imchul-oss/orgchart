@@ -189,6 +189,9 @@ body.present #tb-more,body.present #tb-more-panel{display:none!important;}
 .opt-body{padding:6px 0 16px;}
 .opt-sec{padding:10px 22px 4px;}
 .opt-sec-title{font-size:10px;font-weight:700;color:#999;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;padding-bottom:4px;border-bottom:1px solid #F0F0F0;}
+.opt-sec-title[role=button]{cursor:pointer;user-select:none;}
+.opt-sec.collapsed>*:not(.opt-sec-title){display:none;}
+.opt-sec.collapsed>.opt-sec-title{margin-bottom:0;}
 .opt-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
 .opt-lbl{font-size:12px;color:#555;min-width:100px;}
 .opt-val{font-size:11px;color:#999;min-width:32px;text-align:right;}
@@ -806,9 +809,126 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
       <button class="mcl" onclick="closeOptions()">✕</button>
     </div>
     <div class="opt-body">
-      <!-- 폰트 -->
-      <div class="opt-sec">
-        <div class="opt-sec-title">폰트 크기</div>
+      <div class="opt-sec" data-sec="layout">
+        <div class="opt-sec-title" role="button" tabindex="0" aria-expanded="true"><span class="opt-arr">▾</span> 배치</div>
+        <div class="opt-row">
+          <span class="opt-lbl">차트 방향</span>
+          <select id="opt-orient" class="opt-orient-sel"
+            onchange="OPT.orient=this.value;autoLayout();saveOptLS()">
+            <option value="down">위에서 아래로</option>
+            <option value="right">왼쪽에서 오른쪽으로</option>
+            <option value="left">오른쪽에서 왼쪽으로</option>
+          </select>
+        </div>
+        <div class="opt-row">
+          <span class="opt-lbl">상하 간격</span>
+          <input type="range" class="opt-slider" id="opt-rg" min="40" max="200" step="10"
+            oninput="OPT.rowGap=+this.value;document.getElementById('opt-rg-v').textContent=this.value+'px';scheduleOptLayout()">
+          <span class="opt-val" id="opt-rg-v">80px</span>
+        </div>
+        <div class="opt-row">
+          <span class="opt-lbl">한 줄 최대 조직 수</span>
+          <input type="range" class="opt-slider" id="opt-wrap" min="0" max="8" step="1"
+            oninput="OPT.wrapN=+this.value;document.getElementById('opt-wrap-v').textContent=OPT.wrapN?OPT.wrapN+'개':'끔';scheduleOptLayout()">
+          <span class="opt-val" id="opt-wrap-v">끔</span>
+        </div>
+        <div class="opt-row">
+          <span class="opt-lbl">좌우 간격</span>
+          <input type="range" class="opt-slider" id="opt-cg" min="10" max="120" step="10"
+            oninput="OPT.colGap=+this.value;document.getElementById('opt-cg-v').textContent=this.value+'px';scheduleOptLayout()">
+          <span class="opt-val" id="opt-cg-v">44px</span>
+        </div>
+        <div class="opt-row">
+          <span class="opt-lbl">사이드 여백</span>
+          <input type="range" class="opt-slider" id="opt-px" min="20" max="120" step="10"
+            oninput="OPT.padX=+this.value;document.getElementById('opt-px-v').textContent=this.value+'px';scheduleOptLayout()">
+          <span class="opt-val" id="opt-px-v">80px</span>
+        </div>
+        <div class="opt-row">
+          <span class="opt-lbl">상단 여백</span>
+          <input type="range" class="opt-slider" id="opt-py" min="20" max="250" step="10"
+            oninput="OPT.padY=+this.value;document.getElementById('opt-py-v').textContent=this.value+'px';scheduleOptLayout()">
+          <span class="opt-val" id="opt-py-v">60px</span>
+        </div>
+      </div>
+      <div class="opt-sec" data-sec="card">
+        <div class="opt-sec-title" role="button" tabindex="0" aria-expanded="true"><span class="opt-arr">▾</span> 카드</div>
+        <div class="opt-row">
+          <span class="opt-lbl">헤더 높이 (0=자동)</span>
+          <input type="range" class="opt-slider" id="opt-hdrh" min="0" max="160" step="2"
+            oninput="OPT.hdrH=+this.value;document.getElementById('opt-hdrh-v').textContent=this.value+'px';applyAllFontHeights();render();saveOptLS()">
+          <span class="opt-val" id="opt-hdrh-v">0px</span>
+        </div>
+        <div class="opt-row">
+          <span class="opt-lbl">행 높이 (0=자동)</span>
+          <input type="range" class="opt-slider" id="opt-rowh" min="0" max="100" step="2"
+            oninput="OPT.rowH=+this.value;document.getElementById('opt-rowh-v').textContent=this.value+'px';applyAllFontHeights();render();saveOptLS()">
+          <span class="opt-val" id="opt-rowh-v">0px</span>
+        </div>
+        <div class="opt-row">
+          <span class="opt-lbl">카드 너비</span>
+          <input type="range" class="opt-slider" id="opt-nw" min="140" max="340" step="20"
+            oninput="applyCardWidth(this.value)">
+          <span class="opt-val" id="opt-nw-v">228px</span>
+        </div>
+        <div class="opt-row">
+          <span class="opt-lbl">색상띠 폭</span>
+          <input type="range" class="opt-slider" id="opt-bw" min="4" max="20" step="2"
+            oninput="applyBandW(this.value)">
+          <span class="opt-val" id="opt-bw-v">12px</span>
+        </div>
+        <div class="opt-row">
+          <span class="opt-lbl">카드 모서리</span>
+          <input type="range" class="opt-slider" id="opt-cr" min="0" max="20" step="1"
+            oninput="OPT.cardRadius=+this.value;document.documentElement.style.setProperty('--card-radius',this.value+'px');document.getElementById('opt-cr-v').textContent=this.value+'px';saveOptLS()">
+          <span class="opt-val" id="opt-cr-v">8px</span>
+        </div>
+        <div class="opt-row">
+          <span class="opt-lbl">카드 음영</span>
+          <input type="range" class="opt-slider" id="opt-sha" min="0" max="0.4" step="0.01"
+            oninput="OPT.shadowA=+this.value;document.documentElement.style.setProperty('--shadow-a',this.value);document.getElementById('opt-sha-v').textContent=Math.round(this.value*100)+'%';saveOptLS()">
+          <span class="opt-val" id="opt-sha-v">11%</span>
+        </div>
+      </div>
+      <div class="opt-sec" data-sec="count">
+        <div class="opt-sec-title" role="button" tabindex="0" aria-expanded="true"><span class="opt-arr">▾</span> 인원 수</div>
+        <div class="opt-row">
+          <span class="opt-lbl">표시</span>
+          <input type="checkbox" id="opt-showcnt" checked onchange="OPT.showCnt=this.checked;render();saveOptLS()">
+        </div>
+        <div class="opt-row">
+          <span class="opt-lbl">위치</span>
+          <select id="opt-cntpos" onchange="OPT.cntPos=this.value;render();saveOptLS()"><option value="tr">오른쪽 위</option><option value="mr">오른쪽 가운데</option><option value="br">오른쪽 아래</option><option value="badge">모서리 배지</option></select>
+        </div>
+        <div class="opt-row">
+          <span class="opt-lbl">색</span>
+          <input type="color" id="opt-cntcol" value="#808080" oninput="OPT.cntColor=this.value;render();saveOptLS()"> <button type="button" id="opt-cntcol-auto" onclick="OPT.cntColor='';_setCntCtl();render();saveOptLS()">자동</button>
+        </div>
+        <div class="opt-row">
+          <span class="opt-lbl">겸직</span>
+          <select id="opt-cntcc" onchange="OPT.cntCc=this.value;render();saveOptLS()"><option value="sep">따로 표시</option><option value="inc">포함</option><option value="exc">제외</option></select>
+        </div>
+        <div class="opt-row">
+          <span class="opt-lbl">인원 수 크기</span>
+          <input type="range" class="opt-slider" id="opt-cntsz" min="8" max="14" step="1" value="9"
+            oninput="OPT.cntSize=+this.value;applyCntStyle();render();saveOptLS()">
+          <span class="opt-val" id="opt-cntsz-v">9px</span>
+        </div>
+        <div class="opt-row">
+          <span class="opt-lbl">가로 여백</span>
+          <input type="range" class="opt-slider" id="opt-cntdx" min="-30" max="60" step="1" value="0"
+            oninput="OPT.cntDx=+this.value;applyCntStyle();render();saveOptLS()">
+          <span class="opt-val" id="opt-cntdx-v">0px</span>
+        </div>
+        <div class="opt-row">
+          <span class="opt-lbl">세로 위치</span>
+          <input type="range" class="opt-slider" id="opt-cntdy" min="-30" max="30" step="1" value="0"
+            oninput="OPT.cntDy=+this.value;applyCntStyle();render();saveOptLS()">
+          <span class="opt-val" id="opt-cntdy-v">0px</span>
+        </div>
+      </div>
+      <div class="opt-sec" data-sec="font">
+        <div class="opt-sec-title" role="button" tabindex="0" aria-expanded="true"><span class="opt-arr">▾</span> 글꼴</div>
         <div class="opt-row">
           <span class="opt-lbl">헤드 영문</span>
           <input type="range" class="opt-slider" id="opt-fsen" min="6" max="32" step="1"
@@ -858,121 +978,8 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
           <span class="opt-val" id="opt-lhc-v">1.20</span>
         </div>
       </div>
-      <!-- 카드 -->
-      <div class="opt-sec">
-        <div class="opt-sec-title">카드</div>
-        <div class="opt-row">
-          <span class="opt-lbl">헤더 높이 (0=자동)</span>
-          <input type="range" class="opt-slider" id="opt-hdrh" min="0" max="160" step="2"
-            oninput="OPT.hdrH=+this.value;document.getElementById('opt-hdrh-v').textContent=this.value+'px';applyAllFontHeights();render();saveOptLS()">
-          <span class="opt-val" id="opt-hdrh-v">0px</span>
-        </div>
-        <div class="opt-row">
-          <span class="opt-lbl">행 높이 (0=자동)</span>
-          <input type="range" class="opt-slider" id="opt-rowh" min="0" max="100" step="2"
-            oninput="OPT.rowH=+this.value;document.getElementById('opt-rowh-v').textContent=this.value+'px';applyAllFontHeights();render();saveOptLS()">
-          <span class="opt-val" id="opt-rowh-v">0px</span>
-        </div>
-        <div class="opt-row">
-          <label class="opt-lbl" style="min-width:0"><input type="checkbox" id="opt-showcnt" checked onchange="OPT.showCnt=this.checked;render();saveOptLS()"> 카드에 인원 수 표시</label>
-          <label class="opt-lbl" style="min-width:0">위치 <select id="opt-cntpos" onchange="OPT.cntPos=this.value;render();saveOptLS()"><option value="tr">오른쪽 위</option><option value="mr">오른쪽 가운데</option><option value="br">오른쪽 아래</option><option value="badge">모서리 배지</option></select></label>
-          <label class="opt-lbl" style="min-width:0">색 <input type="color" id="opt-cntcol" value="#808080" oninput="OPT.cntColor=this.value;render();saveOptLS()"> <button type="button" id="opt-cntcol-auto" onclick="OPT.cntColor='';_setCntCtl();render();saveOptLS()">자동</button></label>
-          <label class="opt-lbl" style="min-width:0">겸직 <select id="opt-cntcc" onchange="OPT.cntCc=this.value;render();saveOptLS()"><option value="sep">따로 표시</option><option value="inc">포함</option><option value="exc">제외</option></select></label>
-        </div>
-        <div class="opt-row">
-          <span class="opt-lbl">인원 수 크기</span>
-          <input type="range" class="opt-slider" id="opt-cntsz" min="8" max="14" step="1" value="9"
-            oninput="OPT.cntSize=+this.value;applyCntStyle();render();saveOptLS()">
-          <span class="opt-val" id="opt-cntsz-v">9px</span>
-        </div>
-        <div class="opt-row">
-          <span class="opt-lbl">가로 여백</span>
-          <input type="range" class="opt-slider" id="opt-cntdx" min="-30" max="60" step="1" value="0"
-            oninput="OPT.cntDx=+this.value;applyCntStyle();render();saveOptLS()">
-          <span class="opt-val" id="opt-cntdx-v">0px</span>
-        </div>
-        <div class="opt-row">
-          <span class="opt-lbl">세로 위치</span>
-          <input type="range" class="opt-slider" id="opt-cntdy" min="-30" max="30" step="1" value="0"
-            oninput="OPT.cntDy=+this.value;applyCntStyle();render();saveOptLS()">
-          <span class="opt-val" id="opt-cntdy-v">0px</span>
-        </div>
-        <div class="opt-row">
-          <span class="opt-lbl">카드 너비</span>
-          <input type="range" class="opt-slider" id="opt-nw" min="140" max="340" step="20"
-            oninput="applyCardWidth(this.value)">
-          <span class="opt-val" id="opt-nw-v">228px</span>
-        </div>
-        <div class="opt-row">
-          <span class="opt-lbl">색상띠 폭</span>
-          <input type="range" class="opt-slider" id="opt-bw" min="4" max="20" step="2"
-            oninput="applyBandW(this.value)">
-          <span class="opt-val" id="opt-bw-v">12px</span>
-        </div>
-        <div class="opt-row">
-          <span class="opt-lbl">카드 모서리</span>
-          <input type="range" class="opt-slider" id="opt-cr" min="0" max="20" step="1"
-            oninput="OPT.cardRadius=+this.value;document.documentElement.style.setProperty('--card-radius',this.value+'px');document.getElementById('opt-cr-v').textContent=this.value+'px';saveOptLS()">
-          <span class="opt-val" id="opt-cr-v">8px</span>
-        </div>
-        <div class="opt-row">
-          <span class="opt-lbl">카드 음영</span>
-          <input type="range" class="opt-slider" id="opt-sha" min="0" max="0.4" step="0.01"
-            oninput="OPT.shadowA=+this.value;document.documentElement.style.setProperty('--shadow-a',this.value);document.getElementById('opt-sha-v').textContent=Math.round(this.value*100)+'%';saveOptLS()">
-          <span class="opt-val" id="opt-sha-v">11%</span>
-        </div>
-      </div>
-      <!-- 배치 간격 -->
-      <div class="opt-sec">
-        <div class="opt-sec-title">배치 간격</div>
-        <div class="opt-row">
-          <span class="opt-lbl">차트 방향</span>
-          <select id="opt-orient" class="opt-orient-sel"
-            onchange="OPT.orient=this.value;autoLayout();saveOptLS()">
-            <option value="down">위에서 아래로</option>
-            <option value="right">왼쪽에서 오른쪽으로</option>
-            <option value="left">오른쪽에서 왼쪽으로</option>
-          </select>
-        </div>
-        <div class="opt-row">
-          <span class="opt-lbl">상하 간격</span>
-          <input type="range" class="opt-slider" id="opt-rg" min="40" max="200" step="10"
-            oninput="OPT.rowGap=+this.value;document.getElementById('opt-rg-v').textContent=this.value+'px';scheduleOptLayout()">
-          <span class="opt-val" id="opt-rg-v">80px</span>
-        </div>
-        <div class="opt-row">
-          <span class="opt-lbl">한 줄 최대 조직 수</span>
-          <input type="range" class="opt-slider" id="opt-wrap" min="0" max="8" step="1"
-            oninput="OPT.wrapN=+this.value;document.getElementById('opt-wrap-v').textContent=OPT.wrapN?OPT.wrapN+'개':'끔';scheduleOptLayout()">
-          <span class="opt-val" id="opt-wrap-v">끔</span>
-        </div>
-        <div class="opt-row">
-          <span class="opt-lbl">좌우 간격</span>
-          <input type="range" class="opt-slider" id="opt-cg" min="10" max="120" step="10"
-            oninput="OPT.colGap=+this.value;document.getElementById('opt-cg-v').textContent=this.value+'px';scheduleOptLayout()">
-          <span class="opt-val" id="opt-cg-v">44px</span>
-        </div>
-        <div class="opt-row">
-          <span class="opt-lbl">사이드 여백</span>
-          <input type="range" class="opt-slider" id="opt-px" min="20" max="120" step="10"
-            oninput="OPT.padX=+this.value;document.getElementById('opt-px-v').textContent=this.value+'px';scheduleOptLayout()">
-          <span class="opt-val" id="opt-px-v">80px</span>
-        </div>
-        <div class="opt-row">
-          <span class="opt-lbl">상단 여백</span>
-          <input type="range" class="opt-slider" id="opt-py" min="20" max="250" step="10"
-            oninput="OPT.padY=+this.value;document.getElementById('opt-py-v').textContent=this.value+'px';scheduleOptLayout()">
-          <span class="opt-val" id="opt-py-v">60px</span>
-        </div>
-      </div>
-      <!-- 캔버스 -->
-      <div class="opt-sec">
-        <div class="opt-sec-title">캔버스</div>
-        <div id="opt-canvas-colors"></div>
-      </div>
-      <!-- 선 -->
-      <div class="opt-sec">
-        <div class="opt-sec-title">선</div>
+      <div class="opt-sec" data-sec="line">
+        <div class="opt-sec-title" role="button" tabindex="0" aria-expanded="true"><span class="opt-arr">▾</span> 선·캔버스</div>
         <div class="opt-row">
           <span class="opt-lbl">실선 굵기</span>
           <input type="range" class="opt-slider" id="opt-sw" min="0.5" max="5" step="0.5"
@@ -986,10 +993,10 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
           <span class="opt-val" id="opt-dw-v">1.5px</span>
         </div>
         <div id="opt-line-colors"></div>
+        <div id="opt-canvas-colors"></div>
       </div>
-      <!-- 로고 (좌상단) -->
-      <div class="opt-sec">
-        <div class="opt-sec-title">로고 (좌상단)</div>
+      <div class="opt-sec" data-sec="logo">
+        <div class="opt-sec-title" role="button" tabindex="0" aria-expanded="true"><span class="opt-arr">▾</span> 로고·색상</div>
         <div class="opt-row">
           <span class="opt-lbl">로고 텍스트</span>
           <input type="text" id="opt-logo-txt" maxlength="20" style="flex:1;padding:6px 9px;border:1.5px solid #DDD;border-radius:5px;font-size:13px;outline:none;"
@@ -1012,13 +1019,7 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
             oninput="OPT.logoSubColor=this.value;applyLogo();document.getElementById('opt-logo-subcol-v').textContent=this.value.toUpperCase();saveOptLS()">
           <span class="opt-val" id="opt-logo-subcol-v" style="font-family:monospace;letter-spacing:0.5px;">#808080</span>
         </div>
-      </div>
-      <!-- UI 색상 -->
-      <div class="opt-sec">
-        <div class="opt-sec-title">UI 색상</div>
         <div id="opt-ui-colors"></div>
-      </div>
-      <div class="opt-sec" style="padding-top:4px;">
         <p style="font-size:11px;color:#999;">카드 헤더·띠·텍스트 색상은 <b>◈ 데이터</b> 패널에 있습니다.</p>
       </div>
     </div>
@@ -4116,6 +4117,40 @@ function _optColorRows(rows){ // [{lbl, key, cssVar, val}]
       ${mkHexInp(r.val,`applyColor('${r.key}','${r.cssVar}',this.value);this.closest('.opt-color-row').querySelector('.opt-color-dot').style.background=this.value`)}
     </div>`).join('');
 }
+var OPTSEC_DEF={layout:1,card:1,count:1,font:0,line:0,logo:0};
+function _optSecLoad(){
+  var o={};
+  try{ var v=JSON.parse(localStorage.getItem('ssb-optsec')||'null'); if(v&&typeof v==='object') o=v; }catch(e){}
+  return o;
+}
+function applyOptSecs(){
+  var st=_optSecLoad();
+  var secs=document.querySelectorAll('#optov .opt-sec[data-sec]');
+  for(var i=0;i<secs.length;i++){
+    var s=secs[i],k=s.getAttribute('data-sec');
+    var open=(typeof st[k]==='boolean')?st[k]:!!OPTSEC_DEF[k];
+    s.classList.toggle('collapsed',!open);
+    var t=s.querySelector('.opt-sec-title');
+    if(t){ t.setAttribute('aria-expanded',open?'true':'false'); var a=t.querySelector('.opt-arr'); if(a) a.textContent=open?'▾':'▸'; }
+  }
+}
+function toggleOptSec(t){
+  var s=t.closest('.opt-sec[data-sec]'); if(!s) return;
+  var k=s.getAttribute('data-sec'), open=s.classList.contains('collapsed');
+  var st=_optSecLoad(); st[k]=open;
+  try{ localStorage.setItem('ssb-optsec',JSON.stringify(st)); }catch(e){}
+  applyOptSecs();
+}
+document.addEventListener('click',function(e){
+  var t=e.target&&e.target.closest?e.target.closest('#optov .opt-sec-title[role=button]'):null;
+  if(t) toggleOptSec(t);
+});
+document.addEventListener('keydown',function(e){
+  if(e.key!=='Enter'&&e.key!==' ') return;
+  var t=e.target&&e.target.closest?e.target.closest('#optov .opt-sec-title[role=button]'):null;
+  if(t){ e.preventDefault(); toggleOptSec(t); }
+});
+applyOptSecs();
 function openOptions(){
   if(!ADMIN) return;
   const sv=(id,v)=>{ const el=document.getElementById(id); if(el){el.value=v;} };
@@ -4168,6 +4203,7 @@ function openOptions(){
   const lcv=document.getElementById('opt-logo-col-v'); if(lcv) lcv.textContent = (OPT.logoColor||'#40D2A7').toUpperCase();
   const lsc=document.getElementById('opt-logo-subcol'); if(lsc) lsc.value = OPT.logoSubColor || '#808080';
   const lscv=document.getElementById('opt-logo-subcol-v'); if(lscv) lscv.textContent = (OPT.logoSubColor||'#808080').toUpperCase();
+  applyOptSecs();
   document.getElementById('optov').classList.add('show');
 }
 function closeOptions(){
