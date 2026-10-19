@@ -303,7 +303,6 @@ body.present #mtip{display:none!important;}
 .mn{font-size:var(--fs-mn);font-weight:600;color:var(--txt-mn);line-height:var(--lh-c);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex-shrink:1;}
 .mf{font-size:var(--fs-mf);color:var(--txt-mf);margin-top:1px;line-height:var(--lh-c);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .mr2{font-size:var(--fs-mr2);color:var(--txt-mr2);white-space:nowrap;flex-shrink:0;line-height:var(--lh-c);}
-.mcc{font-size:9px;line-height:12px;padding:0 3px;border-radius:6px;background:rgba(0,0,0,.08);color:#666;white-space:nowrap;flex-shrink:0;align-self:center;margin-left:-5px;}
 .ma{font-size:var(--fs-ma);color:var(--txt-ma);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:var(--lh-c);margin-top:1px;}
 /* Member row drag-and-drop (move between teams) */
 .mr[draggable="true"]{cursor:grab;}
@@ -1772,6 +1771,12 @@ function applyCntStyle(){
   st.setProperty('--cnt-dx',v.dx+'px'); st.setProperty('--cnt-dy',v.dy+'px');
   [['opt-cntsz-v',v.fs],['opt-cntdx-v',v.dx],['opt-cntdy-v',v.dy]].forEach(([id,x])=>{const e=document.getElementById(id); if(e) e.textContent=x+'px';});
 }
+function jobText(m){
+  const f=m.f||'';
+  if(m.cc!==true) return f;
+  if(!f) return '겸직';
+  return /\(겸\)$/.test(f)?f:f+'(겸)';
+}
 function nodeHTML(nd) {
   const _mc=(nd.m||[]).length?_mcOf(nd):1;  // 빈 카드는 1열 본문(+) 그대로, 폭만 넓다
   const av=nd.m.map((m,i)=>`
@@ -1779,10 +1784,10 @@ function nodeHTML(nd) {
       <div class="mband" style="background:${statusColor(m.s)}"></div>
       <div class="mi">
         <div class="mn-row">
-          <div class="mn">${esc(m.n||'')}</div>${m.cc===true?'<span class="mcc">겸</span>':''}
+          <div class="mn">${esc(m.n||'')}</div>
           <div class="mr2">${esc(m.r||'')}</div>
         </div>
-        <div class="mf">${esc(m.f||'')}${m.a?`<span style="color:var(--txt-ma)">&nbsp;/&nbsp;${esc(m.a)}</span>`:''}</div>
+        <div class="mf">${esc(jobText(m))}${m.a?`<span style="color:var(--txt-ma)">&nbsp;/&nbsp;${esc(m.a)}</span>`:''}</div>
       </div>
     </div>`).join('');
   const _cl=cntLabel(nd);
@@ -2831,8 +2836,9 @@ function saveModal(){
   nd.m=[];
   document.querySelectorAll('#mlist .mer').forEach(row=>{
     const g=f=>{ const el=row.querySelector(`[data-f="${f}"]`); return el?(el.value==='__other__'?'':el.value.trim()):'';}
-    const n=g('n'), f=g('f'), r=g('r'), a=g('a'), s=g('s')||'active';
-    const ccEl=row.querySelector('[data-f="cc"]'), cc=!!(ccEl&&ccEl.checked);
+    let f=g('f'); const n=g('n'), r=g('r'), a=g('a'), s=g('s')||'active';
+    const ccEl=row.querySelector('[data-f="cc"]'); let cc=!!(ccEl&&ccEl.checked);
+    if(/\(겸\)$/.test(f)){ f=f.replace(/\s*\(겸\)$/,''); cc=true; }
     if(n||f||r||a) nd.m.push(cc?{n,f,r,a,s,cc:true}:{n,f,r,a,s});
   });
   // Sync connection dash style: connections TO this node follow the new type
@@ -4406,7 +4412,8 @@ function _sanitizeSheet(sh){
     if(n.type==='ceo')n.type='top';
     if(n.color&&!/^#[0-9a-fA-F]{3,8}$/.test(n.color)) n.color='';
     if('mc' in n && !(n.mc===2||n.mc===3||n.mc===4)) delete n.mc;
-    (Array.isArray(n.m)?n.m:[]).forEach(m=>{ if(m&&typeof m==='object'&&'cc' in m&&m.cc!==true) delete m.cc; });
+    (Array.isArray(n.m)?n.m:[]).forEach(m=>{ if(m&&typeof m==='object'&&'cc' in m&&m.cc!==true) delete m.cc;
+      if(m&&typeof m==='object'&&typeof m.f==='string'&&/\(겸\)$/.test(m.f)){ m.f=m.f.replace(/\s*\(겸\)$/,''); m.cc=true; } });
   });
   const busY={};
   Object.entries(sh.busY||{}).forEach(([k,v])=>{ if(Number.isFinite(+v)) busY[k]=+v; });
@@ -4661,10 +4668,10 @@ function exportPNG(){
       ctx.beginPath(); ctx.rect(mx,ry,MW,CUR_MH); ctx.clip();
       ctx.textBaseline='middle';
       ctx.fillStyle='#222';
-      const t1=(m.n||'')+(m.cc===true?' (겸)':'')+(m.r?'  '+m.r:'');
+      const t1=(m.n||'')+(m.r?'  '+m.r:'');
       fitText(t1,mx+bw+8,ry+CUR_MH*0.33,'bold','12px',mx+MW-6-(mx+bw+8));
       ctx.fillStyle='#555';
-      fitText(m.f||'',mx+bw+8,ry+CUR_MH*0.72,'','10px',mx+MW-6-(mx+bw+8));
+      fitText(jobText(m),mx+bw+8,ry+CUR_MH*0.72,'','10px',mx+MW-6-(mx+bw+8));
       ctx.restore();
     });
   });
@@ -5448,8 +5455,7 @@ function tvBuild(){
         mr.style.paddingLeft=(10+(it.depth+1)*18+20)+'px';
         mr.style.display=(!hidden&&!folded&&TV.mem.has(nd.id))?'':'none';
         var nm=document.createElement('span'); nm.textContent=m.n||''; mr.appendChild(nm);
-        var sub=[m.r,m.f].filter(Boolean).join(' · ');
-        if(m.cc===true) sub=sub?sub+' · 겸직':'겸직';
+        var sub=[m.r,jobText(m)].filter(Boolean).join(' · ');
         if(sub){ var s=document.createElement('span'); s.className='tv-sub'; s.textContent=sub; mr.appendChild(s); }
         body.appendChild(mr);
       });
@@ -5527,8 +5533,8 @@ document.addEventListener('keydown',function(e){
     const nd=S.nodes.find(n=>n.id===row.dataset.nid); const m=nd&&nd.m[+row.dataset.mi]; if(!m) return;
     const defKey=OPT.statusItems[0]?.key||'active', sk=m.s||defKey;
     const si=OPT.statusItems.find(x=>x.key===sk);
-    const L=[['직급',m.r],['직무',m.f],['근무지',m.a],['상태',si?si.label:sk]].filter(x=>x[1]);
-    t.innerHTML='<b>'+esc(m.n||'')+'</b>'+L.map(x=>'<div>'+x[0]+' '+esc(x[1])+'</div>').join('')+(m.cc===true?'<div>겸직</div>':'')+'<div style="opacity:.7">'+esc(nd.ko||nd.en||'')+'</div>';
+    const L=[['직급',m.r],['직무',jobText(m)],['근무지',m.a],['상태',si?si.label:sk]].filter(x=>x[1]);
+    t.innerHTML='<b>'+esc(m.n||'')+'</b>'+L.map(x=>'<div>'+x[0]+' '+esc(x[1])+'</div>').join('')+'<div style="opacity:.7">'+esc(nd.ko||nd.en||'')+'</div>';
     t.style.display='block';
     const w=t.offsetWidth, h=t.offsetHeight;
     let x=mx+14, y=my+16;
