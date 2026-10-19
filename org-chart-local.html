@@ -3697,14 +3697,84 @@ function autoLayout(){
       const bW=bwOf(cards), bS=stepOf(bW);
       stackRows(cards,C).forEach((cs,ri)=>{
         const y=ri===0?(C>1?c20(p.y+CUR_HH/2+10):p.y):c20(prevY+prevH+20);
+        // 20 격자 반올림으로 부모와의 간격이 COL_GAP/2 미만이 되면 그 행만 한 칸 더 바깥으로
+        const xR=r20(p.x+cardW(p)+COL_GAP), xL=r20(p.x-COL_GAP-bW);
+        const bump=dir>0?(xR-(p.x+cardW(p))<COL_GAP/2?20:0):(cs.length&&p.x-(xL+cardW(cs[0]))<COL_GAP/2?20:0);
         cs.forEach((a,j)=>{
-          a.x=dir>0?r20(p.x+cardW(p)+COL_GAP)+j*bS:r20(p.x-COL_GAP-bW)-j*bS;
+          a.x=dir>0?xR+bump+j*bS:xL-bump-j*bS;
           a.y=y;
         });
         prevY=y; prevH=Math.max(...cs.map(nh));
       });
     });
   });
+
+  // ─── 형제 서브트리 충돌 해소 (최종 위치 기준) ─────────────
+  // equalizeSiblingGaps()는 그룹 안 형제를 오른쪽으로 벌리면서 첫 배치에서 예약된 폭을 넘길 수 있다
+  // (혼합 그룹의 leaf 슬롯 → 균등화). 이웃 서브트리와 세로로 겹치는 카드가 COL_GAP/2보다 가까우면
+  // 오른쪽 형제 서브트리를 통째로 밀고 부모를 다시 가운데로. 충돌이 없으면 아무것도 움직이지 않는다.
+  {
+    const treeSet=new Set(treeNodes.map(n=>n.id));
+    const byId=id=>S.nodes.find(n=>n.id===id);
+    const members=(id,out)=>{
+      const n=byId(id); if(!n||!treeSet.has(id)) return out;
+      out.push(n);
+      (n._asides||[]).forEach(aid=>{ const a=byId(aid); if(a&&a.x!==undefined) out.push(a); });
+      nk(id).forEach(k=>members(k,out));
+      return out;
+    };
+    const minGap=COL_GAP/2;
+    const need=(A,B)=>{ // B 묶음을 오른쪽으로 얼마나 밀어야 하는지 (0 = 충돌 없음)
+      let s=0;
+      A.forEach(a=>{ const aw=cardW(a), ah=nh(a);
+        B.forEach(b=>{
+          if(a===b) return;
+          const bw=cardW(b), bh=nh(b);
+          if(!(a.y<b.y+bh&&b.y<a.y+ah)) return;
+          if(b.x-(a.x+aw)>=minGap||a.x-(b.x+bw)>=minGap) return;
+          s=Math.max(s,a.x+aw+COL_GAP-b.x);
+        });
+      });
+      return s>0?c20(s):0;
+    };
+    // 이동 단위: 일반 부모 = 자식 서브트리(x 순), 줄바꿈 부모 = 격자 열(행 간 같은 열은 함께). 세로 1열은 제외
+    const unitsOf=p=>{
+      const ids=nk(p.id).filter(k=>treeSet.has(k));
+      if(p._wrap){
+        const us=[];
+        (p._wrap.rows||[]).forEach(r=>r.forEach((cid,j)=>{ if(treeSet.has(cid)) (us[j]||(us[j]=[])).push(cid); }));
+        return us.filter(Boolean);
+      }
+      return ids.map(byId).sort((a,b)=>a.x-b.x).map(c=>[c.id]);
+    };
+    const uMem=u=>{ const o=[]; u.forEach(id=>members(id,o)); return o; };
+    const parents=treeNodes.filter(p=>!p._col&&unitsOf(p).length>1)
+      .sort((a,b)=>(b._d??0)-(a._d??0)); // 깊은 부모부터
+    parents.forEach(p=>{
+      const us=unitsOf(p);
+      const ch=nk(p.id).filter(k=>treeSet.has(k)).map(byId);
+      const mid=()=>{ const cs=ch.map(c=>c.x+cardW(c)/2); return (Math.min(...cs)+Math.max(...cs))/2; };
+      const m0=mid();
+      const left=uMem(us[0]);
+      let moved=false;
+      for(let i=1;i<us.length;i++){
+        const sub=uMem(us[i]);
+        // 한 번 민 뒤 원래 반대편에 있던 카드와 새로 겹칠 수 있으므로 충돌이 없어질 때까지 반복
+        for(let dx=need(left,sub), guard=0; dx>0&&guard<200; dx=need(left,sub), guard++){
+          moved=true;
+          for(let j=i;j<us.length;j++) uMem(us[j]).forEach(q=>{ q.x+=dx; });
+        }
+        sub.forEach(q=>left.push(q));
+      }
+      if(moved){
+        const dp=Math.round((mid()-m0)/20)*20;
+        if(dp){
+          p.x+=dp;
+          (p._asides||[]).forEach(aid=>{ const a=byId(aid); if(a&&a.x!==undefined) a.x+=dp; });
+        }
+      }
+    });
+  }
 
   // 트리 우측 끝
   const treeR=Math.max(treeNodes.length?Math.max(...treeNodes.map(n=>n.x+cardW(n))):PAD_X+NW,
@@ -3718,9 +3788,16 @@ function autoLayout(){
   const sideBase=treeR+COL_GAP*2;
   let freeR=treeR;
   let sideX=sideBase;
+  // 같은 행에 나란히 놓는 카드: 20 격자 반올림으로 앞 카드와 COL_GAP/2보다 가까워지면 한 칸 밀기 (반환값 = 민 양)
+  const rowR={};
+  const rowBump=(n,y)=>{
+    const pr=rowR[y], b=(pr!==undefined&&n.x-pr<COL_GAP/2)?20:0;
+    n.x+=b; rowR[y]=Math.max(pr??-Infinity,n.x+cardW(n));
+    return b;
+  };
   freeSides.forEach((sid,i)=>{
     const snd=S.nodes.find(n=>n.id===sid);
-    if(snd){ snd.x=Math.round(sideX/20)*20; snd.y=sideY; freeR=Math.max(freeR,snd.x+cardW(snd)); }
+    if(snd){ snd.x=Math.round(sideX/20)*20; snd.y=sideY; sideX+=rowBump(snd,sideY); freeR=Math.max(freeR,snd.x+cardW(snd)); }
     sideX+=(snd?cardW(snd):NW)+COL_GAP;
   });
   // TF 그룹: 작은 트리로 배치, 그룹끼리 좌→우 (자유 side 행 우측)
@@ -3749,7 +3826,18 @@ function autoLayout(){
       };
       const right=pl(g.root,Math.round(gL/20)*20);
       let gr=-Infinity;
-      g.ids.forEach(id=>{ const n=nd(id); n.x=Math.round(n._tfx/20)*20; n.y=rowY[n._tfd]; gr=Math.max(gr,n.x+cardW(n)); delete n._tfx; delete n._tfd; });
+      g.ids.forEach(id=>{ const n=nd(id); n.x=Math.round(n._tfx/20)*20; n.y=rowY[n._tfd]; });
+      // 같은 행의 이웃 TF 카드가 반올림으로 COL_GAP/2보다 가까우면 그 카드와 오른쪽 카드들을 한 칸 밀기
+      g.ids.map(nd).sort((a,b)=>a.x-b.x).forEach(n=>{
+        const prev=g.ids.map(nd).filter(q=>q!==n&&q._tfd===n._tfd&&q.x<=n.x);
+        if(!prev.length) return;
+        const pr=Math.max(...prev.map(q=>q.x+cardW(q)));
+        if(n.x-pr<COL_GAP/2){
+          const dl=c20(pr+COL_GAP/2-n.x), x0=n.x;
+          g.ids.map(nd).forEach(q=>{ if(q===n||q.x>x0) q.x+=dl; });
+        }
+      });
+      g.ids.forEach(id=>{ const n=nd(id); gr=Math.max(gr,n.x+cardW(n)); delete n._tfx; delete n._tfd; });
       gL=Math.max(gr,right)+COL_GAP*2;
       zoneR=Math.max(gr,right);
     });
@@ -3764,8 +3852,8 @@ function autoLayout(){
   Object.keys(orphanByLv).sort((a,b)=>a-b).forEach(d=>{
     orphanByLv[d].sort((a,b)=>_posCmp(_po,a,b));
     orphanByLv[d].forEach(n=>{
-      n.x=Math.round(ox/20)*20; ox+=cardW(n)+COL_GAP;
-      n.y=depY[n._d]??PAD_Y;
+      n.x=Math.round(ox/20)*20; n.y=depY[n._d]??PAD_Y;
+      ox+=rowBump(n,n.y)+cardW(n)+COL_GAP;
       oi++;
     });
   });
