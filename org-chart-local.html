@@ -425,6 +425,13 @@ body.present #mtip{display:none!important;}
 .sfl-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
 .sfl-lbl{flex:1;font-size:11px;opacity:.7;}
 .sfl-num{font-size:13px;font-weight:700;}
+#statsfl-body{max-height:calc(100vh - 160px);overflow-y:auto;}
+.sfl-ell{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
+.sfl-row.cur{background:rgba(255,255,255,.14);border-radius:4px;}
+.sfl-row.cur .sfl-lbl{opacity:1;font-weight:700;}
+.sfl-sub{font-size:9px;opacity:.5;}
+.sfl-cc{font-size:9px;opacity:.6;color:var(--mint);}
+.sfl-dup{font-size:10px;opacity:.55;margin-top:4px;text-align:right;}
 .sfl-total{border-top:1px solid rgba(255,255,255,.12);margin-top:6px;padding-top:7px;display:flex;justify-content:space-between;align-items:center;}
 .sfl-total-lbl{font-size:10px;opacity:.5;}
 .sfl-total-num{font-size:14px;font-weight:800;}
@@ -714,6 +721,8 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
     <button class="sfl-tab" onclick="switchStatTab(this,'job')">직무</button>
     <button class="sfl-tab" onclick="switchStatTab(this,'role')">직책</button>
     <button class="sfl-tab" onclick="switchStatTab(this,'area')">분야</button>
+    <button class="sfl-tab" onclick="switchStatTab(this,'sheet')">시트</button>
+    <button class="sfl-tab" onclick="switchStatTab(this,'team')">팀</button>
   </div>
   <div id="statsfl-filter" style="display:none;margin-bottom:8px;">
     <select id="statsfl-grp" class="sfl-grp-sel" onchange="updateStatsPanel()">
@@ -5067,8 +5076,29 @@ function switchStatTab(btn,tab){
   btn.classList.add('active');
   // 직무·직책 탭에서만 현황그룹 필터 노출
   const fEl=document.getElementById('statsfl-filter');
-  if(fEl) fEl.style.display=(tab==='summary')?'none':'block';
+  if(fEl) fEl.style.display=(tab==='job'||tab==='role'||tab==='area')?'block':'none';
   updateStatsPanel();
+}
+// 패널이 화면 아래로 넘치면 본문을 줄이고, 그래도 좁으면 패널을 위로 올린다 (팀 탭은 행이 많다)
+function _sflFit(){
+  const fl=document.getElementById('statsfl'), b=document.getElementById('statsfl-body');
+  if(!fl||!b||fl.classList.contains('collapsed')||getComputedStyle(fl).display==='none') return;
+  b.style.maxHeight='';
+  let r=fl.getBoundingClientRect(); const lim=innerHeight-10;
+  if(r.bottom<=lim) return;
+  const room=b.clientHeight-(r.bottom-lim);
+  if(room<160){ const nt=Math.max(60,r.top-(160-room)); fl.style.top=nt+'px'; fl.style.bottom='auto'; r=fl.getBoundingClientRect(); }
+  if(r.bottom>lim) b.style.maxHeight=Math.max(80,b.clientHeight-(r.bottom-lim))+'px';
+}
+function _sflStatusOk(m){
+  const defKey=OPT.statusItems[0]?.key||'active';
+  const ex=new Set(OPT.statsGroups.filter(g=>g.excludeTotal).flatMap(g=>g.statuses));
+  return !ex.has(m.s||defKey);
+}
+function _sflCounted(m){ return m.cc!==true&&_sflStatusOk(m); }
+function _sflCountNodes(nodes){
+  let c=0; nodes.forEach(n=>(n.m||[]).forEach(m=>{ if(_sflCounted(m)) c++; }));
+  return c;
 }
 
 function updateStatsPanel(){
@@ -5178,6 +5208,45 @@ function updateStatsPanel(){
     const lbl=grpDef?grpDef.name:'전체';
     html+=`<div class="sfl-total"><span class="sfl-total-lbl">${esc(lbl)}</span><span class="sfl-total-num">${filtered.length}</span></div>`;
 
+  } else if(_statTab==='sheet'){
+    const cnts=SHEETS.map((sh,i)=>_sflCountNodes(i===CUR_SHEET?S.nodes:sh.nodes));
+    const names=new Set();
+    SHEETS.forEach((sh,i)=>(i===CUR_SHEET?S.nodes:sh.nodes).forEach(n=>(n.m||[]).forEach(m=>{ if(_sflCounted(m)) names.add(m.n); })));
+    SHEETS.forEach((sh,i)=>{
+      html+=`<div class="sfl-row${i===CUR_SHEET?' cur':''}" data-sheet="${i}" style="cursor:pointer" onclick="switchSheet(${i})"><span class="sfl-lbl sfl-ell">${esc(sh.name)}</span><span class="sfl-num">${cnts[i]}</span></div>`;
+    });
+    html+=`<div class="sfl-total"><span class="sfl-total-lbl">전체</span><span class="sfl-total-num">${names.size}</span></div>`;
+    const dup=cnts.reduce((a,b)=>a+b,0)-names.size;
+    if(dup>0) html+=`<div class="sfl-dup">시트 중복 ${dup}명</div>`;
+
+  } else if(_statTab==='team'){
+    const ord=tvOrder();
+    const byId={}; S.nodes.forEach(n=>{byId[n.id]=n;});
+    const own=e=>{ const n=byId[e.id]; return n?_sflCountNodes([n]):0; };
+    ord.forEach((e,idx)=>{
+      if(e.kind!=='row'){
+        if(e.kind==='head') html+=`<div class="sfl-sec-lbl">${esc(e.text||'')}</div>`;
+        return;
+      }
+      const n=byId[e.id]; if(!n) return;
+      const c=own(e);
+      let sub='';
+      const nx=ord[idx+1];
+      if(nx&&nx.kind==='row'&&nx.depth>e.depth){
+        let t=c;
+        for(let j=idx+1;j<ord.length;j++){
+          const x=ord[j];
+          if(x.kind!=='row'||x.depth<=e.depth) break;
+          t+=own(x);
+        }
+        sub=`<span class="sfl-sub">계 ${t}</span>`;
+      }
+      const ccN=(n.m||[]).filter(m=>m.cc===true&&_sflStatusOk(m)).length;
+      const cc=ccN>0?`<span class="sfl-cc">+${ccN}겸</span>`:'';
+      html+=`<div class="sfl-row" data-id="${esc(String(e.id))}" data-depth="${e.depth}"><span class="sfl-lbl sfl-ell" style="padding-left:${e.depth*12}px">${esc(n.en||n.ko||'')}</span>${sub}${cc}<span class="sfl-num">${c}</span></div>`;
+    });
+    html+=`<div class="sfl-total"><span class="sfl-total-lbl sfl-ell">${esc(SHEETS[CUR_SHEET]?SHEETS[CUR_SHEET].name:'')}</span><span class="sfl-total-num">${_sflCountNodes(S.nodes)}</span></div>`;
+
   } else if(_statTab==='area'){
     // ── 분야 탭: 분야 카테고리별 인원 (현황그룹 필터 적용 가능)
     OPT.areaCats.forEach(cat=>{
@@ -5199,6 +5268,7 @@ function updateStatsPanel(){
   }
 
   body.innerHTML=html;
+  _sflFit();
   const ttl=document.getElementById('statsfl-title');
   const flEl=document.getElementById('statsfl');
   if(ttl){
