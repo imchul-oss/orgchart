@@ -289,7 +289,10 @@ body.present #mtip{display:none!important;}
 
 /* Member rows */
 .nb{background:var(--card-bg);border-radius:0 0 var(--card-radius) var(--card-radius);overflow:hidden;}
-.nb:empty{height:10px;min-height:10px;}  /* 구성원이 없는 카드의 얇은 아래 마감 (EMPTY_CAP, 철님 10-20) - 화면·인쇄·PNG 같은 높이, 구성원 끌어다 놓는 자리 */
+.nb:empty{height:10px;min-height:10px;position:relative;overflow:visible;}  /* 구성원이 없는 카드: 배치·인쇄·PNG는 머리글 + 10px 흰 마감 (EMPTY_CAP) */
+.nb:empty::before{content:'＋';position:absolute;left:0;right:0;top:0;height:34px;display:flex;align-items:center;justify-content:center;background:var(--card-bg);border-radius:0 0 var(--card-radius) var(--card-radius);box-shadow:0 3px 8px rgba(0,0,0,.14);color:#C8CDD8;font-size:15px;}  /* 화면에서는 원래의 ＋ 본문이 마감 위에 겹쳐 보인다 (철님 10-20) - 구성원 끌어다 놓는 자리 */
+body.printing .nb:empty::before{display:none!important;}
+@media print{.nb:empty::before{display:none!important;}}
 .mr{padding:4px 10px 4px calc(var(--band-w) + 8px);height:var(--mh);position:relative;display:flex;align-items:center;gap:0;border-top:1px solid var(--row-border);box-sizing:border-box;overflow:hidden;}
 .mr:nth-child(even){background:var(--row-even);}
 .nb.mcol{display:grid;padding-left:var(--band-w);background:linear-gradient(var(--band-color,var(--mint)),var(--band-color,var(--mint))) left top/var(--band-w) 100% no-repeat,var(--card-bg);}
