@@ -3772,6 +3772,27 @@ function _autoLayoutCore(){
 
   // 트리 노드 위치 적용 (_lx가 있는 것 = tidy 배치에서 놓인 것). x는 반올림 없이 그대로
   const treeNodes=S.nodes.filter(n=>n._lx!==undefined&&!sideIds.has(n.id));
+  // 세로 1열 묶음과 두 줄 이상 줄바꿈 묶음은 쌓인 전체 높이로 다음 줄 높이에 들어간다 - 부모+자식 덩어리가 길어지는 만큼
+  // 그 아래 줄을 내린다 (철님 10-20). 전체 줄 맞춤 모드에서만 의미가 있다(부모 바로 아래 모드는 줄이 묶음별이다).
+  {
+    const grow={};
+    treeNodes.forEach(p=>{
+      const d1=(p._d??0)+1; if(depY[d1]===undefined) return;
+      let bottom=null;
+      if(p._col&&p._col.length){
+        let y=Math.max(depY[d1],depY[p._d]+bsH(p,true)+20); bottom=y;
+        p._col.forEach((cid,i)=>{ const c=S.nodes.find(n=>n.id===cid); if(!c) return; if(i>0) y=Math.ceil((bottom+20)/20)*20; bottom=y+bsH(c,true); });
+      } else if(p._wrap&&p._wrap.rows&&p._wrap.rows.length>1){
+        let y=depY[d1]; bottom=y;
+        p._wrap.rows.forEach((row,ri)=>{ const h=Math.max(0,...row.map(id=>{ const c=S.nodes.find(n=>n.id===id); return c?bsH(c,true):0; })); if(ri>0) y=Math.ceil((bottom+ROW_GAP)/20)*20; bottom=y+h; });
+      }
+      if(bottom!==null){ const need=bottom-depY[d1]; if(need>(depH[d1]||0)) grow[d1]=Math.max(grow[d1]||0,need); }
+    });
+    if(Object.keys(grow).length){
+      Object.keys(grow).forEach(d=>{ depH[d]=Math.max(depH[d]||0,grow[d]); });
+      let cy2=PAD_Y; Object.keys(depH).sort((a,b)=>a-b).forEach(d=>{ depY[d]=Math.round(cy2/20)*20; cy2=depY[d]+Math.ceil((depH[d]+ROW_GAP)/20)*20; });
+    }
+  }
   treeNodes.forEach(n=>{
     n.x=n._lx||0;
     n.y=depY[n._d]??PAD_Y;
@@ -3927,10 +3948,7 @@ function _autoLayoutCore(){
   S.scale=sc;
 
   const rnd=S.nodes.find(n=>n.id===root.id);
-  // 루트를 뷰포트 수평 중앙에 배치 — 트리 넓이 무관하게 항상 적용
-  const needLeft=Math.ceil(vw/(2*sc)-cardW(rnd)/2);
-  const shiftX=Math.max(0, needLeft-rnd.x);
-  if(shiftX>0) S.nodes.forEach(n=>n.x+=shiftX);
+  // (제거 10-20) 루트를 화면 중앙에 두려고 카드 위치를 오른쪽으로 밀던 단계: 보기 위치는 아래 스크롤로 맞추고, 카드 좌표는 배치 결과 그대로 둔다
 
   const cvs=document.getElementById('canvas');
   cvs.style.marginLeft='';
