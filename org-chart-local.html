@@ -390,6 +390,7 @@ body:not(.bodyband) .nb.mcol{padding-left:0;background:var(--card-bg);}
 .stcat-lbl:focus{background:#fff;border-radius:3px;}
 .stcat-del{background:none;border:none;cursor:pointer;color:#999;font-size:13px;padding:0 1px;line-height:1;}
 .stcat-del:hover{color:#E33;}
+.stcat-to{display:inline-flex;align-items:center;gap:2px;font-size:11px;color:#667;white-space:nowrap;cursor:pointer;}
 .cat-add{display:flex;gap:5px;margin-top:4px;}
 .cat-add input{flex:1;padding:5px 9px;border:1.5px solid #DDD;border-radius:6px;font-size:12px;}
 .cat-add button{padding:5px 12px;border:none;border-radius:6px;background:var(--mint);color:#fff;font-size:12px;font-weight:600;cursor:pointer;}
@@ -962,8 +963,8 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
         <div class="opt-row">
           <span class="opt-lbl">인원 수 셈법</span>
           <select id="opt-cntmode" class="opt-orient-sel" onchange="OPT.cntMode=this.value;render();saveOptLS()">
-            <option value="count">현원 (합산 제외 상태 빼고)</option>
-            <option value="ratio">현원/정원</option>
+            <option value="count">현원</option>
+            <option value="ratio">현원/정원 (정원 = 현원 + 자리)</option>
           </select>
         </div>
         <div class="opt-row">
@@ -1232,8 +1233,8 @@ const OPT = {
     {key:'joining',label:'입사예정',color:'#60DCF8'},
     {key:'onleave',label:'휴직',    color:'#9AA5B1'},
     {key:'leaving',label:'퇴사예정',color:'#FF8770'},
-    {key:'needed', label:'채용필요',color:'#FFB347'},
-    {key:'hiring', label:'채용 중', color:'#A78BFA'}
+    {key:'needed', label:'채용필요',color:'#FFB347', to:true},
+    {key:'hiring', label:'채용 중', color:'#A78BFA', to:true}
   ],
   // 로고 (좌상단)
   logoText: '',
@@ -1890,25 +1891,27 @@ function mrDrop(e,toNid){
 }
 function headCount(nd){
   const defKey=OPT.statusItems[0]?.key||'active';
-  const exK=new Set(OPT.statsGroups.filter(g=>g.excludeTotal).flatMap(g=>g.statuses));
+  const exK=_exKeys();
   return (nd.m||[]).filter(m=>!exK.has(m.s||defKey)).length;
 }
 function nodeTitle(nd){ return (nd&&(nd.en||nd.ko))||''; }
 function _cntCcVal(){return (OPT.cntCc==='inc'||OPT.cntCc==='exc')?OPT.cntCc:'sep';}
+function _toKeys(){ return new Set(OPT.statusItems.filter(x=>x.to===true).map(x=>x.key)); }  // 자리(TO) 상태: 인원이 아닌 빈 자리 (철님 10-20)
+function _exKeys(){ const k=new Set(OPT.statsGroups.filter(g=>g.excludeTotal).flatMap(g=>g.statuses)); _toKeys().forEach(x=>k.add(x)); return k; }  // 총원·현원에서 빠지는 상태 = 합산 제외 그룹 + 자리
 function cntLabel(nd){
   if(OPT.showCnt===false) return '';
   const defKey=OPT.statusItems[0]?.key||'active';
-  const exK=new Set(OPT.statsGroups.filter(g=>g.excludeTotal).flatMap(g=>g.statuses));
-  const all=(nd.m||[]), ms=all.filter(m=>!exK.has(m.s||defKey));
-  const C=ms.filter(m=>m.cc===true).length, M=ms.length-C, mode=_cntCcVal();
-  // 인원 수 셈법 '현원/정원'(OPT.cntMode==='ratio'): 합산 제외 상태(채용 필요·채용 중 등)까지 넣은 자리 수를 분모로 - 같으면 그냥 N명 (철님 10-20)
-  const ratio=OPT.cntMode==='ratio';
-  const num=(pres,tot)=>ratio&&tot>pres?pres+'/'+tot:String(pres);
-  if(mode==='inc') return (ratio?all.length:ms.length)>0?num(ms.length,all.length)+'명':'';
-  const allM=all.length-all.filter(m=>m.cc===true).length;
-  if(mode==='exc') return (ratio?allM:M)>0?num(M,allM)+'명':'';
-  if(M+C===0&&!(ratio&&allM>0)) return '';
-  return C>0?num(M,allM)+'명 +'+C+'겸':num(M,allM)+'명';
+  const TO=_toKeys(), exK=_exKeys();
+  const all=(nd.m||[]), persons=all.filter(m=>!TO.has(m.s||defKey)), to=all.length-persons.length;
+  const ratio=OPT.cntMode==='ratio', mode=_cntCcVal();
+  // 현원 = 사람(자리 상태 제외). '현원' 모드는 합산 제외 그룹도 빼고, '현원/정원' 모드는 사람 전부(휴직 포함)를 세며 정원 = 현원 + 자리, 같아도 7/7명으로 표시 (철님 10-20)
+  const ms=ratio?persons:persons.filter(m=>!exK.has(m.s||defKey));
+  const C=ms.filter(m=>m.cc===true).length, M=ms.length-C;
+  const lab=p=>ratio?p+'/'+(p+to)+'명':p+'명';
+  if(mode==='inc') return (ms.length+(ratio?to:0))>0?lab(ms.length):'';
+  if(mode==='exc') return (M+(ratio?to:0))>0?lab(M):'';
+  if(M+C+(ratio?to:0)===0) return '';
+  return C>0?lab(M)+' +'+C+'겸':lab(M);
 }
 function _cntStyleVals(){
   const iv=(v,lo,hi,d)=>(Number.isInteger(v)&&v>=lo&&v<=hi)?v:d;
@@ -4207,6 +4210,7 @@ function renderStatusCatList(){
       ${mkHexInp(x.color,`OPT.statusItems[${i}].color=this.value;applyStatusColor('${x.key}',this.value);renderSgList()`)}
       <input type="text" class="stcat-lbl" value="${esc(x.label)}"
         oninput="OPT.statusItems[${i}].label=this.value;renderSgList();updateSt();saveOptLS()">
+      <label class="stcat-to" title="자리(TO): 인원이 아닌 빈 자리 - 현원에서 빠지고 정원에만 들어간다"><input type="checkbox" data-to="1"${x.to===true?' checked':''} onchange="OPT.statusItems[${i}].to=this.checked;render();updateSt();saveOptLS()">자리</label>
       <button class="stcat-del" onclick="removeStatusCat(${i})">✕</button>
     </div>`).join('');
 }
@@ -4442,8 +4446,8 @@ function resetOptions(){
       {key:'joining',label:'입사예정',color:'#60DCF8'},
       {key:'onleave',label:'휴직',    color:'#9AA5B1'},
       {key:'leaving',label:'퇴사예정',color:'#FF8770'},
-      {key:'needed', label:'채용필요',color:'#FFB347'},
-      {key:'hiring', label:'채용 중', color:'#A78BFA'}
+      {key:'needed', label:'채용필요',color:'#FFB347', to:true},
+      {key:'hiring', label:'채용 중', color:'#A78BFA', to:true}
     ]
   });
   NW=228;
@@ -4780,7 +4784,7 @@ function _applyOptObj(d){
   if(d.statusItems){
     // key는 CSS 변수명·인라인 핸들러에, color는 인라인 style에 들어간다 — 형식 강제
     OPT.statusItems=d.statusItems.filter(x=>x&&/^[A-Za-z0-9_-]+$/.test(String(x.key||'')))
-      .map(x=>({key:x.key,label:String(x.label||''),color:/^#[0-9a-fA-F]{3,8}$/.test(String(x.color||''))?x.color:'#999999'}));
+      .map(x=>({key:x.key,label:String(x.label||''),color:/^#[0-9a-fA-F]{3,8}$/.test(String(x.color||''))?x.color:'#999999',...(x.to===true?{to:true}:{})}));
     applyAllStatusCSS();
   }
   OPT.showCnt=d.showCnt!==false;{const _c=document.getElementById('opt-showcnt');if(_c)_c.checked=OPT.showCnt;}
@@ -5349,7 +5353,7 @@ function _sflFit(){
 }
 function _sflStatusOk(m){
   const defKey=OPT.statusItems[0]?.key||'active';
-  const ex=new Set(OPT.statsGroups.filter(g=>g.excludeTotal).flatMap(g=>g.statuses));
+  const ex=_exKeys();
   return !ex.has(m.s||defKey);
 }
 function _sflCounted(m){ return m.cc!==true&&_sflStatusOk(m); }
@@ -5543,7 +5547,7 @@ function _statSummaryData(){
   const row=g=>({name:g.name,cnt:all.filter(m=>g.statuses.includes(m.s||defKey)).length,col:statusItemColor(g.statuses[0])});
   const grouped=new Set(OPT.statsGroups.flatMap(g=>g.statuses));
   const orphans=all.filter(m=>!grouped.has(m.s||defKey)).length;
-  const exclKeys=new Set(excl.flatMap(g=>g.statuses));
+  const exclKeys=_exKeys();
   const rows=incl.map(row); if(orphans) rows.push({name:'미분류',cnt:orphans,col:'#888'});
   return {rows,total:all.filter(m=>!exclKeys.has(m.s||defKey)).length,excl:excl.map(row),sheet:(SHEETS[CUR_SHEET]&&SHEETS[CUR_SHEET].name)||''};
 }
@@ -5621,7 +5625,7 @@ function updateStatsPanel(){
       </div>`;
     }
     // 총원 = 전체 - 합산제외 그룹 (미분류 포함)
-    const exclKeys=new Set(excl.flatMap(g=>g.statuses));
+    const exclKeys=_exKeys();
     const totalCnt=allMembers.filter(m=>!exclKeys.has(m.s||defKey)).length;
     html+=`<div class="sfl-total"><span class="sfl-total-lbl">총원</span><span class="sfl-total-num">${totalCnt}</span></div>`;
     if(excl.length){
@@ -5717,7 +5721,7 @@ function updateStatsPanel(){
   const ttl=document.getElementById('statsfl-title');
   const flEl=document.getElementById('statsfl');
   if(ttl){
-    const ex=new Set(OPT.statsGroups.filter(g=>g.excludeTotal).flatMap(g=>g.statuses));
+    const ex=_exKeys();
     const tot=allMembers.filter(m=>!ex.has(m.s||defKey)).length;
     ttl.textContent=(flEl&&flEl.classList.contains('collapsed'))?`인원 현황 ${tot}명`:'인원 현황';
   }
