@@ -289,8 +289,7 @@ body.present #mtip{display:none!important;}
 
 /* Member rows */
 .nb{background:var(--card-bg);border-radius:0 0 var(--card-radius) var(--card-radius);overflow:hidden;}
-.nb:empty{min-height:34px;}
-.nb:empty::before{content:'＋';display:flex;align-items:center;justify-content:center;height:34px;color:#C8CDD8;font-size:15px;pointer-events:none;}
+.nb:empty{display:none;}  /* 구성원이 없는 카드는 머리글만 - 구성원 추가는 ✏ 편집에서 */
 .mr{padding:4px 10px 4px calc(var(--band-w) + 8px);height:var(--mh);position:relative;display:flex;align-items:center;gap:0;border-top:1px solid var(--row-border);box-sizing:border-box;overflow:hidden;}
 .mr:nth-child(even){background:var(--row-even);}
 .nb.mcol{display:grid;padding-left:var(--band-w);background:linear-gradient(var(--band-color,var(--mint)),var(--band-color,var(--mint))) left top/var(--band-w) 100% no-repeat,var(--card-bg);}
@@ -1075,6 +1074,11 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
       <div class="opt-sec" data-sec="logo">
         <div class="opt-sec-title" role="button" tabindex="0" aria-expanded="true"><span class="opt-arr">▾</span> 로고·색상</div>
         <div class="opt-row">
+          <span class="opt-lbl">단계별 자동 색</span>
+          <input type="checkbox" id="opt-gradcolor" onchange="OPT.gradColor=this.checked;render();saveOptLS()">
+          <span class="opt-val">본부 색을 아래로 옅게</span>
+        </div>
+        <div class="opt-row">
           <span class="opt-lbl">로고 텍스트</span>
           <input type="text" id="opt-logo-txt" maxlength="20" style="flex:1;padding:6px 9px;border:1.5px solid #DDD;border-radius:5px;font-size:13px;outline:none;"
             oninput="OPT.logoText=this.value;applyLogo();saveOptLS()">
@@ -1196,7 +1200,7 @@ const OPT = {
   uiMint:'#40D2A7', uiSky:'#60DCF8', uiCoral:'#FF8770', topbarBg:'#2C2C2C',
   statsBg:'#1C1C20', stbarBg:'#1A1A1A',
   // 카드 스타일
-  cardRadius:8, shadowA:0.11, bodyBand:false, sbShow:true, sbPos:'tl', sbMode:'auto', sbScale:100, showCnt:true, cntPos:'tr', cntColor:'', cntCc:'sep', cntSize:9, cntDx:0, cntDy:0,
+  cardRadius:8, shadowA:0.11, bodyBand:false, gradColor:false, sbShow:true, sbPos:'tl', sbMode:'auto', sbScale:100, showCnt:true, cntPos:'tr', cntColor:'', cntCc:'sep', cntSize:9, cntDx:0, cntDy:0,
   // 헤더 배경색
   hdrTop:'#1A1A1A', hdrL1:'#2C2C2C', hdrL2:'#383838', hdrL3:'#424242',
   hdrL4:'#4A4A4A', hdrL5:'#525252', hdrTf:'#30304A', hdrSide:'#323232',
@@ -1330,7 +1334,7 @@ function init() {
 }
 
 // ═══ Node height
-function nh(nd) { const _m=(nd.m||[]).length; return CUR_HH + (_m ? Math.ceil(_m/_mcOf(nd))*CUR_MH : 34); }  // 빈 카드는 .nb:empty min-height(34)와 일치
+function nh(nd) { const _m=(nd.m||[]).length; return CUR_HH + (_m ? Math.ceil(_m/_mcOf(nd))*CUR_MH : 0); }  // 구성원이 없는 카드는 머리글만 (철님 10-20); 본문은 .nb:empty{display:none}
 
 // ═══ 인원 열 수 (nd.mc: 2·3·4, 없으면 1열) — 카드 폭 = 색띠 + 열 수 × 일반 카드의 멤버 영역 폭
 const AC_MAX=8, MC_MAX=8;  // 직속 카드 한 줄 개수·인원 열 수 상한 - 배치 계산은 열 수를 변수로 받으므로 입력 검증에만 쓴다 (철님 10-20: 3개 상한에 이유 없음)
@@ -1732,17 +1736,34 @@ function _applyCntPill(el,nd){
   if(!pill||!hd) return;
   const fx=_cntColorVal();
   if(fx){ const f=cntFixedColors(fx); pill.style.background=f.bg; pill.style.color=f.fg; return; }
-  let col=nd.color||'';
+  let col=_dispColor(nd)||'';
   if(!col){ col=getComputedStyle(hd).backgroundColor; if(!col||col==='transparent'||/rgba\(.*,\s*0\)$/.test(col)) col='#808080'; }
   const k=cntPillColors(col);
   pill.style.background=k.bg; pill.style.color=k.fg;
 }
+// 단계별 자동 색(OPT.gradColor): 최상위 카드 바로 아래 조직이 기준색, 그 아래는 단계마다 12% 옅게(최대 48%). 자료의 nd.color는 건드리지 않는다 (철님 10-20)
+function _gradParent(id){ const c=S.conns.find(k=>k.t===id&&(()=>{const f=S.nodes.find(n=>n.id===k.f);return f&&f.type!=='side';})()); return c?S.nodes.find(n=>n.id===c.f):null; }
+function _mixWhite(col,t){
+  let r,g,b; const m=String(col||'').trim();
+  if(/^#[0-9a-fA-F]{6}$/.test(m)){ r=parseInt(m.slice(1,3),16); g=parseInt(m.slice(3,5),16); b=parseInt(m.slice(5,7),16); }
+  else { const q=m.match(/\d+(\.\d+)?/g); if(!q||q.length<3) return col; [r,g,b]=q.slice(0,3).map(Number); }
+  const f=v=>Math.round(v+(255-v)*t); return 'rgb('+f(r)+', '+f(g)+', '+f(b)+')';
+}
+function _dispColor(nd){
+  if(OPT.gradColor!==true||!nd||nd.type==='top'||nd.type==='side') return (nd&&nd.color)||'';
+  let b=nd, lv=0, guard=0; let p=_gradParent(b.id);
+  while(p&&p.type!=='top'&&guard++<64){ b=p; lv++; p=_gradParent(b.id); }
+  if(!p||b===nd) return nd.color||'';  // 최상위 아래가 아니거나(고아) 자신이 기준 조직이면 그대로
+  const baseCol=b.color||getComputedStyle(document.documentElement).getPropertyValue('--hdr-'+b.type).trim()||'';
+  return baseCol?_mixWhite(baseCol,Math.min(0.48,0.12*lv)):'';
+}
 function bindNode(el,nd) {
   el.className='nd t-'+nd.type;
   if(_mcOf(nd)>1) el.style.width=cardW(nd)+'px'; else el.style.removeProperty('width');
-  if(nd.color) el.style.setProperty('--band-color',nd.color);
+  const _dc=_dispColor(nd);
+  if(_dc) el.style.setProperty('--band-color',_dc);
   else el.style.removeProperty('--band-color');
-  {const _nh=el.querySelector('.nh'); if(_nh) _nh.style.background=nd.color?nd.color:'';}
+  {const _nh=el.querySelector('.nh'); if(_nh) _nh.style.background=_dc?_dc:'';}
   _applyCntPill(el,nd);
   // 카드 전체에서 드래그 가능 — 단, 멤버 행(.mr)·액션 버튼(.nact) 위는 각자 핸들러로 양보
   // 빈 카드(멤버 0)도 본문 영역에서 드래그 시작 가능
@@ -3906,7 +3927,10 @@ function _autoLayoutCore(){
   S.scale=sc;
 
   const rnd=S.nodes.find(n=>n.id===root.id);
-  // (제거 10-20) 루트를 화면 중앙에 두려고 카드 위치를 오른쪽으로 밀던 단계: 보기 위치는 아래 스크롤로 맞추고, 카드 좌표는 배치 결과 그대로 둔다
+  // 루트를 뷰포트 수평 중앙에 배치 — 트리 넓이 무관하게 항상 적용
+  const needLeft=Math.ceil(vw/(2*sc)-cardW(rnd)/2);
+  const shiftX=Math.max(0, needLeft-rnd.x);
+  if(shiftX>0) S.nodes.forEach(n=>n.x+=shiftX);
 
   const cvs=document.getElementById('canvas');
   cvs.style.marginLeft='';
@@ -4369,7 +4393,7 @@ function resetOptions(){
     strokeW:1.8,strokeDashW:1.5,
     uiMint:'#40D2A7',uiSky:'#60DCF8',uiCoral:'#FF8770',topbarBg:'#2C2C2C',
     statsBg:'#1C1C20',stbarBg:'#1A1A1A',
-    cardRadius:8,shadowA:0.11,bodyBand:false,sbShow:true,sbPos:'tl',sbMode:'auto',sbScale:100,showCnt:true,cntPos:'tr',cntColor:'',cntCc:'sep',cntSize:9,cntDx:0,cntDy:0,
+    cardRadius:8,shadowA:0.11,bodyBand:false,gradColor:false,sbShow:true,sbPos:'tl',sbMode:'auto',sbScale:100,showCnt:true,cntPos:'tr',cntColor:'',cntCc:'sep',cntSize:9,cntDx:0,cntDy:0,
     canvasBg:'#ECEEF3',cardBg:'#FFFFFF',rowEven:'#FAFBFD',rowBorder:'#F2F3F6',
     hdrTop:'#1A1A1A',hdrL1:'#2C2C2C',hdrL2:'#383838',hdrL3:'#424242',
     hdrL4:'#4A4A4A',hdrL5:'#525252',hdrTf:'#30304A',hdrSide:'#323232',
@@ -4392,6 +4416,7 @@ function resetOptions(){
   applyAllFontHeights();
   closeOptions(); setTimeout(()=>{openOptions();autoLayout();},50);
   _syncStatsBoxCtl();
+  {const _g=document.getElementById('opt-gradcolor');if(_g)_g.checked=OPT.gradColor===true;}
   applyBodyBand();
 }
 
@@ -4724,6 +4749,7 @@ function _applyOptObj(d){
   }
   OPT.showCnt=d.showCnt!==false;{const _c=document.getElementById('opt-showcnt');if(_c)_c.checked=OPT.showCnt;}
   OPT.bodyBand=d.bodyBand===true; applyBodyBand();
+  OPT.gradColor=d.gradColor===true;{const _g=document.getElementById('opt-gradcolor');if(_g)_g.checked=OPT.gradColor;} if(S.nodes&&S.nodes.length&&document.getElementById('nl')) render();  // 옵션을 나중에 불러와도 색이 바로 따라오게
   OPT.sbShow=d.sbShow!==false; OPT.sbPos=['tl','tr','bl','br'].includes(d.sbPos)?d.sbPos:'tl'; OPT.sbMode=['auto','outside','inside'].includes(d.sbMode)?d.sbMode:'auto'; OPT.sbScale=(Number.isInteger(d.sbScale)&&d.sbScale>=60&&d.sbScale<=160)?d.sbScale:100; _syncStatsBoxCtl();
   OPT.cntPos=(d.cntPos==='tr'||d.cntPos==='mr'||d.cntPos==='br'||d.cntPos==='badge')?d.cntPos:'tr';
   OPT.cntColor=(typeof d.cntColor==='string'&&/^#[0-9a-fA-F]{6}$/.test(d.cntColor))?d.cntColor:'';
