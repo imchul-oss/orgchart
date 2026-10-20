@@ -975,6 +975,34 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
             oninput="OPT.cntDy=+this.value;applyCntStyle();render();saveOptLS()">
           <span class="opt-val" id="opt-cntdy-v">0px</span>
         </div>
+        <div class="opt-row">
+          <span class="opt-lbl">현황표 (인쇄·이미지)</span>
+          <input type="checkbox" id="opt-sbshow" checked onchange="OPT.sbShow=this.checked;saveOptLS()">
+          <span class="opt-val">표시</span>
+        </div>
+        <div class="opt-row">
+          <span class="opt-lbl">현황표 위치</span>
+          <select id="opt-sbpos" class="opt-orient-sel" onchange="OPT.sbPos=this.value;saveOptLS()">
+            <option value="tl">왼쪽 위</option>
+            <option value="tr">오른쪽 위</option>
+            <option value="bl">왼쪽 아래</option>
+            <option value="br">오른쪽 아래</option>
+          </select>
+        </div>
+        <div class="opt-row">
+          <span class="opt-lbl">현황표 자리</span>
+          <select id="opt-sbmode" class="opt-orient-sel" onchange="OPT.sbMode=this.value;saveOptLS()">
+            <option value="auto">빈 자리면 차트 안, 아니면 밖</option>
+            <option value="outside">항상 차트 밖</option>
+            <option value="inside">항상 차트 안</option>
+          </select>
+        </div>
+        <div class="opt-row">
+          <span class="opt-lbl">현황표 크기</span>
+          <input type="range" class="opt-slider" id="opt-sbscale" min="60" max="160" step="10" value="100"
+            oninput="OPT.sbScale=+this.value;document.getElementById('opt-sbscale-v').textContent=this.value+'%';saveOptLS()">
+          <span class="opt-val" id="opt-sbscale-v">100%</span>
+        </div>
       </div>
       <div class="opt-sec" data-sec="font">
         <div class="opt-sec-title" role="button" tabindex="0" aria-expanded="true"><span class="opt-arr">▾</span> 글꼴</div>
@@ -1168,7 +1196,7 @@ const OPT = {
   uiMint:'#40D2A7', uiSky:'#60DCF8', uiCoral:'#FF8770', topbarBg:'#2C2C2C',
   statsBg:'#1C1C20', stbarBg:'#1A1A1A',
   // 카드 스타일
-  cardRadius:8, shadowA:0.11, bodyBand:false, showCnt:true, cntPos:'tr', cntColor:'', cntCc:'sep', cntSize:9, cntDx:0, cntDy:0,
+  cardRadius:8, shadowA:0.11, bodyBand:false, sbShow:true, sbPos:'tl', sbMode:'auto', sbScale:100, showCnt:true, cntPos:'tr', cntColor:'', cntCc:'sep', cntSize:9, cntDx:0, cntDy:0,
   // 헤더 배경색
   hdrTop:'#1A1A1A', hdrL1:'#2C2C2C', hdrL2:'#383838', hdrL3:'#424242',
   hdrL4:'#4A4A4A', hdrL5:'#525252', hdrTf:'#30304A', hdrSide:'#323232',
@@ -1910,6 +1938,7 @@ function _setCntCtl(){
   [['opt-cntsz',v.fs],['opt-cntdx',v.dx],['opt-cntdy',v.dy]].forEach(([id,x])=>{const e=document.getElementById(id); if(e) e.value=x;});
   applyCntStyle();
 }
+function _syncStatsBoxCtl(){ const g=id=>document.getElementById(id); if(g('opt-sbshow')) g('opt-sbshow').checked=OPT.sbShow!==false; if(g('opt-sbpos')) g('opt-sbpos').value=OPT.sbPos||'tl'; if(g('opt-sbmode')) g('opt-sbmode').value=OPT.sbMode||'auto'; if(g('opt-sbscale')){ g('opt-sbscale').value=OPT.sbScale||100; const v=g('opt-sbscale-v'); if(v) v.textContent=(OPT.sbScale||100)+'%'; } }
 function applyBodyBand(){ document.body.classList.toggle('bodyband',OPT.bodyBand===true); const c=document.getElementById('opt-bodyband'); if(c) c.checked=OPT.bodyBand===true; }
 function _cntPosVal(){return ['mr','br','badge'].indexOf(OPT.cntPos)>=0?OPT.cntPos:'tr';}
 function _cntColorVal(){return /^#[0-9a-fA-F]{6}$/.test(OPT.cntColor||'')?OPT.cntColor:'';}
@@ -4337,7 +4366,7 @@ function resetOptions(){
     strokeW:1.8,strokeDashW:1.5,
     uiMint:'#40D2A7',uiSky:'#60DCF8',uiCoral:'#FF8770',topbarBg:'#2C2C2C',
     statsBg:'#1C1C20',stbarBg:'#1A1A1A',
-    cardRadius:8,shadowA:0.11,bodyBand:false,showCnt:true,cntPos:'tr',cntColor:'',cntCc:'sep',cntSize:9,cntDx:0,cntDy:0,
+    cardRadius:8,shadowA:0.11,bodyBand:false,sbShow:true,sbPos:'tl',sbMode:'auto',sbScale:100,showCnt:true,cntPos:'tr',cntColor:'',cntCc:'sep',cntSize:9,cntDx:0,cntDy:0,
     canvasBg:'#ECEEF3',cardBg:'#FFFFFF',rowEven:'#FAFBFD',rowBorder:'#F2F3F6',
     hdrTop:'#1A1A1A',hdrL1:'#2C2C2C',hdrL2:'#383838',hdrL3:'#424242',
     hdrL4:'#4A4A4A',hdrL5:'#525252',hdrTf:'#30304A',hdrSide:'#323232',
@@ -4359,6 +4388,7 @@ function resetOptions(){
   applyAllStatusCSS();
   applyAllFontHeights();
   closeOptions(); setTimeout(()=>{openOptions();autoLayout();},50);
+  _syncStatsBoxCtl();
   applyBodyBand();
 }
 
@@ -4691,6 +4721,7 @@ function _applyOptObj(d){
   }
   OPT.showCnt=d.showCnt!==false;{const _c=document.getElementById('opt-showcnt');if(_c)_c.checked=OPT.showCnt;}
   OPT.bodyBand=d.bodyBand===true; applyBodyBand();
+  OPT.sbShow=d.sbShow!==false; OPT.sbPos=['tl','tr','bl','br'].includes(d.sbPos)?d.sbPos:'tl'; OPT.sbMode=['auto','outside','inside'].includes(d.sbMode)?d.sbMode:'auto'; OPT.sbScale=(Number.isInteger(d.sbScale)&&d.sbScale>=60&&d.sbScale<=160)?d.sbScale:100; _syncStatsBoxCtl();
   OPT.cntPos=(d.cntPos==='tr'||d.cntPos==='mr'||d.cntPos==='br'||d.cntPos==='badge')?d.cntPos:'tr';
   OPT.cntColor=(typeof d.cntColor==='string'&&/^#[0-9a-fA-F]{6}$/.test(d.cntColor))?d.cntColor:'';
   OPT.cntCc=(d.cntCc==='sep'||d.cntCc==='inc'||d.cntCc==='exc')?d.cntCc:'sep';
@@ -4899,8 +4930,8 @@ function exportPNG(){
   _VN.forEach(n=>{x0=Math.min(x0,n.x);y0=Math.min(y0,n.y);x1=Math.max(x1,n.x+cardW(n));y1=Math.max(y1,n.y+nh(n));});
   const _tz=tfZoneInfo();
   if(_tz){ x0=Math.min(x0,_tz.x); y0=Math.min(y0,_tz.y); x1=Math.max(x1,_tz.x+_tz.w); y1=Math.max(y1,_tz.y+_tz.h); }
-  const _sd=_statSummaryData(), _sbH=_statSummaryH(_sd);
-  if(_sd){ x0-=_SB_W+30; y1=Math.max(y1,y0+_sbH); }  // 차트 왼쪽에 인원 현황표 자리
+  const _pl=_statsBoxPlan({x0,y0,x1,y1});
+  if(_pl){ x0-=_pl.ext.left; x1+=_pl.ext.right; y1+=_pl.ext.bottom; }  // 차트 밖 자리일 때만 그만큼 여백
   const W=Math.round((x1-x0+80)*2), H=Math.round((y1-y0+80)*2);
   const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
   const ctx=cv.getContext('2d');
@@ -5009,9 +5040,9 @@ function exportPNG(){
       ctx.restore();
     });
   });
-  if(_sd){  // 인원 현황표 (현황 탭과 같은 숫자)
-    const bx=x0, by=y0;
-    ctx.save(); ctx.setLineDash([]);
+  if(_pl){  // 인원 현황표 (현황 탭과 같은 숫자), 계획한 자리에 배율대로
+    const _sd=_pl.sd, _sbH=_pl.h0, bx=0, by=0;
+    ctx.save(); ctx.setLineDash([]); ctx.translate(_pl.x,_pl.y); ctx.scale(_pl.s,_pl.s);
     ctx.fillStyle='#fff'; ctx.fillRect(bx,by,_SB_W,_sbH);
     ctx.strokeStyle='#d0d0d0'; ctx.lineWidth=1; ctx.strokeRect(bx+.5,by+.5,_SB_W-1,_sbH-1);
     ctx.fillStyle='#2b2f36'; ctx.fillRect(bx,by,_SB_W,26);
@@ -5047,13 +5078,15 @@ function preparePrint(){
   const w=document.getElementById('wrap'), cvs=document.getElementById('canvas');
   _prep={scale:S.scale,sl:w.scrollLeft,st:w.scrollTop,tf:cvs.style.transform};
   const {x0,y0,x1,y1}=_chartBounds();
-  const _sd=_statSummaryData(), _ox=_sd?_SB_W+20:0;  // 인원 현황표 자리만큼 차트를 오른쪽으로
-  const sc=Math.min((1123-40-_ox)/(x1-x0),(794-40)/(y1-y0),1);
-  cvs.style.transform=`translate(${20+_ox-x0*sc}px,${20-y0*sc}px) scale(${sc})`;
-  if(_sd){
+  const _pl=_statsBoxPlan({x0,y0,x1,y1}), _sd=_pl?_pl.sd:null;
+  const _bx0=x0-(_pl?_pl.ext.left:0), _bx1=x1+(_pl?_pl.ext.right:0), _by1=y1+(_pl?_pl.ext.bottom:0);  // 차트 밖 자리일 때만 여백
+  const sc=Math.min((1123-40)/(_bx1-_bx0),(794-40)/(_by1-y0),1);
+  cvs.style.transform=`translate(${20-_bx0*sc}px,${20-y0*sc}px) scale(${sc})`;
+  if(_pl){
     const r=x=>`<div class="ps-row"><i style="background:${x.col}"></i><span>${esc(x.name)}</span><b>${x.cnt}</b></div>`;
     const bx=document.createElement('div'); bx.id='print-stats';
     bx.innerHTML=`<div class="ps-hd">인원 현황${_sd.sheet?' · '+esc(_sd.sheet):''}</div>${_sd.rows.map(r).join('')}<div class="ps-tot"><span>총원</span><b>${_sd.total}</b></div>${_sd.excl.length?`<div class="ps-ex">합산 제외</div>${_sd.excl.map(r).join('')}`:''}`;
+    bx.style.left=(20+(_pl.x-_bx0)*sc)+'px'; bx.style.top=(20+(_pl.y-y0)*sc)+'px'; bx.style.transform=`scale(${sc*_pl.s})`; bx.style.transformOrigin='0 0';  // 차트와 같은 배율, 계획한 자리
     document.body.appendChild(bx);
   }
   document.body.classList.add('printing');
@@ -5446,6 +5479,28 @@ function _statSummaryData(){
   return {rows,total:all.filter(m=>!exclKeys.has(m.s||defKey)).length,excl:excl.map(row),sheet:(SHEETS[CUR_SHEET]&&SHEETS[CUR_SHEET].name)||''};
 }
 const _SB_W=150;  // 인쇄·PNG 인원 현황표 폭
+// 인쇄·PNG 인원 현황표 자리 계획 (철님 10-20): b = 차트 테두리. 표시 옵션이 꺼졌거나 자료가 없으면 null.
+// 위치(sbPos) 모서리에 두되, 자리(sbMode)가 auto면 그 모서리에 카드가 없을 때만 차트 안에 넣고 아니면 차트 밖 세로 칸에 둔다.
+// 반환: {sd,s,w,h,h0,x,y,inside,ext} - x,y는 차트 좌표의 표 왼쪽 위, s는 배율, ext는 차트 밖에 더 필요한 여백.
+function _statsBoxPlan(b){
+  if(OPT.sbShow===false) return null;
+  const sd=_statSummaryData(); if(!sd) return null;
+  const s=Math.max(0.6,Math.min(1.6,(OPT.sbScale||100)/100)), h0=_statSummaryH(sd), w=_SB_W*s, h=h0*s;
+  const pos=['tl','tr','bl','br'].includes(OPT.sbPos)?OPT.sbPos:'tl', mode=['auto','outside','inside'].includes(OPT.sbMode)?OPT.sbMode:'auto';
+  const left=pos==='tl'||pos==='bl', top=pos==='tl'||pos==='tr';
+  const inX=left?b.x0:b.x1-w, inY=top?b.y0:b.y1-h;
+  const H=collHidden();
+  const hit=S.nodes.some(n=>{ if(H.has(n.id)) return false; const x0=n.x,x1=n.x+cardW(n),y0=n.y,y1=n.y+nh(n); return x0<inX+w+10&&x1>inX-10&&y0<inY+h+10&&y1>inY-10; });
+  const inside=mode==='inside'||(mode==='auto'&&!hit);
+  const ext={left:0,right:0,top:0,bottom:0};
+  let x=inX,y=inY;
+  if(!inside){
+    if(left){ ext.left=w+30; x=b.x0-w-30; } else { ext.right=w+30; x=b.x1+30; }
+    if(h>b.y1-b.y0) ext.bottom=h-(b.y1-b.y0);
+    y=top?b.y0:(b.y1+ext.bottom-h);
+  }
+  return {sd,s,w,h,h0,x,y,inside,ext,pos,mode};
+}
 function _statSummaryH(sd){ return sd?34+sd.rows.length*18+24+(sd.excl.length?20+sd.excl.length*18:0)+8:0; }
 function updateStatsPanel(){
   const body=document.getElementById('statsfl-body');
