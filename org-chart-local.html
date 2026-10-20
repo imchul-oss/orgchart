@@ -5171,20 +5171,19 @@ function exportPNG(){
   if(_pl){  // 인원 현황표 (현황 탭과 같은 숫자), 계획한 자리에 배율대로
     const _sd=_pl.sd, _sbH=_pl.h0, bx=0, by=0;
     ctx.save(); ctx.setLineDash([]); ctx.translate(_pl.x,_pl.y); ctx.scale(_pl.s,_pl.s);
-    ctx.fillStyle='#fff'; ctx.fillRect(bx,by,_SB_W,_sbH);
-    ctx.strokeStyle='#d0d0d0'; ctx.lineWidth=1; ctx.strokeRect(bx+.5,by+.5,_SB_W-1,_sbH-1);
-    ctx.fillStyle='#2b2f36'; ctx.fillRect(bx,by,_SB_W,26);
+    const W=_sd.w||_SB_W;
+    ctx.fillStyle='#fff'; ctx.fillRect(bx,by,W,_sbH);
+    ctx.strokeStyle='#d0d0d0'; ctx.lineWidth=1; ctx.strokeRect(bx+.5,by+.5,W-1,_sbH-1);
+    ctx.fillStyle='#2b2f36'; ctx.fillRect(bx,by,W,26);
     ctx.textBaseline='middle'; ctx.textAlign='left'; ctx.fillStyle='#fff'; ctx.font='bold 12px '+font;
-    fitText('인원 현황'+(_sd.sheet?' · '+_sd.sheet:''),bx+10,by+13,'bold','12px',_SB_W-20);
+    fitText(_sd.title,bx+10,by+13,'bold','12px',W-20);
     let ry=by+34;
-    const line=(r,muted)=>{ ctx.fillStyle=r.col; ctx.fillRect(bx+10,ry+5,8,8);
-      ctx.textAlign='left'; ctx.fillStyle=muted?'#888':'#333'; ctx.font='11px '+font; ctx.fillText(r.name,bx+24,ry+9);
-      ctx.textAlign='right'; ctx.font='bold 11px '+font; ctx.fillText(String(r.cnt),bx+_SB_W-10,ry+9); ry+=18; };
-    _sd.rows.forEach(r=>line(r,false));
-    ctx.fillStyle='#e4e4e4'; ctx.fillRect(bx+8,ry+2,_SB_W-16,1);
-    ctx.textAlign='left'; ctx.fillStyle='#222'; ctx.font='bold 12px '+font; ctx.fillText('총원',bx+10,ry+13);
-    ctx.textAlign='right'; ctx.fillText(String(_sd.total),bx+_SB_W-10,ry+13); ry+=24;
-    if(_sd.excl.length){ ctx.textAlign='left'; ctx.fillStyle='#999'; ctx.font='10px '+font; ctx.fillText('합산 제외',bx+10,ry+10); ry+=20; _sd.excl.forEach(r=>line(r,true)); }
+    _sd.items.forEach(it=>{  // 패널의 줄 그대로: 줄 18, 합계 24, 구역 제목 20, 안내 16
+      if(it.t==='row'){ if(it.col){ ctx.fillStyle=it.col; ctx.fillRect(bx+10,ry+5,8,8); } ctx.textAlign='left'; ctx.fillStyle=it.dim?'#888':'#333'; ctx.font='11px '+font; ctx.fillText(it.name,bx+(it.col?24:10)+it.ind,ry+9); ctx.textAlign='right'; ctx.font='bold 11px '+font; ctx.fillText(String(it.cnt),bx+W-10,ry+9); ry+=18; }
+      else if(it.t==='total'){ ctx.fillStyle='#e4e4e4'; ctx.fillRect(bx+8,ry+2,W-16,1); ctx.textAlign='left'; ctx.fillStyle='#222'; ctx.font='bold 12px '+font; ctx.fillText(it.name,bx+10,ry+13); ctx.textAlign='right'; ctx.fillText(String(it.cnt),bx+W-10,ry+13); ry+=24; }
+      else if(it.t==='sec'){ ctx.textAlign='left'; ctx.fillStyle='#999'; ctx.font='10px '+font; ctx.fillText(it.name,bx+10,ry+10); ry+=20; }
+      else { ctx.textAlign='left'; ctx.fillStyle='#999'; ctx.font='10px '+font; ctx.fillText(it.name,bx+10,ry+8); ry+=16; }
+    });
     ctx.restore();
   }
   const dt=new Date(), pad=n=>String(n).padStart(2,'0');
@@ -5213,9 +5212,9 @@ function preparePrint(){
   cvs.style.transform=`translate(${20-_bx0*sc}px,${20-_ty0*sc}px) scale(${sc})`;
   if(_hd){ const hd=document.createElement('div'); hd.id='print-head'; hd.textContent=_hd.text; hd.style.left=(20+(x0-_bx0)*sc)+'px'; hd.style.top=(20+(_hd.h/2-10)*sc)+'px'; hd.style.width=((x1-x0)*sc)+'px'; hd.style.fontSize=(20*sc)+'px'; hd.style.textAlign=_hd.align; document.body.appendChild(hd); }
   if(_pl){
-    const r=x=>`<div class="ps-row"><i style="background:${x.col}"></i><span>${esc(x.name)}</span><b>${x.cnt}</b></div>`;
-    const bx=document.createElement('div'); bx.id='print-stats';
-    bx.innerHTML=`<div class="ps-hd">인원 현황${_sd.sheet?' · '+esc(_sd.sheet):''}</div>${_sd.rows.map(r).join('')}<div class="ps-tot"><span>총원</span><b>${_sd.total}</b></div>${_sd.excl.length?`<div class="ps-ex">합산 제외</div>${_sd.excl.map(r).join('')}`:''}`;
+    const r=it=>it.t==='row'?`<div class="ps-row"><i style="background:${it.col||'transparent'}"></i><span style="padding-left:${it.ind}px${it.dim?';opacity:.6':''}">${esc(it.name)}</span><b>${esc(String(it.cnt))}</b></div>`:it.t==='total'?`<div class="ps-tot"><span>${esc(it.name)}</span><b>${esc(String(it.cnt))}</b></div>`:`<div class="ps-ex">${esc(it.name)}</div>`;
+    const bx=document.createElement('div'); bx.id='print-stats'; bx.style.width=(_sd.w||_SB_W)+'px';
+    bx.innerHTML=`<div class="ps-hd">${esc(_sd.title)}</div>${_sd.items.map(r).join('')}`;
     bx.style.left=(20+(_pl.x-_bx0)*sc)+'px'; bx.style.top=(20+(_pl.y-y0)*sc)+'px'; bx.style.transform=`scale(${sc*_pl.s})`; bx.style.transformOrigin='0 0';  // 차트와 같은 배율, 계획한 자리
     document.body.appendChild(bx);
   }
@@ -5610,8 +5609,8 @@ const _SB_W=150;  // 인쇄·PNG 인원 현황표 폭
 // 반환: {sd,s,w,h,h0,x,y,inside,ext} - x,y는 차트 좌표의 표 왼쪽 위, s는 배율, ext는 차트 밖에 더 필요한 여백.
 function _statsBoxPlan(b){
   if(OPT.sbShow===false) return null;
-  const sd=_statSummaryData(); if(!sd) return null;
-  const s=Math.max(0.6,Math.min(1.6,(OPT.sbScale||100)/100)), h0=_statSummaryH(sd), w=_SB_W*s, h=h0*s;
+  const sd=_statTableData(); if(!sd||!sd.items.length) return null;
+  const s=Math.max(0.6,Math.min(1.6,(OPT.sbScale||100)/100)), h0=_statSummaryH(sd), w=(sd.w||_SB_W)*s, h=h0*s;
   const pos=['tl','tr','bl','br'].includes(OPT.sbPos)?OPT.sbPos:'tl', mode=['auto','outside','inside'].includes(OPT.sbMode)?OPT.sbMode:'auto';
   const left=pos==='tl'||pos==='bl', top=pos==='tl'||pos==='tr';
   const inX=left?b.x0:b.x1-w, inY=top?b.y0:b.y1-h;
@@ -5627,22 +5626,36 @@ function _statsBoxPlan(b){
   }
   return {sd,s,w,h,h0,x,y,inside,ext,pos,mode};
 }
-function _statSummaryH(sd){ return sd?34+sd.rows.length*18+24+(sd.excl.length?20+sd.excl.length*18:0)+8:0; }
-function updateStatsPanel(){
-  const body=document.getElementById('statsfl-body');
+const STAT_TAB_NAMES={summary:'인원 현황',job:'직무',role:'직책',area:'분야',sheet:'시트',team:'팀'};
+// 인쇄·PNG 표의 내용 = 패널이 지금 보여 주는 탭·범위·필터 그대로 (철님 10-20). 패널 html을 그대로 읽어 줄로 바꾼다.
+function _statTableData(){
+  const tmp=document.createElement('div'); tmp.innerHTML=_statPanelHtml();
+  const items=[];
+  tmp.querySelectorAll('.sfl-row,.sfl-total,.sfl-sec-lbl,.sfl-dup').forEach(el=>{
+    if(el.style&&el.style.display==='none') return;  // 접힌 팀 줄은 패널에서도 안 보인다
+    if(el.classList.contains('sfl-row')){
+      const l=el.querySelector('.sfl-lbl'), n=el.querySelector('.sfl-num'), d=el.querySelector('.sfl-dot');
+      const name=l?l.textContent.replace(/\s+/g,' ').trim():''; if(!name) return;
+      items.push({t:'row',name,cnt:n?n.textContent.trim():'',col:d?(d.style.background||''):'',dim:!!el.closest('.sfl-sec')||/opacity/.test((l&&l.getAttribute('style'))||''),ind:(parseInt(el.getAttribute('data-depth'))||0)*12});
+    } else if(el.classList.contains('sfl-total')){
+      const l=el.querySelector('.sfl-total-lbl'), n=el.querySelector('.sfl-total-num'); items.push({t:'total',name:l?l.textContent.trim():'',cnt:n?n.textContent.trim():''});
+    } else if(el.classList.contains('sfl-sec-lbl')){ items.push({t:'sec',name:el.textContent.trim()}); }
+    else { items.push({t:'note',name:el.textContent.trim()}); }
+  });
+  const tab=STAT_TAB_NAMES[_statTab]||'인원 현황', all=_sflScope==='all'&&(_statTab==='summary'||_statTab==='team');
+  const sheet=_statTab==='sheet'?'':(all?'전체':((SHEETS[CUR_SHEET]&&SHEETS[CUR_SHEET].name)||''));
+  const tots=items.filter(i=>i.t==='total'), total=tots.length?(parseInt(tots[tots.length-1].cnt)||0):0;
+  const mc=_statTableData._c||(_statTableData._c=document.createElement('canvas').getContext('2d')), font=getComputedStyle(document.body).fontFamily||'sans-serif';
+  let need=0; items.forEach(it=>{ mc.font=(it.t==='total'?'bold 12px ':'11px ')+font; const w=mc.measureText(it.name).width+(it.t==='row'?(it.col?24:10)+it.ind:10)+10+mc.measureText(String(it.cnt||'')).width+12; if(w>need) need=w; });
+  const w=Math.max(_SB_W,Math.min(280,Math.ceil(need)));  // 폭은 가장 긴 줄에 맞춘다 (150~280px)
+  return {items,title:tab+(sheet?' · '+sheet:''),total,tab:_statTab,w,sheet};
+}
+function _statSummaryH(sd){ return sd?34+sd.items.reduce((a,it)=>a+(it.t==='row'?18:it.t==='total'?24:it.t==='sec'?20:16),0)+8:0; }
+// 패널 본문 html (철님 10-20): 패널과 인쇄·PNG 표가 같은 html에서 나온다 - 탭·범위·필터 그대로
+function _statPanelHtml(){
   const grpSel=document.getElementById('statsfl-grp');
-  if(!body) return;
-
   const defKey=OPT.statusItems[0]?.key||'active';
   const allMembers=S.nodes.flatMap(n=>n.m||[]).filter(m=>m.cc!==true);  // 겸직 항목은 빼서 한 사람을 한 번만 센다
-
-  // 현황그룹 필터 옵션 재빌드 — OPT.statsGroups 기준 (사용자 설정 그룹 단위)
-  if(grpSel){
-    const prev=grpSel.value;
-    grpSel.innerHTML=`<option value="">전체</option>`+
-      OPT.statsGroups.map((g,i)=>`<option value="${i}"${String(i)===prev?' selected':''}>${esc(g.name)}</option>`).join('');
-  }
-
   const grpIdx=grpSel?.value!==''&&grpSel?.value!=null ? +grpSel.value : -1;
   const grpDef=grpIdx>=0 ? OPT.statsGroups[grpIdx] : null;
   // statsGroup은 여러 statusItem을 묶는 단위이므로 .statuses 배열로 필터
@@ -5744,7 +5757,19 @@ function updateStatsPanel(){
     html+=`<div class="sfl-total"><span class="sfl-total-lbl">${esc(lbl)}</span><span class="sfl-total-num">${filtered.length}</span></div>`;
   }
 
-  body.innerHTML=html;
+  return html;
+}
+function updateStatsPanel(){
+  const body=document.getElementById('statsfl-body');
+  const grpSel=document.getElementById('statsfl-grp');
+  if(!body) return;
+  // 현황그룹 필터 옵션 재빌드 — OPT.statsGroups 기준 (사용자 설정 그룹 단위)
+  if(grpSel){
+    const prev=grpSel.value;
+    grpSel.innerHTML=`<option value="">전체</option>`+
+      OPT.statsGroups.map((g,i)=>`<option value="${i}"${String(i)===prev?' selected':''}>${esc(g.name)}</option>`).join('');
+  }
+  body.innerHTML=_statPanelHtml();
   _sflFit();
   const ttl=document.getElementById('statsfl-title');
   const flEl=document.getElementById('statsfl');
