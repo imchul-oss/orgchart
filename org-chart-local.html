@@ -3342,7 +3342,30 @@ function _posCmp(po,a,b){
   if(po==='right'||po==='left') return (a.y-b.y)||(a.x-b.x);
   return (a.x-b.x)||(a.y-b.y);
 }
+// 접힌 카드의 하위(collHidden)는 데이터에 없는 것처럼 배치한다: 배치 동안만 S.nodes / S.conns 를
+// 보이는 카드·연결로 바꿔 두고, 화면 갱신(render) 직전과 종료 시 원래 배열로 되돌린다.
+// 숨은 카드의 x/y 는 건드리지 않는다. 접힌 카드가 없으면 그대로 기존 배치.
 function autoLayout(){
+  const _H=collHidden();
+  if(!_H.size) return _autoLayoutCore();
+  const allN=S.nodes, allC=S.conns;
+  const visN=allN.filter(n=>!_H.has(n.id));
+  const visC=(allC||[]).filter(c=>!_H.has(c.f)&&!_H.has(c.t));
+  const realRender=window.render;
+  let restored=false;
+  const restore=()=>{
+    if(restored) return; restored=true;
+    // 배치 중 S.nodes / S.conns 자체가 바뀌지 않았다면 원래 배열로 복원
+    if(S.nodes===visN) S.nodes=allN;
+    if(S.conns===visC) S.conns=allC;
+    if(window.render!==realRender) window.render=realRender;
+  };
+  window.render=function(){ restore(); return realRender.apply(this,arguments); };
+  S.nodes=visN; S.conns=visC;
+  try{ return _autoLayoutCore(); }
+  finally{ restore(); }
+}
+function _autoLayoutCore(){
   const _po=(SHEETS[CUR_SHEET]&&SHEETS[CUR_SHEET].posOrient)||'down';
   const COL_GAP=OPT.colGap, ROW_GAP=OPT.rowGap, PAD_X=OPT.padX, PAD_Y=OPT.padY;
   const r20=v=>Math.round(v/20)*20, c20=v=>Math.ceil(v/20)*20;
