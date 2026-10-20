@@ -855,31 +855,31 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
         </div>
         <div class="opt-row">
           <span class="opt-lbl">상하 간격</span>
-          <input type="range" class="opt-slider" id="opt-rg" min="40" max="200" step="10"
+          <input type="range" class="opt-slider" id="opt-rg" min="20" max="400" step="10"
             oninput="OPT.rowGap=+this.value;document.getElementById('opt-rg-v').textContent=this.value+'px';scheduleOptLayout()">
           <span class="opt-val" id="opt-rg-v">80px</span>
         </div>
         <div class="opt-row">
           <span class="opt-lbl">한 줄 최대 조직 수</span>
-          <input type="range" class="opt-slider" id="opt-wrap" min="0" max="8" step="1"
+          <input type="range" class="opt-slider" id="opt-wrap" min="0" max="20" step="1"
             oninput="OPT.wrapN=+this.value;document.getElementById('opt-wrap-v').textContent=OPT.wrapN?OPT.wrapN+'개':'끔';scheduleOptLayout()">
           <span class="opt-val" id="opt-wrap-v">끔</span>
         </div>
         <div class="opt-row">
           <span class="opt-lbl">좌우 간격</span>
-          <input type="range" class="opt-slider" id="opt-cg" min="10" max="120" step="10"
+          <input type="range" class="opt-slider" id="opt-cg" min="10" max="300" step="10"
             oninput="OPT.colGap=+this.value;document.getElementById('opt-cg-v').textContent=this.value+'px';scheduleOptLayout()">
           <span class="opt-val" id="opt-cg-v">44px</span>
         </div>
         <div class="opt-row">
           <span class="opt-lbl">사이드 여백</span>
-          <input type="range" class="opt-slider" id="opt-px" min="20" max="120" step="10"
+          <input type="range" class="opt-slider" id="opt-px" min="0" max="300" step="10"
             oninput="OPT.padX=+this.value;document.getElementById('opt-px-v').textContent=this.value+'px';scheduleOptLayout()">
           <span class="opt-val" id="opt-px-v">80px</span>
         </div>
         <div class="opt-row">
           <span class="opt-lbl">상단 여백</span>
-          <input type="range" class="opt-slider" id="opt-py" min="20" max="250" step="10"
+          <input type="range" class="opt-slider" id="opt-py" min="0" max="400" step="10"
             oninput="OPT.padY=+this.value;document.getElementById('opt-py-v').textContent=this.value+'px';scheduleOptLayout()">
           <span class="opt-val" id="opt-py-v">60px</span>
         </div>
@@ -888,37 +888,37 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
         <div class="opt-sec-title" role="button" tabindex="0" aria-expanded="true"><span class="opt-arr">▾</span> 카드</div>
         <div class="opt-row">
           <span class="opt-lbl">헤더 높이 (0=자동)</span>
-          <input type="range" class="opt-slider" id="opt-hdrh" min="0" max="160" step="2"
+          <input type="range" class="opt-slider" id="opt-hdrh" min="0" max="240" step="2"
             oninput="OPT.hdrH=+this.value;document.getElementById('opt-hdrh-v').textContent=this.value+'px';applyAllFontHeights();render();saveOptLS()">
           <span class="opt-val" id="opt-hdrh-v">0px</span>
         </div>
         <div class="opt-row">
           <span class="opt-lbl">행 높이 (0=자동)</span>
-          <input type="range" class="opt-slider" id="opt-rowh" min="0" max="100" step="2"
+          <input type="range" class="opt-slider" id="opt-rowh" min="0" max="160" step="2"
             oninput="OPT.rowH=+this.value;document.getElementById('opt-rowh-v').textContent=this.value+'px';applyAllFontHeights();render();saveOptLS()">
           <span class="opt-val" id="opt-rowh-v">0px</span>
         </div>
         <div class="opt-row">
           <span class="opt-lbl">카드 너비</span>
-          <input type="range" class="opt-slider" id="opt-nw" min="140" max="340" step="20"
+          <input type="range" class="opt-slider" id="opt-nw" min="100" max="600" step="10"
             oninput="applyCardWidth(this.value)">
           <span class="opt-val" id="opt-nw-v">228px</span>
         </div>
         <div class="opt-row">
           <span class="opt-lbl">색상띠 폭</span>
-          <input type="range" class="opt-slider" id="opt-bw" min="4" max="20" step="2"
+          <input type="range" class="opt-slider" id="opt-bw" min="0" max="40" step="2"
             oninput="applyBandW(this.value)">
           <span class="opt-val" id="opt-bw-v">12px</span>
         </div>
         <div class="opt-row">
           <span class="opt-lbl">카드 모서리</span>
-          <input type="range" class="opt-slider" id="opt-cr" min="0" max="20" step="1"
+          <input type="range" class="opt-slider" id="opt-cr" min="0" max="40" step="1"
             oninput="OPT.cardRadius=+this.value;document.documentElement.style.setProperty('--card-radius',this.value+'px');document.getElementById('opt-cr-v').textContent=this.value+'px';saveOptLS()">
           <span class="opt-val" id="opt-cr-v">8px</span>
         </div>
         <div class="opt-row">
           <span class="opt-lbl">카드 음영</span>
-          <input type="range" class="opt-slider" id="opt-sha" min="0" max="0.4" step="0.01"
+          <input type="range" class="opt-slider" id="opt-sha" min="0" max="1" step="0.01"
             oninput="OPT.shadowA=+this.value;document.documentElement.style.setProperty('--shadow-a',this.value);document.getElementById('opt-sha-v').textContent=Math.round(this.value*100)+'%';saveOptLS()">
           <span class="opt-val" id="opt-sha-v">11%</span>
         </div>
@@ -943,19 +943,19 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
         </div>
         <div class="opt-row">
           <span class="opt-lbl">인원 수 크기</span>
-          <input type="range" class="opt-slider" id="opt-cntsz" min="8" max="14" step="1" value="9"
+          <input type="range" class="opt-slider" id="opt-cntsz" min="6" max="24" step="1" value="9"
             oninput="OPT.cntSize=+this.value;applyCntStyle();render();saveOptLS()">
           <span class="opt-val" id="opt-cntsz-v">9px</span>
         </div>
         <div class="opt-row">
           <span class="opt-lbl">가로 여백</span>
-          <input type="range" class="opt-slider" id="opt-cntdx" min="-30" max="60" step="1" value="0"
+          <input type="range" class="opt-slider" id="opt-cntdx" min="-100" max="200" step="1" value="0"
             oninput="OPT.cntDx=+this.value;applyCntStyle();render();saveOptLS()">
           <span class="opt-val" id="opt-cntdx-v">0px</span>
         </div>
         <div class="opt-row">
           <span class="opt-lbl">세로 위치</span>
-          <input type="range" class="opt-slider" id="opt-cntdy" min="-30" max="30" step="1" value="0"
+          <input type="range" class="opt-slider" id="opt-cntdy" min="-100" max="100" step="1" value="0"
             oninput="OPT.cntDy=+this.value;applyCntStyle();render();saveOptLS()">
           <span class="opt-val" id="opt-cntdy-v">0px</span>
         </div>
@@ -964,49 +964,49 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
         <div class="opt-sec-title" role="button" tabindex="0" aria-expanded="true"><span class="opt-arr">▾</span> 글꼴</div>
         <div class="opt-row">
           <span class="opt-lbl">헤드 영문</span>
-          <input type="range" class="opt-slider" id="opt-fsen" min="6" max="32" step="1"
+          <input type="range" class="opt-slider" id="opt-fsen" min="6" max="48" step="1"
             oninput="applyFs('fsEn','--fs-en',this.value,'opt-fsen-v');scheduleOptLayout()">
           <span class="opt-val" id="opt-fsen-v">12px</span>
         </div>
         <div class="opt-row">
           <span class="opt-lbl">헤드 한글</span>
-          <input type="range" class="opt-slider" id="opt-fsko" min="6" max="26" step="1"
+          <input type="range" class="opt-slider" id="opt-fsko" min="6" max="40" step="1"
             oninput="applyFs('fsKo','--fs-ko',this.value,'opt-fsko-v');scheduleOptLayout()">
           <span class="opt-val" id="opt-fsko-v">8px</span>
         </div>
         <div class="opt-row">
           <span class="opt-lbl">멤버 이름</span>
-          <input type="range" class="opt-slider" id="opt-fsmn" min="6" max="30" step="1"
+          <input type="range" class="opt-slider" id="opt-fsmn" min="6" max="40" step="1"
             oninput="applyFs('fsMn','--fs-mn',this.value,'opt-fsmn-v');scheduleOptLayout()">
           <span class="opt-val" id="opt-fsmn-v">11px</span>
         </div>
         <div class="opt-row">
           <span class="opt-lbl">멤버 직무</span>
-          <input type="range" class="opt-slider" id="opt-fsmf" min="6" max="24" step="1"
+          <input type="range" class="opt-slider" id="opt-fsmf" min="6" max="36" step="1"
             oninput="applyFs('fsMf','--fs-mf',this.value,'opt-fsmf-v');scheduleOptLayout()">
           <span class="opt-val" id="opt-fsmf-v">9px</span>
         </div>
         <div class="opt-row">
           <span class="opt-lbl">멤버 직책</span>
-          <input type="range" class="opt-slider" id="opt-fsmr" min="6" max="24" step="1"
+          <input type="range" class="opt-slider" id="opt-fsmr" min="6" max="36" step="1"
             oninput="applyFs('fsMr2','--fs-mr2',this.value,'opt-fsmr-v');scheduleOptLayout()">
           <span class="opt-val" id="opt-fsmr-v">9px</span>
         </div>
         <div class="opt-row">
           <span class="opt-lbl">멤버 분야</span>
-          <input type="range" class="opt-slider" id="opt-fsma" min="6" max="24" step="1"
+          <input type="range" class="opt-slider" id="opt-fsma" min="6" max="36" step="1"
             oninput="applyFs('fsMa','--fs-ma',this.value,'opt-fsma-v');scheduleOptLayout()">
           <span class="opt-val" id="opt-fsma-v">9px</span>
         </div>
         <div class="opt-row">
           <span class="opt-lbl">헤더 줄간격</span>
-          <input type="range" class="opt-slider" id="opt-lhh" min="0.8" max="2.0" step="0.05"
+          <input type="range" class="opt-slider" id="opt-lhh" min="0.6" max="3" step="0.05"
             oninput="OPT.lhH=+this.value;document.getElementById('opt-lhh-v').textContent=(+this.value).toFixed(2);document.documentElement.style.setProperty('--lh-h',this.value);applyAllFontHeights();render();saveOptLS()">
           <span class="opt-val" id="opt-lhh-v">1.20</span>
         </div>
         <div class="opt-row">
           <span class="opt-lbl">멤버 줄간격</span>
-          <input type="range" class="opt-slider" id="opt-lhc" min="0.8" max="2.0" step="0.05"
+          <input type="range" class="opt-slider" id="opt-lhc" min="0.6" max="3" step="0.05"
             oninput="OPT.lhC=+this.value;document.getElementById('opt-lhc-v').textContent=(+this.value).toFixed(2);document.documentElement.style.setProperty('--lh-c',this.value);applyAllFontHeights();render();saveOptLS()">
           <span class="opt-val" id="opt-lhc-v">1.20</span>
         </div>
@@ -1015,13 +1015,13 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
         <div class="opt-sec-title" role="button" tabindex="0" aria-expanded="true"><span class="opt-arr">▾</span> 선·캔버스</div>
         <div class="opt-row">
           <span class="opt-lbl">실선 굵기</span>
-          <input type="range" class="opt-slider" id="opt-sw" min="0.5" max="5" step="0.5"
+          <input type="range" class="opt-slider" id="opt-sw" min="0.5" max="10" step="0.5"
             oninput="applyStroke('--stroke-w',this.value,'opt-sw-v')">
           <span class="opt-val" id="opt-sw-v">1.8px</span>
         </div>
         <div class="opt-row">
           <span class="opt-lbl">점선 굵기</span>
-          <input type="range" class="opt-slider" id="opt-dw" min="0.5" max="4" step="0.5"
+          <input type="range" class="opt-slider" id="opt-dw" min="0.5" max="10" step="0.5"
             oninput="applyStroke('--stroke-dash-w',this.value,'opt-dw-v')">
           <span class="opt-val" id="opt-dw-v">1.5px</span>
         </div>
@@ -1289,7 +1289,8 @@ function init() {
 function nh(nd) { const _m=(nd.m||[]).length; return CUR_HH + (_m ? Math.ceil(_m/_mcOf(nd))*CUR_MH : 34); }  // 빈 카드는 .nb:empty min-height(34)와 일치
 
 // ═══ 인원 열 수 (nd.mc: 2·3·4, 없으면 1열) — 카드 폭 = 색띠 + 열 수 × 일반 카드의 멤버 영역 폭
-function _mcOf(nd){ const c=nd&&nd.mc; return (c===2||c===3||c===4)?c:1; }
+const AC_MAX=8, MC_MAX=8;  // 직속 카드 한 줄 개수·인원 열 수 상한 - 배치 계산은 열 수를 변수로 받으므로 입력 검증에만 쓴다 (철님 10-20: 3개 상한에 이유 없음)
+function _mcOf(nd){ const c=nd&&nd.mc; return (Number.isInteger(c)&&c>=2&&c<=MC_MAX)?c:1; }
 function cardW(nd){ const c=_mcOf(nd); return c===1?NW:OPT.bandW+c*(NW-OPT.bandW); }
 
 // ═══ Grid — 스크롤·줌에 맞춰 background-position 재계산
@@ -1831,8 +1832,8 @@ function cntLabel(nd){
 }
 function _cntStyleVals(){
   const iv=(v,lo,hi,d)=>(Number.isInteger(v)&&v>=lo&&v<=hi)?v:d;
-  const fs=iv(OPT.cntSize,8,14,9);
-  return {fs, lh:fs+3, px:Math.round(fs*2/3), dx:iv(OPT.cntDx,-30,60,0), dy:iv(OPT.cntDy,-30,30,0)};
+  const fs=iv(OPT.cntSize,6,24,9);
+  return {fs, lh:fs+3, px:Math.round(fs*2/3), dx:iv(OPT.cntDx,-100,200,0), dy:iv(OPT.cntDy,-100,100,0)};
 }
 function applyCntStyle(){
   const v=_cntStyleVals(), st=document.documentElement.style;
@@ -1929,7 +1930,7 @@ function besideSplit(P,cards){
   const nR=P.ad==='L'?0:P.ad==='B'?Math.ceil(n/2):n;
   return {R:ord.slice(0,nR),L:ord.slice(nR)};
 }
-const besideCols=P=>(P&&(P.ac===2||P.ac===3))?P.ac:1;
+const besideCols=P=>(P&&Number.isInteger(P.ac)&&P.ac>=2&&P.ac<=AC_MAX)?P.ac:1;
 
 // ─── Draw connections (SVG) — 실선·점선 모두 버스 패턴 (스타일만 구분)
 function drawConns() {
@@ -2961,7 +2962,7 @@ function openEdit(id){
     </div>
     <div class="fg">
       <label class="fl">한 줄 최대 개수 (0 = 전체 설정)</label>
-      <input class="fi" type="number" id="ei-kn" min="0" max="20" value="${(Number.isInteger(nd.kn)&&nd.kn>0)?nd.kn:0}">
+      <input class="fi" type="number" id="ei-kn" min="0" max="50" value="${(Number.isInteger(nd.kn)&&nd.kn>0)?nd.kn:0}">
     </div>
     <div class="fg">
       <label class="fl">직속 카드 위치</label>
@@ -2974,18 +2975,13 @@ function openEdit(id){
     <div class="fg">
       <label class="fl">직속 카드 한 줄 개수</label>
       <select class="fs" id="ei-ac">
-        <option value="1" ${nd.ac!==2&&nd.ac!==3?'selected':''}>1개 (기본)</option>
-        <option value="2" ${nd.ac===2?'selected':''}>2개</option>
-        <option value="3" ${nd.ac===3?'selected':''}>3개</option>
+        ${Array.from({length:AC_MAX},(_,i)=>i+1).map(v=>`<option value="${v}"${besideCols(nd)===v?' selected':''}>${v}개${v===1?' (기본)':''}</option>`).join('')}
       </select>
     </div>
     <div class="fg">
       <label class="fl">인원 열 수</label>
       <select class="fs" id="ei-mc">
-        <option value="1" ${_mcOf(nd)===1?'selected':''}>1열 (기본)</option>
-        <option value="2" ${_mcOf(nd)===2?'selected':''}>2열</option>
-        <option value="3" ${_mcOf(nd)===3?'selected':''}>3열</option>
-        <option value="4" ${_mcOf(nd)===4?'selected':''}>4열</option>
+        ${Array.from({length:MC_MAX},(_,i)=>i+1).map(v=>`<option value="${v}"${_mcOf(nd)===v?' selected':''}>${v}열${v===1?' (기본)':''}</option>`).join('')}
       </select>
       <div style="font-size:11px;color:#999;">카드가 넓어지고 낮아집니다. 자동 배치를 누르면 주변 배치에 반영됩니다.</div>
     </div>
@@ -3090,8 +3086,8 @@ function saveModal(){
   if(document.getElementById('ei-kl').value==='col') nd.kl='col'; else delete nd.kl;
   { const kn=parseInt(document.getElementById('ei-kn').value,10); if(kn>=1) nd.kn=kn; else delete nd.kn; }
   { const ad=document.getElementById('ei-ad').value; if(ad==='L'||ad==='B') nd.ad=ad; else delete nd.ad; }
-  { const ac=parseInt(document.getElementById('ei-ac').value,10); if(ac===2||ac===3) nd.ac=ac; else delete nd.ac; }
-  { const mcEl=document.getElementById('ei-mc'), mc=mcEl?parseInt(mcEl.value,10):NaN; if(mc===2||mc===3||mc===4) nd.mc=mc; else delete nd.mc; }
+  { const ac=parseInt(document.getElementById('ei-ac').value,10); if(Number.isInteger(ac)&&ac>=2&&ac<=AC_MAX) nd.ac=ac; else delete nd.ac; }
+  { const mcEl=document.getElementById('ei-mc'), mc=mcEl?parseInt(mcEl.value,10):NaN; if(Number.isInteger(mc)&&mc>=2&&mc<=MC_MAX) nd.mc=mc; else delete nd.mc; }
   if(document.getElementById('ei-aside').checked) nd.aside=true; else delete nd.aside;
   { const se=document.getElementById('ei-sum'); if(se){ if(se.value) nd.sum=se.value; else delete nd.sum; } }
   const defCb=document.getElementById('ei-color-def');
@@ -4812,7 +4808,7 @@ function _applyOptObj(d){
   OPT.cntColor=(typeof d.cntColor==='string'&&/^#[0-9a-fA-F]{6}$/.test(d.cntColor))?d.cntColor:'';
   OPT.cntCc=(d.cntCc==='sep'||d.cntCc==='inc'||d.cntCc==='exc')?d.cntCc:'sep';
   { const iv=(v,lo,hi,df)=>(typeof v==='number'&&Number.isInteger(v))?Math.min(hi,Math.max(lo,v)):df;
-    OPT.cntSize=iv(d.cntSize,8,14,9); OPT.cntDx=iv(d.cntDx,-30,60,0); OPT.cntDy=iv(d.cntDy,-30,30,0); }
+    OPT.cntSize=iv(d.cntSize,6,24,9); OPT.cntDx=iv(d.cntDx,-100,200,0); OPT.cntDy=iv(d.cntDy,-100,100,0); }
   _setCntCtl();
   applyCntStyle();
   if(d.nw) NW=d.nw;
@@ -5250,11 +5246,11 @@ function importCSV(inp){
           const nn={id:g('id'),en:g('en'),ko:g('ko'),type:g('type')||'l2',
             x:+g('x')||0,y:+g('y')||0,color:g('color')||'',m:[]};
           const t=v=>String(v==null?'':v).trim();
-          const mc=t(g('mc')); if(/^[2-4]$/.test(mc)) nn.mc=+mc;
+          const mc=t(g('mc')); if(/^\d+$/.test(mc)&&+mc>=2&&+mc<=MC_MAX) nn.mc=+mc;
           if(t(g('kl'))==='col') nn.kl='col';
           const kn=t(g('kn')); if(/^\d+$/.test(kn)&&+kn>=1) nn.kn=+kn;
           const ad=t(g('ad')); if(ad==='L'||ad==='B') nn.ad=ad;
-          const ac=t(g('ac')); if(ac==='2'||ac==='3') nn.ac=+ac;
+          const ac=t(g('ac')); if(/^\d+$/.test(ac)&&+ac>=2&&+ac<=AC_MAX) nn.ac=+ac;
           const as=t(g('aside')); if(as==='1'||as==='true') nn.aside=true;
           const sm=t(g('sum')); if(sm&&_ID_RE.test(sm)) nn.sum=sm;
           const tc=t(g('tc')); if(/^#[0-9a-fA-F]{6}$/.test(tc)) nn.tc=tc;
