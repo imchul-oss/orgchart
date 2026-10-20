@@ -3333,11 +3333,14 @@ function addChild(pid){
     return sib?sib.type:null;
   })();
   const type=sibType||(p._d!==undefined?dltype[p._d+1]:null)||lvmap[p.type]||'l3';
+  // 색: 색이 지정된 형제가 있으면 그 색, 없으면 부모 색(최상위 카드는 따르지 않음), 둘 다 없으면 단계 기본색 (철님 10-20)
+  const sibColor=(S.conns.filter(c=>c.f===pid).map(c=>S.nodes.find(n=>n.id===c.t)).find(n=>n&&n.type!=='side'&&n.color)||{}).color;
+  const color=sibColor||(p.type!=='top'&&p.color?p.color:'');
   const id='nd'+(++S.nid);
-  S.nodes.push({
+  S.nodes.push(Object.assign({
     id,en:'Sub-Team',ko:'하위 조직',type,
     x:p.x+cardW(p)+20, y:p.y+nh(p)+30, m:[]
-  });
+  },color?{color}:{}));
   S.conns.push({id:'e'+(++S.nid),f:pid,t:id,d:0});
   autoLayout(); openEdit(id);
 }
