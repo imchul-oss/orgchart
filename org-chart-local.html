@@ -276,7 +276,6 @@ body.present #tb-more,body.present #tb-more-panel{display:none!important;}
 .ncnt{position:absolute;top:calc(3px + var(--cnt-dy,0px));right:calc(36px + var(--cnt-dx,0px));font-size:var(--cnt-fs,9px);line-height:var(--cnt-lh,12px);padding:0 var(--cnt-px,6px);border-radius:8px;background:rgba(0,0,0,.55);color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.28);pointer-events:none;white-space:nowrap;}  /* 흰 글자 대비 4.5 이상: 흰 헤더 위에서도 4.76 */
 .ncnt{z-index:3;}
 .ncnt-br{top:calc(var(--hh) - var(--cnt-lh,12px) - 4px + var(--cnt-dy,0px));}
-body.ro .ncnt,body.present .ncnt{right:calc(7px + var(--cnt-dx,0px));}
 .ncnt.ncnt-mr{top:calc(var(--hh) / 2 - var(--cnt-lh,12px) / 2 + var(--cnt-dy,0px));}
 .ncnt.ncnt-badge,body.ro .ncnt.ncnt-badge,body.present .ncnt.ncnt-badge{top:var(--cnt-dy,0px);right:var(--cnt-dx,0px);transform:translate(50%,-50%);z-index:6;}
 #mtip{position:fixed;display:none;z-index:99999;background:rgba(20,20,24,.95);color:#fff;font-size:11px;line-height:1.5;padding:7px 10px;border-radius:6px;max-width:260px;pointer-events:none;word-break:break-all;box-shadow:0 2px 8px rgba(0,0,0,.35);}
@@ -559,11 +558,20 @@ body.present #srch-box,body.present #srch-btn{display:none!important;}
 .tv-head2{padding:10px 12px 4px;font-size:11px;font-weight:700;color:#8a6d00;border-top:1px solid #eee;margin-top:6px;}
 body.present #treeview,body.present #btn-tree{display:none!important;}
 @media print{#treeview,#treeview.tv-open{display:none!important;}}
+#print-stats{display:none;}
+@media print{
+  #print-stats{display:block;position:fixed;left:20px;top:20px;width:150px;box-sizing:border-box;background:#fff;border:1px solid #d0d0d0;font-size:11px;color:#333;z-index:50;}
+  #print-stats .ps-hd{background:#2b2f36;color:#fff;font-weight:700;font-size:12px;padding:5px 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  #print-stats .ps-row{display:flex;align-items:center;gap:6px;padding:2px 10px;}
+  #print-stats .ps-row i{width:8px;height:8px;flex:none;}
+  #print-stats .ps-row span{flex:1;}
+  #print-stats .ps-tot{display:flex;justify-content:space-between;font-weight:700;font-size:12px;border-top:1px solid #e4e4e4;margin:4px 8px 0;padding:4px 2px 6px;}
+  #print-stats .ps-ex{color:#999;font-size:10px;padding:2px 10px;}
+}
 @media print{
   #srch-box,#srch-btn{display:none!important;}
   .nd.srch-hit,.nd.srch-hit.srch-cur{outline:none!important;}
   .mr.srch-row{background:inherit!important;}
-  .ncnt{right:calc(7px + var(--cnt-dx,0px));}  /* 인쇄에는 ✏ 버튼이 없으므로 읽기 전용과 같은 자리 */
   @page{size:A4 landscape;margin:0}
   body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
   *{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
@@ -1636,6 +1644,7 @@ function drawNodes() {
     if(!S.nodes.find(n=>'n'+n.id===el.id)) el.remove();
   });
   collDecorate();
+  _fitRowText(layer);
 }
 
 function mkNode(nd) {
@@ -1837,6 +1846,20 @@ function jobText(m){
   if(!f) return '겸직';
   return /\(겸\)$/.test(f)?f:f+'(겸)';
 }
+// 'NGUYEN VAN KY(응우옌 반 키)'처럼 영문·한글 두 표기가 붙은 이름은 괄호 부분을 둘째 줄로 내린다 (화면·인쇄·PNG 공통)
+function _nmSplit(n){
+  const m=/^(.+?)\s*\(([^()]+)\)\s*$/.exec(String(n||'')); if(!m) return null;
+  const A=m[1], B=m[2], lat=/[A-Za-z]{2}/, han=/[가-힣]/;
+  return ((lat.test(A)&&han.test(B))||(han.test(A)&&lat.test(B)))?{a:A,b:B}:null;
+}
+function _nmLine2(m){ const sp=_nmSplit(m.n), j=jobText(m); return sp?('('+sp.b+')'+(j?' · '+j:'')):j; }
+// 칸보다 긴 이름·직무 글자는 70%까지 줄인 뒤에만 '…'로 자른다 (PNG의 fitText와 같은 규칙)
+function _fitRowText(root){
+  const els=[...(root||document).querySelectorAll('.mn,.mf')], todo=[];
+  els.forEach(e=>{ e.style.fontSize=''; });
+  els.forEach(e=>{ const cw=e.clientWidth, sw=e.scrollWidth; if(cw>0&&sw>cw+0.5) todo.push([e,cw/sw,parseFloat(getComputedStyle(e).fontSize)||12]); });
+  todo.forEach(([e,r,fs])=>{ e.style.fontSize=(fs*Math.max(0.7,r*0.98)).toFixed(2)+'px'; });
+}
 function _txtSt(c){return /^#[0-9a-fA-F]{6}$/.test(c||'')?` style="color:${c}"`:'';}
 function nodeHTML(nd) {
   const _mc=(nd.m||[]).length?_mcOf(nd):1;  // 빈 카드는 1열 본문(+) 그대로, 폭만 넓다
@@ -1845,10 +1868,10 @@ function nodeHTML(nd) {
       <div class="mband" style="background:${statusColor(m.s)}"></div>
       <div class="mi">
         <div class="mn-row">
-          <div class="mn">${esc(m.n||'')}</div>
+          <div class="mn"${_nmSplit(m.n)?` title="${esc(m.n)}"`:''}>${esc(_nmSplit(m.n)?_nmSplit(m.n).a:(m.n||''))}</div>
           <div class="mr2">${esc(m.r||'')}</div>
         </div>
-        <div class="mf">${esc(jobText(m))}${m.a?`<span style="color:var(--txt-ma)">&nbsp;/&nbsp;${esc(m.a)}</span>`:''}</div>
+        <div class="mf">${esc(_nmLine2(m))}${m.a?`<span style="color:var(--txt-ma)">&nbsp;/&nbsp;${esc(m.a)}</span>`:''}</div>
       </div>
     </div>`).join('');
   const _cl=cntLabel(nd);
@@ -3039,7 +3062,7 @@ function mkCatSel(cats,val,df){
   return `<select data-f="${df}" class="mer-sel">${opts}${extra}<option value="__other__"${(!out&&!cats.includes(val))?' selected':''}>미입력</option></select>`;
 }
 function merRow(m){
-  return `<div class="mer" draggable="true">
+  return `<div class="mer">
     <div class="mer-r">
       <span class="mer-drag" title="드래그로 순서 변경">⠿</span>
       ${mkStatusSel(m.s||'active')}
@@ -3109,6 +3132,13 @@ function initMerDnd(){
   const list=document.getElementById('mlist');
   if(!list) return;
   let drag=null;
+  // 줄 전체를 draggable로 두면 이름 칸에서 글자를 끌어 선택할 수 없다 - 손잡이(⠿)를 누른 동안만 줄을 끌 수 있게 한다
+  list.addEventListener('mousedown',e=>{
+    const h=e.target.closest('.mer-drag'); if(!h) return;
+    const row=h.closest('.mer'); if(row) row.draggable=true;
+  });
+  const _merUndrag=()=>list.querySelectorAll('.mer[draggable="true"]').forEach(r=>r.removeAttribute('draggable'));
+  list.addEventListener('mouseup',()=>{ if(!drag) _merUndrag(); });
   list.addEventListener('dragstart',e=>{
     drag=e.target.closest('.mer');
     if(!drag) return;
@@ -3117,6 +3147,7 @@ function initMerDnd(){
   });
   list.addEventListener('dragend',()=>{
     if(drag) drag.classList.remove('dragging');
+    _merUndrag();
     list.querySelectorAll('.drag-over-top,.drag-over-bot').forEach(el=>{
       el.classList.remove('drag-over-top','drag-over-bot');
     });
@@ -3580,8 +3611,9 @@ function _autoLayoutCore(){
 
     // ─── 그룹 컴팩트 배치 ──────────────────────────────
     // 각 자식은 자기 서브트리 너비만큼만 차지 → 그룹 간 간격은 grpGap 일정.
-    // 단, 자식 없는 leaf 형제는 NW × 1.2로 약간 부풀려 시각 균형 보정.
-    const LEAF_PAD = 1.2;  // leaf 슬롯 너비 = NW × 1.2
+    // leaf 형제도 카드 너비 그대로(LEAF_PAD 1) - 1.2배로 부풀리면 하위 있는 형제와 섞인 그룹에서만 간격이 넓어지고,
+    // 넓은 카드일수록 더 벌어져 같은 줄 카드끼리 간격이 달라진다 (철님 10-20 지적)
+    const LEAF_PAD = 1;
     const isLeafArr=ch.map(cid=>tk(cid).length===0);
     const hasMixed = isLeafArr.some(v=>v) && isLeafArr.some(v=>!v);
 
@@ -3597,7 +3629,7 @@ function _autoLayoutCore(){
           const slot = cardW(cn) * LEAF_PAD;
           const b = leafBeside(cn);  // leaf 옆 side 카드 자리 예약 (없으면 0)
           cn._lx = Math.round((x + b.l + slot/2 - cardW(cn)/2)/20)*20;
-          lastR = Math.max(x + b.l + slot, b.r(cn._lx));
+          lastR = Math.max(cn._lx + cardW(cn), b.r(cn._lx));  // 반올림된 실제 위치 기준 - 슬롯 끝을 쓰면 격자 오차가 쌓여 간격이 번갈아 달라진다
         } else {
           lastR = x + NW;
         }
@@ -3646,7 +3678,7 @@ function _autoLayoutCore(){
         const C=besideCols(n), nR=sbs.R.length, nL=sbs.L.length;
         const bR=bwOf(n._bs.R), bL=bwOf(n._bs.L);
         if(nR) right=Math.max(right,r20(n._lx+cardW(n)+COL_GAP)+(Math.min(C,nR)-1)*stepOf(bR)+bR);
-        if(nL) left=Math.min(left,r20(n._lx-COL_GAP-bL)-(Math.min(C,nL)-1)*stepOf(bL));
+        if(nL) left=Math.min(left,n._lx-(r20(n._lx+cardW(n)+COL_GAP)-(n._lx+cardW(n)))-bL-(Math.min(C,nL)-1)*stepOf(bL));  // 배치와 같은 거울 간격
       }
       (kids[id]||[]).forEach(cid=>{
         if(sideIds.has(cid)||pars[cid]!==id||isAsideC(cid)) return;
@@ -3687,8 +3719,9 @@ function _autoLayoutCore(){
         const gaps=[];
         for(let i=0;i<bounds.length-1;i++) gaps.push(bounds[i+1].left-bounds[i].right);
         if(gaps.length===0) return;
-        // 목표: 가장 큰 gap으로 통일 (음수 gap은 0으로 클램프 — 겹쳤다면 정상화)
-        const targetGap=Math.max(COL_GAP, ...gaps.map(g=>Math.max(g,0)));
+        // 목표: 좌우 간격 옵션(COL_GAP)보다 좁은 곳만 넓힌다. 가장 큰 gap으로 통일하면 깊은 하위 묶음 옆의
+        // 넓은 간격 하나가 하위 없는 형제들 사이에도 퍼져 카드마다 간격이 달라진다 (철님 10-20 지적)
+        const targetGap=COL_GAP;
         for(let i=0;i<gaps.length;i++){
           const dx=targetGap-gaps[i];
           if(dx>0){
@@ -3785,10 +3818,10 @@ function _autoLayoutCore(){
       stackRows(cards,C).forEach((cs,ri)=>{
         const y=ri===0?(C>1?c20(p.y+CUR_HH/2+10):p.y):c20(prevY+prevH+20);
         // 20 격자 반올림으로 부모와의 간격이 COL_GAP/2 미만이 되면 그 행만 한 칸 더 바깥으로
-        const xR=r20(p.x+cardW(p)+COL_GAP), xL=r20(p.x-COL_GAP-bW);
-        const bump=dir>0?(xR-(p.x+cardW(p))<COL_GAP/2?20:0):(cs.length&&p.x-(xL+cardW(cs[0]))<COL_GAP/2?20:0);
+        // 좌우 나눔: 오른쪽 간격을 정한 뒤 왼쪽은 같은 간격을 거울처럼 쓴다 (양쪽을 따로 반올림하면 20/40px로 갈라진다)
+        const xR=r20(p.x+cardW(p)+COL_GAP), gR=xR-(p.x+cardW(p)), g=gR+(gR<COL_GAP/2?20:0);
         cs.forEach((a,j)=>{
-          a.x=dir>0?xR+bump+j*bS:xL-bump-j*bS;
+          a.x=dir>0?p.x+cardW(p)+g+j*bS:p.x-g-bW-j*bS;
           a.y=y;
         });
         prevY=y; prevH=Math.max(...cs.map(nh));
@@ -4983,6 +5016,8 @@ function exportPNG(){
   _VN.forEach(n=>{x0=Math.min(x0,n.x);y0=Math.min(y0,n.y);x1=Math.max(x1,n.x+cardW(n));y1=Math.max(y1,n.y+nh(n));});
   const _tz=tfZoneInfo();
   if(_tz){ x0=Math.min(x0,_tz.x); y0=Math.min(y0,_tz.y); x1=Math.max(x1,_tz.x+_tz.w); y1=Math.max(y1,_tz.y+_tz.h); }
+  const _sd=_statSummaryData(), _sbH=_statSummaryH(_sd);
+  if(_sd){ x0-=_SB_W+30; y1=Math.max(y1,y0+_sbH); }  // 차트 왼쪽에 인원 현황표 자리
   const W=Math.round((x1-x0+80)*2), H=Math.round((y1-y0+80)*2);
   const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
   const ctx=cv.getContext('2d');
@@ -5062,7 +5097,7 @@ function exportPNG(){
         const _v=_cntStyleVals(), _H=_v.lh;
         ctx.save(); ctx.font=_v.fs+'px sans-serif'; ctx.textBaseline='middle'; ctx.textAlign='right';
         const _t=_cl, _w=ctx.measureText(_t).width+_v.px*2, _pos=_cntPosVal();
-        const _rx=_pos==='badge'?x+CW-_v.dx+_w/2:x+CW-7-_v.dx;
+        const _rx=_pos==='badge'?x+CW-_v.dx+_w/2:x+CW-36-_v.dx;  // 화면 .ncnt(right:36px+dx)와 같은 기준 - 모드마다 기준이 다르면 편집 화면에서 맞춘 위치가 읽기 전용·인쇄·PNG에서 카드 밖으로 밀린다
         const _py=(_pos==='badge'?y-_H/2:(_pos==='br'?y+CUR_HH-_H-4:(_pos==='mr'?y+CUR_HH/2-_H/2:y+3)))+_v.dy;
         const _fx=_cntColorVal();
         const _k=_fx?cntFixedColors(_fx):cntPillColors((hcs&&hcs.backgroundColor)||'#eee');
@@ -5084,13 +5119,32 @@ function exportPNG(){
       ctx.beginPath(); ctx.rect(mx,ry,MW,CUR_MH); ctx.clip();
       ctx.textBaseline='middle';
       ctx.fillStyle='#222';
-      const t1=(m.n||'')+(m.r?'  '+m.r:'');
+      const _sp=_nmSplit(m.n), t1=(_sp?_sp.a:(m.n||''))+(m.r?'  '+m.r:'');
       fitText(t1,mx+bw+8,ry+CUR_MH*0.33,'bold','12px',mx+MW-6-(mx+bw+8));
       ctx.fillStyle='#555';
-      fitText(jobText(m),mx+bw+8,ry+CUR_MH*0.72,'','10px',mx+MW-6-(mx+bw+8));
+      fitText(_nmLine2(m),mx+bw+8,ry+CUR_MH*0.72,'','10px',mx+MW-6-(mx+bw+8));
       ctx.restore();
     });
   });
+  if(_sd){  // 인원 현황표 (현황 탭과 같은 숫자)
+    const bx=x0, by=y0;
+    ctx.save(); ctx.setLineDash([]);
+    ctx.fillStyle='#fff'; ctx.fillRect(bx,by,_SB_W,_sbH);
+    ctx.strokeStyle='#d0d0d0'; ctx.lineWidth=1; ctx.strokeRect(bx+.5,by+.5,_SB_W-1,_sbH-1);
+    ctx.fillStyle='#2b2f36'; ctx.fillRect(bx,by,_SB_W,26);
+    ctx.textBaseline='middle'; ctx.textAlign='left'; ctx.fillStyle='#fff'; ctx.font='bold 12px '+font;
+    fitText('인원 현황'+(_sd.sheet?' · '+_sd.sheet:''),bx+10,by+13,'bold','12px',_SB_W-20);
+    let ry=by+34;
+    const line=(r,muted)=>{ ctx.fillStyle=r.col; ctx.fillRect(bx+10,ry+5,8,8);
+      ctx.textAlign='left'; ctx.fillStyle=muted?'#888':'#333'; ctx.font='11px '+font; ctx.fillText(r.name,bx+24,ry+9);
+      ctx.textAlign='right'; ctx.font='bold 11px '+font; ctx.fillText(String(r.cnt),bx+_SB_W-10,ry+9); ry+=18; };
+    _sd.rows.forEach(r=>line(r,false));
+    ctx.fillStyle='#e4e4e4'; ctx.fillRect(bx+8,ry+2,_SB_W-16,1);
+    ctx.textAlign='left'; ctx.fillStyle='#222'; ctx.font='bold 12px '+font; ctx.fillText('총원',bx+10,ry+13);
+    ctx.textAlign='right'; ctx.fillText(String(_sd.total),bx+_SB_W-10,ry+13); ry+=24;
+    if(_sd.excl.length){ ctx.textAlign='left'; ctx.fillStyle='#999'; ctx.font='10px '+font; ctx.fillText('합산 제외',bx+10,ry+10); ry+=20; _sd.excl.forEach(r=>line(r,true)); }
+    ctx.restore();
+  }
   const dt=new Date(), pad=n=>String(n).padStart(2,'0');
   const date=dt.getFullYear()+'-'+pad(dt.getMonth()+1)+'-'+pad(dt.getDate());
   const sn=(SHEETS[CUR_SHEET]&&SHEETS[CUR_SHEET].name)||'';
@@ -5110,8 +5164,15 @@ function preparePrint(){
   const w=document.getElementById('wrap'), cvs=document.getElementById('canvas');
   _prep={scale:S.scale,sl:w.scrollLeft,st:w.scrollTop,tf:cvs.style.transform};
   const {x0,y0,x1,y1}=_chartBounds();
-  const sc=Math.min((1123-40)/(x1-x0),(794-40)/(y1-y0),1);
-  cvs.style.transform=`translate(${20-x0*sc}px,${20-y0*sc}px) scale(${sc})`;
+  const _sd=_statSummaryData(), _ox=_sd?_SB_W+20:0;  // 인원 현황표 자리만큼 차트를 오른쪽으로
+  const sc=Math.min((1123-40-_ox)/(x1-x0),(794-40)/(y1-y0),1);
+  cvs.style.transform=`translate(${20+_ox-x0*sc}px,${20-y0*sc}px) scale(${sc})`;
+  if(_sd){
+    const r=x=>`<div class="ps-row"><i style="background:${x.col}"></i><span>${esc(x.name)}</span><b>${x.cnt}</b></div>`;
+    const bx=document.createElement('div'); bx.id='print-stats';
+    bx.innerHTML=`<div class="ps-hd">인원 현황${_sd.sheet?' · '+esc(_sd.sheet):''}</div>${_sd.rows.map(r).join('')}<div class="ps-tot"><span>총원</span><b>${_sd.total}</b></div>${_sd.excl.length?`<div class="ps-ex">합산 제외</div>${_sd.excl.map(r).join('')}`:''}`;
+    document.body.appendChild(bx);
+  }
   document.body.classList.add('printing');
   w.scrollLeft=0; w.scrollTop=0;
 }
@@ -5120,6 +5181,7 @@ function restorePrint(){
   const p=_prep; _prep=null;
   const w=document.getElementById('wrap'), cvs=document.getElementById('canvas');
   document.body.classList.remove('printing');
+  { const b=document.getElementById('print-stats'); if(b) b.remove(); }
   S.scale=p.scale; cvs.style.transform=p.tf;
   w.scrollLeft=p.sl; w.scrollTop=p.st;
 }
@@ -5487,6 +5549,21 @@ function _sflSumField(nd){
     </div>`;
 }
 
+// 현황 탭과 같은 숫자 - 인쇄·PNG의 인원 현황표가 쓴다 (화면 창과 따로 세면 두 값이 갈라진다)
+function _statSummaryData(){
+  const defKey=OPT.statusItems[0]?.key||'active';
+  const all=S.nodes.flatMap(n=>n.m||[]).filter(m=>m.cc!==true);
+  if(!all.length) return null;
+  const incl=OPT.statsGroups.filter(g=>!g.excludeTotal), excl=OPT.statsGroups.filter(g=>g.excludeTotal);
+  const row=g=>({name:g.name,cnt:all.filter(m=>g.statuses.includes(m.s||defKey)).length,col:statusItemColor(g.statuses[0])});
+  const grouped=new Set(OPT.statsGroups.flatMap(g=>g.statuses));
+  const orphans=all.filter(m=>!grouped.has(m.s||defKey)).length;
+  const exclKeys=new Set(excl.flatMap(g=>g.statuses));
+  const rows=incl.map(row); if(orphans) rows.push({name:'미분류',cnt:orphans,col:'#888'});
+  return {rows,total:all.filter(m=>!exclKeys.has(m.s||defKey)).length,excl:excl.map(row),sheet:(SHEETS[CUR_SHEET]&&SHEETS[CUR_SHEET].name)||''};
+}
+const _SB_W=150;  // 인쇄·PNG 인원 현황표 폭
+function _statSummaryH(sd){ return sd?34+sd.rows.length*18+24+(sd.excl.length?20+sd.excl.length*18:0)+8:0; }
 function updateStatsPanel(){
   const body=document.getElementById('statsfl-body');
   const grpSel=document.getElementById('statsfl-grp');
