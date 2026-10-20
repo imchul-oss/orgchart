@@ -5117,9 +5117,13 @@ function exportPNG(){
     let bw=parseFloat(ecs&&ecs.getPropertyValue('--band-w')); if(!isFinite(bw)) bw=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--band-w')); if(!isFinite(bw)) bw=12;
     const band=ecs?ecs.getPropertyValue('--band-color').trim():'';
     const x=nd.x,y=nd.y,h=nh(nd),CW=cardW(nd),MC=_mcOf(nd),BB=OPT.bodyBand===true,colW=(CW-(BB?bw:0))/MC;  // 본문 색 띠가 켜진 카드만 띠 폭을 뺀다
+    // 화면과 같은 카드 모양 (철님 10-20): 둥근 모서리 + 그림자, 테두리 없음. 흰 바탕 fillRect는 둥근 경로로 잘라 그린다
+    const R=parseFloat(ecs&&ecs.borderTopLeftRadius); const RAD=isFinite(R)&&R>0?R:(OPT.cardRadius||8);
+    const rr=(px,py,w2,h2,r)=>{ ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(px,py,w2,h2,r); else ctx.rect(px,py,w2,h2); };
+    ctx.save(); ctx.shadowColor='rgba(0,0,0,'+(OPT.shadowA!=null?OPT.shadowA:0.11)+')'; ctx.shadowBlur=8; ctx.shadowOffsetY=2; rr(x,y,CW,h,RAD); ctx.fillStyle='#fff'; ctx.fill(); ctx.restore();
+    ctx.save(); rr(x,y,CW,h,RAD); ctx.clip();
     ctx.fillStyle='#fff'; ctx.fillRect(x,y,CW,h);
-    ctx.strokeStyle=(ecs&&ecs.borderTopColor&&ecs.borderTopWidth!=='0px')?ecs.borderTopColor:'#d0d0d0';
-    ctx.lineWidth=1; ctx.setLineDash([]); ctx.strokeRect(x+.5,y+.5,CW-1,h-1);
+    ctx.setLineDash([]);
     ctx.fillStyle=(hcs&&hcs.backgroundColor)||'#eee'; ctx.fillRect(x,y,CW,CUR_HH);
     if(band){ ctx.fillStyle=band; ctx.fillRect(x,y,bw,CUR_HH); }
     ctx.save();
@@ -5133,6 +5137,28 @@ function exportPNG(){
     ctx.fillStyle=(kos&&kos.color)||'#222';
     fitText(nd.ko||'',x+bw+10,y+CUR_HH*0.72,(kos&&kos.fontWeight)||'normal',(kos&&kos.fontSize)||'11px',x+CW-6-(x+bw+10));
     ctx.restore();
+    if(BB&&band&&(nd.m||[]).length){ ctx.fillStyle=band; ctx.fillRect(x,y+CUR_HH,bw,h-CUR_HH); }
+    (nd.m||[]).forEach((m,k)=>{
+      const ry=y+CUR_HH+Math.floor(k/MC)*CUR_MH;
+      const mx=x+(BB?bw:0)+(k%MC)*colW, MW=colW;  // 화면과 같은 규칙: 본문 띠가 켜졌을 때만 띠 폭만큼 안쪽에서 시작
+      if(k%2===1){ ctx.fillStyle=OPT.rowEven||'#FAFBFD'; ctx.fillRect(mx,ry,MW,CUR_MH); }  // 화면의 짝수 행 음영
+      ctx.fillStyle=OPT.rowBorder||'#F2F3F6'; ctx.fillRect(mx,ry,MW,1);
+      let sc=statusColor(m.s);
+      const vm=/^var\((--[^)]+)\)$/.exec(sc);
+      if(vm) sc=getComputedStyle(document.documentElement).getPropertyValue(vm[1]).trim()||'#999';
+      ctx.fillStyle=sc; ctx.fillRect(mx,ry,bw,CUR_MH);
+      ctx.save();
+      ctx.beginPath(); ctx.rect(mx,ry,MW,CUR_MH); ctx.clip();
+      ctx.textBaseline='middle';
+      const _sp=_nmSplit(m.n), _nm=_sp?_sp.a:(m.n||''), _avail=mx+MW-6-(mx+bw+8);
+      ctx.fillStyle=OPT.txtMn||'#222'; ctx.font='bold '+(OPT.fsMn||11)+'px '+font; const _nw=Math.min(ctx.measureText(_nm).width,_avail);
+      fitText(_nm,mx+bw+8,ry+CUR_MH*0.33,'bold',(OPT.fsMn||11)+'px',_avail);
+      if(m.r&&_nw+8<_avail){ ctx.fillStyle=OPT.txtMr2||'#999'; fitText(m.r,mx+bw+8+_nw+6,ry+CUR_MH*0.33,'',(OPT.fsMr2||9)+'px',_avail-_nw-6); }  // 직급은 이름 뒤 회색 (화면 .mr2)
+      ctx.fillStyle=OPT.txtMf||'#666';
+      fitText(_nmLine2(m),mx+bw+8,ry+CUR_MH*0.72,'',(OPT.fsMf||9)+'px',_avail);
+      ctx.restore();
+    });
+    ctx.restore();  // 카드 둥근 경로 끝
     if(OPT.showCnt!==false){
       const _cl=cntLabel(nd);
       if(_cl){
@@ -5143,30 +5169,11 @@ function exportPNG(){
         const _py=(_pos==='badge'?y-_H/2:(_pos==='br'?y+CUR_HH-_H-4:(_pos==='mr'?y+CUR_HH/2-_H/2:y+3)))+_v.dy;
         const _fx=_cntColorVal();
         const _k=_fx?cntFixedColors(_fx):cntPillColors((hcs&&hcs.backgroundColor)||'#eee');
-        ctx.fillStyle=_k.bg; ctx.fillRect(_rx-_w,_py,_w,_H);  // 화면의 .ncnt와 같은 위치/색 규칙
+        ctx.save(); rr(_rx-_w,_py,_w,_H,_H/2); ctx.clip(); ctx.fillStyle=_k.bg; ctx.fillRect(_rx-_w,_py,_w,_H); ctx.restore();  // 화면의 .ncnt와 같은 위치/색 규칙, 둥근 알약
         ctx.fillStyle=_k.fg; ctx.fillText(_t,_rx-_v.px,_py+_H/2+0.5);
         ctx.restore();
       }
     }
-    if(BB&&band&&(nd.m||[]).length){ ctx.fillStyle=band; ctx.fillRect(x,y+CUR_HH,bw,h-CUR_HH); }
-    (nd.m||[]).forEach((m,k)=>{
-      const ry=y+CUR_HH+Math.floor(k/MC)*CUR_MH;
-      const mx=x+(BB?bw:0)+(k%MC)*colW, MW=colW;  // 화면과 같은 규칙: 본문 띠가 켜졌을 때만 띠 폭만큼 안쪽에서 시작
-      ctx.fillStyle='#e4e4e4'; ctx.fillRect(mx,ry,MW,1);
-      let sc=statusColor(m.s);
-      const vm=/^var\((--[^)]+)\)$/.exec(sc);
-      if(vm) sc=getComputedStyle(document.documentElement).getPropertyValue(vm[1]).trim()||'#999';
-      ctx.fillStyle=sc; ctx.fillRect(mx,ry,bw,CUR_MH);
-      ctx.save();
-      ctx.beginPath(); ctx.rect(mx,ry,MW,CUR_MH); ctx.clip();
-      ctx.textBaseline='middle';
-      ctx.fillStyle='#222';
-      const _sp=_nmSplit(m.n), t1=(_sp?_sp.a:(m.n||''))+(m.r?'  '+m.r:'');
-      fitText(t1,mx+bw+8,ry+CUR_MH*0.33,'bold','12px',mx+MW-6-(mx+bw+8));
-      ctx.fillStyle='#555';
-      fitText(_nmLine2(m),mx+bw+8,ry+CUR_MH*0.72,'','10px',mx+MW-6-(mx+bw+8));
-      ctx.restore();
-    });
   });
   if(_pl){  // 인원 현황표 (현황 탭과 같은 숫자), 계획한 자리에 배율대로
     const _sd=_pl.sd, _sbH=_pl.h0, bx=0, by=0;
@@ -5179,7 +5186,7 @@ function exportPNG(){
     fitText(_sd.title,bx+10,by+13,'bold','12px',W-20);
     let ry=by+34;
     _sd.items.forEach(it=>{  // 패널의 줄 그대로: 줄 18, 합계 24, 구역 제목 20, 안내 16
-      if(it.t==='row'){ if(it.col){ ctx.fillStyle=it.col; ctx.fillRect(bx+10,ry+5,8,8); } ctx.textAlign='left'; ctx.fillStyle=it.dim?'#888':'#333'; ctx.font='11px '+font; ctx.fillText(it.name,bx+(it.col?24:10)+it.ind,ry+9); ctx.textAlign='right'; ctx.font='bold 11px '+font; ctx.fillText(String(it.cnt),bx+W-10,ry+9); ry+=18; }
+      if(it.t==='row'){ if(it.col){ ctx.fillStyle=it.col; ctx.fillRect(bx+10,ry+5,8,8); } ctx.textAlign='left'; ctx.fillStyle=it.dim?'#888':'#333'; ctx.font='11px '+font; ctx.fillText(it.name,bx+(it.col?24:10)+it.ind,ry+9); ctx.textAlign='right'; ctx.font='bold 11px '+font; ctx.fillText(String(it.cnt),bx+W-10,ry+9); if(it.sub){ ctx.fillStyle='#8a94a6'; ctx.font='9px '+font; ctx.fillText(it.sub,bx+W-14-ctx.measureText(String(it.cnt)).width*1.25,ry+9); } ry+=18; }
       else if(it.t==='total'){ ctx.fillStyle='#e4e4e4'; ctx.fillRect(bx+8,ry+2,W-16,1); ctx.textAlign='left'; ctx.fillStyle='#222'; ctx.font='bold 12px '+font; ctx.fillText(it.name,bx+10,ry+13); ctx.textAlign='right'; ctx.fillText(String(it.cnt),bx+W-10,ry+13); ry+=24; }
       else if(it.t==='sec'){ ctx.textAlign='left'; ctx.fillStyle='#999'; ctx.font='10px '+font; ctx.fillText(it.name,bx+10,ry+10); ry+=20; }
       else { ctx.textAlign='left'; ctx.fillStyle='#999'; ctx.font='10px '+font; ctx.fillText(it.name,bx+10,ry+8); ry+=16; }
@@ -5212,7 +5219,7 @@ function preparePrint(){
   cvs.style.transform=`translate(${20-_bx0*sc}px,${20-_ty0*sc}px) scale(${sc})`;
   if(_hd){ const hd=document.createElement('div'); hd.id='print-head'; hd.textContent=_hd.text; hd.style.left=(20+(x0-_bx0)*sc)+'px'; hd.style.top=(20+(_hd.h/2-10)*sc)+'px'; hd.style.width=((x1-x0)*sc)+'px'; hd.style.fontSize=(20*sc)+'px'; hd.style.textAlign=_hd.align; document.body.appendChild(hd); }
   if(_pl){
-    const r=it=>it.t==='row'?`<div class="ps-row"><i style="background:${it.col||'transparent'}"></i><span style="padding-left:${it.ind}px${it.dim?';opacity:.6':''}">${esc(it.name)}</span><b>${esc(String(it.cnt))}</b></div>`:it.t==='total'?`<div class="ps-tot"><span>${esc(it.name)}</span><b>${esc(String(it.cnt))}</b></div>`:`<div class="ps-ex">${esc(it.name)}</div>`;
+    const r=it=>it.t==='row'?`<div class="ps-row"><i style="background:${it.col||'transparent'}"></i><span style="padding-left:${it.ind}px${it.dim?';opacity:.6':''}">${esc(it.name)}</span>${it.sub?`<em style="font-style:normal;font-size:9px;color:#8a94a6;margin-right:6px;white-space:nowrap">${esc(it.sub)}</em>`:''}<b>${esc(String(it.cnt))}</b></div>`:it.t==='total'?`<div class="ps-tot"><span>${esc(it.name)}</span><b>${esc(String(it.cnt))}</b></div>`:`<div class="ps-ex">${esc(it.name)}</div>`;
     const bx=document.createElement('div'); bx.id='print-stats'; bx.style.width=(_sd.w||_SB_W)+'px';
     bx.innerHTML=`<div class="ps-hd">${esc(_sd.title)}</div>${_sd.items.map(r).join('')}`;
     bx.style.left=(20+(_pl.x-_bx0)*sc)+'px'; bx.style.top=(20+(_pl.y-y0)*sc)+'px'; bx.style.transform=`scale(${sc*_pl.s})`; bx.style.transformOrigin='0 0';  // 차트와 같은 배율, 계획한 자리
@@ -5636,7 +5643,8 @@ function _statTableData(){
     if(el.classList.contains('sfl-row')){
       const l=el.querySelector('.sfl-lbl'), n=el.querySelector('.sfl-num'), d=el.querySelector('.sfl-dot');
       const name=l?l.textContent.replace(/\s+/g,' ').trim():''; if(!name) return;
-      items.push({t:'row',name,cnt:n?n.textContent.trim():'',col:d?(d.style.background||''):'',dim:!!el.closest('.sfl-sec')||/opacity/.test((l&&l.getAttribute('style'))||''),ind:(parseInt(el.getAttribute('data-depth'))||0)*12});
+      const sub=[...el.querySelectorAll('.sfl-own,.sfl-cc')].map(x=>x.textContent.replace(/\s+/g,' ').trim()).filter(Boolean).join(' · ');  // 부서소속 N, +N겸 같은 작은 표시도 출력에 싣는다 (철님 10-20)
+      items.push({t:'row',name,cnt:n?n.textContent.trim():'',sub,col:d?(d.style.background||''):'',dim:!!el.closest('.sfl-sec')||/opacity/.test((l&&l.getAttribute('style'))||''),ind:(parseInt(el.getAttribute('data-depth'))||0)*12});
     } else if(el.classList.contains('sfl-total')){
       const l=el.querySelector('.sfl-total-lbl'), n=el.querySelector('.sfl-total-num'); items.push({t:'total',name:l?l.textContent.trim():'',cnt:n?n.textContent.trim():''});
     } else if(el.classList.contains('sfl-sec-lbl')){ items.push({t:'sec',name:el.textContent.trim()}); }
@@ -5646,7 +5654,7 @@ function _statTableData(){
   const sheet=_statTab==='sheet'?'':(all?'전체':((SHEETS[CUR_SHEET]&&SHEETS[CUR_SHEET].name)||''));
   const tots=items.filter(i=>i.t==='total'), total=tots.length?(parseInt(tots[tots.length-1].cnt)||0):0;
   const mc=_statTableData._c||(_statTableData._c=document.createElement('canvas').getContext('2d')), font=getComputedStyle(document.body).fontFamily||'sans-serif';
-  let need=0; items.forEach(it=>{ mc.font=(it.t==='total'?'bold 12px ':'11px ')+font; const w=mc.measureText(it.name).width+(it.t==='row'?(it.col?24:10)+it.ind:10)+10+mc.measureText(String(it.cnt||'')).width+12; if(w>need) need=w; });
+  let need=0; items.forEach(it=>{ mc.font=(it.t==='total'?'bold 12px ':'11px ')+font; let w=mc.measureText(it.name).width+(it.t==='row'?(it.col?24:10)+it.ind:10)+10+mc.measureText(String(it.cnt||'')).width+12; if(it.sub){ mc.font='9px '+font; w+=mc.measureText(it.sub).width+8; } if(w>need) need=w; });
   const w=Math.max(_SB_W,Math.min(280,Math.ceil(need)));  // 폭은 가장 긴 줄에 맞춘다 (150~280px)
   return {items,title:tab+(sheet?' · '+sheet:''),total,tab:_statTab,w,sheet};
 }
