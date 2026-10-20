@@ -2032,7 +2032,13 @@ function drawConns() {
           mine.forEach(x=>{ if(!ord.includes(x.t)) ord.push(x.t); });
           ord.sort(cmpT);
           const E=dir>0?Math.round(f.x+cardW(f)):Math.round(f.x);
-          const xs=dir>0?Math.round(f.x+cardW(f)+Math.round(OPT.colGap/2)):Math.round(f.x-Math.round(OPT.colGap/2));
+          let xs=dir>0?Math.round(f.x+cardW(f)+Math.round(OPT.colGap/2)):Math.round(f.x-Math.round(OPT.colGap/2));
+          // 다른 카드의 세로 연결선(카드 중심 x)과 같은 x면 직속 줄기를 6px 비켜 그린다 - 정확한 간격 배치에서는 어떤 카드의 중심이 옆 카드의 반 간격 자리에 올 수 있다 (세션 수정 10-20)
+          { const _Hx=collHidden(); const bTop=ay, bBot=Math.max(...ord.map(t=>t.y+nh(t)));
+            const hit=S.nodes.some(n=>{ if(n===f||_Hx.has(n.id)||Math.abs(n.x+cardW(n)/2-xs)>=1) return false;
+              const ks=S.conns.filter(c=>c.f===n.id).map(c=>S.nodes.find(q=>q.id===c.t)).filter(q=>q&&!q.aside&&q.type!=='side'&&!_Hx.has(q.id)); if(!ks.length) return false;
+              const t0=n.y+nh(n), t1=Math.max(...ks.map(q=>q.y)); return Math.min(t1,bBot)-Math.max(t0,bTop)>2; });  // 그 카드의 본 줄기(아래 하위 줄까지)와 세로로 겹칠 때만
+            if(hit) xs+=6*dir; }
           const chits=[];
           const mkG=(c0,hlD,hitD,p,k)=>{
             chits.push({c:c0,d:hitD,hl:hlD,p,k});
@@ -3439,10 +3445,9 @@ function autoLayout(){
 function _autoLayoutCore(){
   const _po=(SHEETS[CUR_SHEET]&&SHEETS[CUR_SHEET].posOrient)||'down';
   const COL_GAP=OPT.colGap, ROW_GAP=OPT.rowGap, PAD_X=OPT.padX, PAD_Y=OPT.padY;
-  const r20=v=>Math.round(v/20)*20, c20=v=>Math.ceil(v/20)*20;
-  // beside 카드 슬롯 폭 = 그 카드들 중 가장 넓은 폭 (모두 기본이면 NW), 피치 = 슬롯 + 열 간격
+  const c20=v=>Math.ceil(v/20)*20;  // y(행·적재)와 TF 영역에서만 사용 - 자동 배치의 x에는 격자 반올림 없음
+  // beside 카드 슬롯 폭 = 그 카드들 중 가장 넓은 폭 (모두 기본이면 NW), 피치 = 슬롯 + 열 간격 (정확히 COL_GAP)
   const bwOf=list=>Math.max(NW,...list.map(q=>typeof q==='object'?q:S.nodes.find(n=>n.id===q)).filter(Boolean).map(cardW));
-  const stepOf=w=>c20(w+COL_GAP);
   const sideKids={};
   S.nodes.forEach(n=>{ if(n.type!=='side') return; const pid=sideBesideParent(n.id); if(pid) (sideKids[pid]||(sideKids[pid]=[])).push(n.id); });
   const besideSide=new Set();
@@ -3533,182 +3538,109 @@ function _autoLayoutCore(){
 
   // X 배치 (DFS). _d = Y 행 결정용 깊이
   // 규칙: 자식 _d > 부모 _d (타입 레벨 기준이지만 같거나 낮으면 강제로 +1)
-  // grpGap = 부모 _d 기반 → 상위일수록 넓게, 하위로 갈수록 좁게
+  // 형제 서브트리 상자 사이 간격 = COL_GAP (깊이 무관, 정확히)
   // 트리 자식 / aside(leaf, aside===true) / 일반 자식
   const tk=id=>(kids[id]||[]).filter(k=>!sideIds.has(k)&&pars[k]===id);
   const isAsideC=id=>{const n=S.nodes.find(x=>x.id===id);return !!n&&n.aside===true&&tk(id).length===0;};
   const nk=id=>tk(id).filter(k=>!isAsideC(k));
   const ak=id=>tk(id).filter(k=>isAsideC(k));
-  function place(id,L,parentD){
-    const nd=S.nodes.find(n=>n.id===id);
-    if(!nd||sideIds.has(id)) return L;
-    const typeD=TYPE_LV[nd.type]??0;
-    // 부모가 있으면 반드시 부모보다 한 단계 아래에 배치
-    nd._d=parentD!==undefined ? Math.max(typeD,parentD+1) : typeD;
-    const ch=nk(id);
-    const xyOrd=(a,b)=>{const na=S.nodes.find(n=>n.id===a),nb=S.nodes.find(n=>n.id===b);return ((na?na.x:0)-(nb?nb.x:0))||((na?na.y:0)-(nb?nb.y:0));};
-    const asd=ak(id).sort((a,b)=>{const na=S.nodes.find(n=>n.id===a),nb=S.nodes.find(n=>n.id===b);return ((na?na.y:0)-(nb?nb.y:0))||((na?na.x:0)-(nb?nb.x:0));});
-    (sideKids[id]||[]).forEach(sid=>{ asd.push(sid); besideSide.add(sid); });
+  // ─── X 배치: 서브트리 상자 tidy packing (아래→위), 간격은 정확히 COL_GAP, x 격자 반올림 없음
+  const G=COL_GAP;
+  const byId=id=>S.nodes.find(n=>n.id===id);
+  const xyOrd=(a,b)=>{const na=byId(a),nb=byId(b);return ((na?na.x:0)-(nb?nb.x:0))||((na?na.y:0)-(nb?nb.y:0));};
+  // beside 카드 목록(aside leaf 자식 + side 카드) 등록 + aside 카드 임시 _d/_lx
+  function _tidyAsides(nd){
+    const asd=ak(nd.id).sort((a,b)=>{const na=byId(a),nb=byId(b);return ((na?na.y:0)-(nb?nb.y:0))||((na?na.x:0)-(nb?nb.x:0));});
+    (sideKids[nd.id]||[]).forEach(sid=>{ asd.push(sid); besideSide.add(sid); });
     nd._asides=asd;
-    const shiftDesc=(cid,dl)=>{
-      const cn=S.nodes.find(n=>n.id===cid); if(!cn) return;
-      if(cn._lx!==undefined) cn._lx+=dl;
-      if(cn._wrap) cn._wrap.x0+=dl;
-      nk(cid).forEach(k=>shiftDesc(k,dl));
-    };
-    // aside 카드: 부모 옆. 예약 폭 계산 + 임시 _d/_lx
-    const fin=(r)=>{
-      if(!asd.length) return r;
-      asd.forEach(aid=>{const an=S.nodes.find(n=>n.id===aid); if(an&&an.type!=='side'){an._d=nd._d; an._lx=0;}});
-      const n=asd.length, C=besideCols(nd), bW=bwOf(asd), bS=stepOf(bW);
-      const nR=nd.ad==='L'?0:nd.ad==='B'?Math.ceil(n/2):n, nL=n-nR;
-      if(nL>0){
-        const ext=bW+COL_GAP+(Math.min(C,nL)-1)*bS+20;
-        if(nd._lx-ext<L){
-          const delta=L-(nd._lx-ext);
-          nd._lx+=delta; if(nd._wrap) nd._wrap.x0+=delta;
-          nk(id).forEach(k=>shiftDesc(k,delta));
-          r+=delta;
-        }
-      }
-      if(nR>0){
-        const ar=r20(nd._lx+cardW(nd)+COL_GAP)+(Math.min(C,nR)-1)*bS+bW;
-        r=Math.max(r,ar);
-      }
-      return r;
-    };
-    // place()를 거치지 않고 직접 배치되는 leaf 자식(혼합 그룹·줄바꿈·세로 1열)의 beside 목록과 예약 폭.
-    // l: 카드 왼쪽에 필요한 폭, rw: 오른쪽 추가 폭(열 간격용), r(lx): 카드가 lx에 놓였을 때 beside 카드의 우측 끝(없으면 0)
-    const leafBeside=cn=>{
-      const sk=sideKids[cn.id]||[];
-      cn._asides=sk.slice(); sk.forEach(sid=>besideSide.add(sid));
-      const n=sk.length, C=besideCols(cn), bW=bwOf(sk), bS=stepOf(bW);
-      const nR=n?(cn.ad==='L'?0:cn.ad==='B'?Math.ceil(n/2):n):0, nL=n-nR;
-      return {l:nL>0?bW+COL_GAP+(Math.min(C,nL)-1)*bS+20:0,
-              rw:nR>0?bW+(Math.min(C,nR)-1)*bS+20:0,
-              r:lx=>nR>0?r20(lx+cardW(cn)+COL_GAP)+(Math.min(C,nR)-1)*bS+bW:0};
-    };
-    // 넓은 카드(mc)가 자식 폭보다 넓으면 왼쪽 경계 L 안으로 밀고 오른쪽 끝을 카드 끝까지 예약
-    const wideFix=r=>{
-      if(!nd.mc) return r;
-      if(nd._lx<L){
-        const dl=c20(L-nd._lx);
-        nd._lx+=dl; if(nd._wrap) nd._wrap.x0+=dl;
-        nk(id).forEach(k=>shiftDesc(k,dl));
-        r+=dl;
-      }
-      return Math.max(r,nd._lx+cardW(nd));
-    };
-    if(!ch.length){
-      nd._lx=Math.round(L/20)*20;
-      return fin(nd._lx+cardW(nd));
-    }
-    // ─── kl='col': 모든 일반 자식이 leaf이면 세로 1열
-    if(nd.kl==='col' && ch.every(cid=>tk(cid).length===0)){
-      const ord=ch.slice().sort(xyOrd);
-      const cbs={}; let cL=0;
-      ord.forEach(cid=>{ const cn=S.nodes.find(n=>n.id===cid); if(cn){ cbs[cid]=leafBeside(cn); cL=Math.max(cL,cbs[cid].l); } });
-      nd._lx=L+cL;
-      let cR=Math.max(L+cL+cardW(nd),...ord.map(cid=>{ const cn=S.nodes.find(n=>n.id===cid); return L+cL+40+(cn?cardW(cn):NW); }));
-      ord.forEach(cid=>{
-        const cn=S.nodes.find(n=>n.id===cid); if(!cn) return;
-        cn._d=Math.max(TYPE_LV[cn.type]??0,nd._d+1);
-        cn._lx=L+cL+40;
-        cR=Math.max(cR,cbs[cid].r(cn._lx));
-      });
-      nd._col=ord;
-      return fin(cR);
-    }
-    // ─── 한 줄 최대 조직 수: 모두 leaf인 넓은 그룹은 행으로 줄바꿈
-    // ─── kl='rows': 손으로 놓은 줄 구성·순서를 그대로 쓰고 간격·정렬만 맞춘다
-    if(nd.kl==='rows' && ch.length>1 && ch.every(cid=>tk(cid).length===0)){
-      const x0=L, wrows=_rowsFromPos(ch), per=Math.max(1,...wrows.map(r=>r.length)), cols=per;
-      const wbs={}, colL=[], colR=[], colW=[];
-      wrows.forEach(row=>row.forEach((cid,j)=>{
-        const cn=S.nodes.find(n=>n.id===cid); if(!cn) return;
-        const b=leafBeside(cn); wbs[cid]=b;
-        colW[j]=Math.max(colW[j]||0,cardW(cn));
-        colL[j]=Math.max(colL[j]||0,b.l); colR[j]=Math.max(colR[j]||0,b.rw);
-      }));
-      const colX=j=>{ let e=colL[j]||0; for(let i=0;i<j;i++) e+=(colL[i]||0)+(colR[i]||0)+(colW[i]||NW)+COL_GAP; return x0+e; };
-      let wR=0;
-      wrows.forEach(row=>row.forEach((cid,j)=>{
-        const cn=S.nodes.find(n=>n.id===cid); if(!cn) return;
-        cn._d=nd._d+1;
-        cn._lx=Math.round(colX(j)/20)*20;
-        wR=Math.max(wR,wbs[cid].r(cn._lx));
-      }));
-      const k=Math.ceil(cols/2);
-      nd._lx=(colX(k)-COL_GAP/2)-cardW(nd)/2;
-      nd._wrap={N:per,x0,per,rows:wrows};
-      return fin(wideFix(Math.max(colX(cols-1)+(colW[cols-1]||NW),wR)));
-    }
-    const WN=(Number.isInteger(nd.kn)&&nd.kn>0)?nd.kn:(OPT.wrapN|0);
-    if(WN>0 && ch.length>WN && ch.every(cid=>tk(cid).length===0)){
-      const x0=L, nrows=Math.ceil(ch.length/WN), per=Math.ceil(ch.length/nrows), cols=per;
-      const wrows=[];
-      // beside 카드가 있는 열은 그만큼 넓힌다 (없으면 열 피치는 그대로 NW+COL_GAP)
-      const wbs={}, colL=[], colR=[], colW=[];
-      ch.forEach((cid,i)=>{
-        const cn=S.nodes.find(n=>n.id===cid); if(!cn) return;
-        const j=i%per, b=leafBeside(cn); wbs[cid]=b;
-        colW[j]=Math.max(colW[j]||0,cardW(cn));
-        colL[j]=Math.max(colL[j]||0,b.l); colR[j]=Math.max(colR[j]||0,b.rw);
-      });
-      const colX=j=>{ let e=colL[j]||0; for(let i=0;i<j;i++) e+=(colL[i]||0)+(colR[i]||0)+(colW[i]||NW)+COL_GAP; return x0+e; };
-      let wR=0;
-      ch.forEach((cid,i)=>{
-        const cn=S.nodes.find(n=>n.id===cid); if(!cn) return;
-        const r=Math.floor(i/per), j=i%per;
-        cn._d=nd._d+1;
-        cn._lx=Math.round(colX(j)/20)*20;
-        wR=Math.max(wR,wbs[cid].r(cn._lx));
-        (wrows[r]||(wrows[r]=[])).push(cid);
-      });
-      const k=Math.ceil(cols/2);
-      nd._lx=(colX(k)-COL_GAP/2)-cardW(nd)/2;
-      nd._wrap={N:WN,x0,per,rows:wrows};
-      return fin(wideFix(Math.max(colX(cols-1)+(colW[cols-1]||NW),wR)));
-    }
-    // 깊이별 자연스러운 감쇠: top 1.5x, l1 1.3x, l2 1.1x, l3+ 1.0x
-    const grpGap=COL_GAP*Math.max(1, 1.5 - 0.2 * nd._d);
-
-    // ─── 그룹 컴팩트 배치 ──────────────────────────────
-    // 각 자식은 자기 서브트리 너비만큼만 차지 → 그룹 간 간격은 grpGap 일정.
-    // leaf 형제도 카드 너비 그대로(LEAF_PAD 1) - 1.2배로 부풀리면 하위 있는 형제와 섞인 그룹에서만 간격이 넓어지고,
-    // 넓은 카드일수록 더 벌어져 같은 줄 카드끼리 간격이 달라진다 (철님 10-20 지적)
-    const LEAF_PAD = 1;
-    const isLeafArr=ch.map(cid=>tk(cid).length===0);
-    const hasMixed = isLeafArr.some(v=>v) && isLeafArr.some(v=>!v);
-
-    let x=L, lastR=L;
-    for(let i=0;i<ch.length;i++){
-      const cid = ch[i];
-      if(isLeafArr[i] && hasMixed){
-        // Leaf 형제 — NW × LEAF_PAD 너비 슬롯, 카드는 슬롯 중앙
-        const cn = S.nodes.find(n=>n.id===cid);
-        if(cn){
-          const typeD = TYPE_LV[cn.type]??0;
-          cn._d = Math.max(typeD, nd._d+1);
-          const slot = cardW(cn) * LEAF_PAD;
-          const b = leafBeside(cn);  // leaf 옆 side 카드 자리 예약 (없으면 0)
-          cn._lx = Math.round((x + b.l + slot/2 - cardW(cn)/2)/20)*20;
-          lastR = Math.max(cn._lx + cardW(cn), b.r(cn._lx));  // 반올림된 실제 위치 기준 - 슬롯 끝을 쓰면 격자 오차가 쌓여 간격이 번갈아 달라진다
-        } else {
-          lastR = x + NW;
-        }
-      } else {
-        // 자식 있는 형제 또는 모두 leaf인 그룹 — 정상 place
-        lastR = place(cid, x, nd._d);
-      }
-      x = lastR + (i<ch.length-1 ? grpGap : 0);
-    }
-    // 부모 중심 = 첫·끝 자식의 실제 중심의 가운데
-    const ccs=ch.map(k=>{const n=S.nodes.find(n=>n.id===k);return n?n._lx+cardW(n)/2:Math.round(L/20)*20+NW/2;});
-    nd._lx=(Math.min(...ccs)+Math.max(...ccs))/2-cardW(nd)/2;
-    return fin(wideFix(lastR));
+    asd.forEach(aid=>{const an=byId(aid); if(an&&an.type!=='side'){an._d=nd._d; an._lx=0;}});
   }
-  place(root.id,PAD_X,undefined);
+  // beside 확장 폭 {l,r}: 카드 블록 = [카드 왼쪽 - l, 카드 오른쪽 + r] (배치 단계와 같은 분배·피치)
+  function _tidyExt(nd){
+    const asd=(nd._asides||[]).map(byId).filter(Boolean);
+    if(!asd.length) return {l:0,r:0};
+    const C=besideCols(nd), sp=besideSplit(nd,asd), nR=sp.R.length, nL=sp.L.length;
+    const bR=bwOf(sp.R), bL=bwOf(sp.L);
+    return {l:nL>0?bL+G+(Math.min(C,nL)-1)*(bL+G):0,
+            r:nR>0?G+(Math.min(C,nR)-1)*(bR+G)+bR:0};
+  }
+  // 서브트리 상자 (상대 좌표, 왼쪽 끝 0): {w, off(카드 왼쪽), kids:[{id,x(자식 상자 왼쪽)}], x0(줄바꿈 격자 왼쪽)}
+  const SBm=new Map();
+  function _tidyBox(id,parentD){
+    const nd=byId(id);
+    if(!nd||sideIds.has(id)) return null;
+    const typeD=TYPE_LV[nd.type]??0;
+    nd._d=parentD!==undefined ? Math.max(typeD,parentD+1) : typeD;  // 부모보다 반드시 한 단계 아래
+    _tidyAsides(nd);
+    const e=_tidyExt(nd), cw=cardW(nd);
+    const ch=nk(id).filter(cid=>byId(cid));
+    const allLeaf=ch.every(cid=>tk(cid).length===0);
+    let box;
+    if(!ch.length){
+      box={w:e.l+cw+e.r, off:e.l, kids:[]};
+    } else if(nd.kl==='col' && allLeaf){
+      // 세로 1열: 자식 카드 왼쪽 = 부모 카드 왼쪽 + 40
+      const ord=ch.slice().sort(xyOrd);
+      let mn=-e.l, mx=cw+e.r;
+      const cs=ord.map(cid=>{ const b=_tidyBox(cid,nd._d); const lx=40-b.off; mn=Math.min(mn,lx); mx=Math.max(mx,lx+b.w); return {id:cid,lx}; });
+      box={w:mx-mn, off:-mn, kids:cs.map(c=>({id:c.id,x:c.lx-mn}))};
+      nd._col=ord;
+    } else {
+      const WN=(Number.isInteger(nd.kn)&&nd.kn>0)?nd.kn:(OPT.wrapN|0);
+      let wrows=null, N=0;
+      if(nd.kl==='rows' && ch.length>1 && allLeaf){
+        wrows=_rowsFromPos(ch); N=Math.max(1,...wrows.map(r=>r.length));
+      } else if(WN>0 && ch.length>WN && allLeaf){
+        const nrows=Math.ceil(ch.length/WN), per=Math.ceil(ch.length/nrows);
+        wrows=[]; ch.forEach((cid,i)=>{ (wrows[Math.floor(i/per)]||(wrows[Math.floor(i/per)]=[])).push(cid); });
+        N=WN;
+      }
+      if(wrows){
+        // 줄바꿈 격자: 열 피치 = 왼쪽 확장 + 카드 + 오른쪽 확장 + G (열마다 최대값)
+        const per=Math.max(1,...wrows.map(r=>r.length));
+        const colL=[], colR=[], colW=[], bx={};
+        wrows.forEach(row=>row.forEach((cid,j)=>{
+          const b=_tidyBox(cid,nd._d), cn=byId(cid); bx[cid]=b;
+          cn._d=nd._d+1;
+          colW[j]=Math.max(colW[j]||0,cardW(cn));
+          colL[j]=Math.max(colL[j]||0,b.off); colR[j]=Math.max(colR[j]||0,b.w-b.off-cardW(cn));
+        }));
+        const colX=j=>{ let s=colL[j]||0; for(let i=0;i<j;i++) s+=(colL[i]||0)+(colW[i]||NW)+(colR[i]||0)+G; return s; };
+        const gw=colX(per-1)+(colW[per-1]||NW)+(colR[per-1]||0);
+        const first=byId(wrows[0][0]);
+        const lastRow=wrows.find(r=>r.length===per)||wrows[0];
+        const last=byId(lastRow[lastRow.length-1]);
+        const c1=colX(0)+cardW(first)/2, ck=colX(lastRow.length-1)+cardW(last)/2;
+        const px=(c1+ck)/2-cw/2, sh=Math.max(0,e.l-px);
+        const kidsArr=[];
+        wrows.forEach(row=>row.forEach((cid,j)=>{ kidsArr.push({id:cid,x:sh+colX(j)-bx[cid].off}); }));
+        box={w:Math.max(sh+gw,sh+px+cw+e.r), off:sh+px, kids:kidsArr, x0:sh};
+        nd._wrap={N,x0:0,per,rows:wrows};
+      } else {
+        // 일반 부모: 자식 상자를 왼쪽부터 G 간격으로 나란히, 부모 카드는 첫·끝 자식 카드 중심의 가운데
+        let x=0; const ks=[];
+        ch.forEach(cid=>{ const b=_tidyBox(cid,nd._d); if(!b) return; ks.push({id:cid,x,b}); x+=b.w+G; });
+        if(!ks.length){
+          box={w:e.l+cw+e.r, off:e.l, kids:[]};
+        } else {
+          const cR=x-G, k1=ks[0], kk=ks[ks.length-1];
+          const c1=k1.x+k1.b.off+cardW(byId(k1.id))/2, ck=kk.x+kk.b.off+cardW(byId(kk.id))/2;
+          const px=(c1+ck)/2-cw/2, sh=Math.max(0,e.l-px);
+          box={w:Math.max(sh+cR,sh+px+cw+e.r), off:sh+px, kids:ks.map(k=>({id:k.id,x:k.x+sh}))};
+        }
+      }
+    }
+    SBm.set(id,box);
+    return box;
+  }
+  // 절대 x: 상자 왼쪽 + 카드 오프셋
+  function _tidyAssign(id,left){
+    const b=SBm.get(id), nd=byId(id); if(!b||!nd) return;
+    nd._lx=left+b.off;
+    if(nd._wrap&&b.x0!==undefined) nd._wrap.x0=left+b.x0;
+    b.kids.forEach(k=>_tidyAssign(k.id,left+k.x));
+  }
+  if(_tidyBox(root.id,undefined)) _tidyAssign(root.id,PAD_X);
   const tfg=tfGroups(n=>n._lx!==undefined||besideSide.has(n.id));
   const tfSet=new Set(); tfg.forEach(g=>g.ids.forEach(i=>tfSet.add(i)));
 
@@ -3728,82 +3660,6 @@ function _autoLayoutCore(){
     cards.forEach((a,k)=>{ const r=Math.floor(k/C); (rows[r]||(rows[r]=[])).push(a); });
     return rows;
   };
-
-  // ─── 형제 간격 균등화 (Post-pass) ─────────────────────
-  // 같은 부모의 자식들 간 gap을 균등화하고, 서브트리를 함께 이동시킴.
-  // 자식 없는 leaf 형제와 자식 많은 형제가 섞여 있을 때 시각적 균형 개선.
-  (function equalizeSiblingGaps(){
-    function getSubtreeBounds(id){
-      const n=S.nodes.find(x=>x.id===id);
-      if(!n||n._lx===undefined) return null;
-      let left=n._lx, right=n._lx+cardW(n);
-      const sbs=sideBs(n);
-      if(sbs){ // beside 카드가 차지할 폭까지 포함 (없으면 간격이 부풀려져 형제 서브트리를 밀어 겹침)
-        const C=besideCols(n), nR=sbs.R.length, nL=sbs.L.length;
-        const bR=bwOf(n._bs.R), bL=bwOf(n._bs.L);
-        if(nR) right=Math.max(right,r20(n._lx+cardW(n)+COL_GAP)+(Math.min(C,nR)-1)*stepOf(bR)+bR);
-        if(nL) left=Math.min(left,n._lx-(r20(n._lx+cardW(n)+COL_GAP)-(n._lx+cardW(n)))-bL-(Math.min(C,nL)-1)*stepOf(bL));  // 배치와 같은 거울 간격
-      }
-      (kids[id]||[]).forEach(cid=>{
-        if(sideIds.has(cid)||pars[cid]!==id||isAsideC(cid)) return;
-        const b=getSubtreeBounds(cid);
-        if(b){ left=Math.min(left,b.left); right=Math.max(right,b.right); }
-      });
-      return {left,right};
-    }
-    function moveSubtree(id,dx){
-      const n=S.nodes.find(x=>x.id===id);
-      if(!n||n._lx===undefined) return;
-      n._lx+=dx;
-      (kids[id]||[]).forEach(cid=>{
-        if(sideIds.has(cid)||pars[cid]!==id) return;
-        moveSubtree(cid,dx);
-      });
-    }
-    // 모든 부모 (top-down 깊이 순으로 처리: 위에서부터 균등화)
-    const allParents=[...new Set(Object.values(pars))].filter(p=>p!=null);
-    allParents.sort((a,b)=>{
-      const da=(S.nodes.find(n=>n.id===a)||{})._d??0;
-      const db=(S.nodes.find(n=>n.id===b)||{})._d??0;
-      return da-db; // shallow first
-    });
-    // 두 번 반복: 한 번으로는 깊이 간 전파 완전치 않을 수 있어 안정화 위해
-    for(let pass=0; pass<2; pass++){
-      allParents.forEach(pid=>{
-        const children=nk(pid);
-        { const pw=S.nodes.find(n=>n.id===pid); if(pw&&(pw._wrap||pw._col)) return; } // 줄바꿈 그룹: 격자·차선 유지
-        if(children.length<3) return; // 2개 이하는 균등화 의미 없음
-        children.sort((a,b)=>{
-          const na=S.nodes.find(n=>n.id===a), nb=S.nodes.find(n=>n.id===b);
-          return ((na&&na._lx)||0)-((nb&&nb._lx)||0);
-        });
-        const bounds=children.map(id=>getSubtreeBounds(id));
-        if(bounds.some(b=>!b)) return;
-        // 인접 형제 서브트리 간 gap 측정
-        const gaps=[];
-        for(let i=0;i<bounds.length-1;i++) gaps.push(bounds[i+1].left-bounds[i].right);
-        if(gaps.length===0) return;
-        // 목표: 좌우 간격 옵션(COL_GAP)보다 좁은 곳만 넓힌다. 가장 큰 gap으로 통일하면 깊은 하위 묶음 옆의
-        // 넓은 간격 하나가 하위 없는 형제들 사이에도 퍼져 카드마다 간격이 달라진다 (철님 10-20 지적)
-        const targetGap=COL_GAP;
-        for(let i=0;i<gaps.length;i++){
-          const dx=targetGap-gaps[i];
-          if(dx>0){
-            for(let j=i+1;j<children.length;j++){
-              moveSubtree(children[j],dx);
-              bounds[j].left+=dx; bounds[j].right+=dx;
-            }
-          }
-        }
-        // 부모를 자식 중심으로 재정렬
-        const parent=S.nodes.find(n=>n.id===pid);
-        if(parent&&parent._lx!==undefined){
-          const ccs=children.map(id=>{ const c=S.nodes.find(n=>n.id===id); return c._lx+cardW(c)/2; });
-          parent._lx=(Math.min(...ccs)+Math.max(...ccs))/2-cardW(parent)/2;
-        }
-      });
-    }
-  })();
 
   // 고아 노드: 타입 레벨로 _d 설정 (depH에 포함시켜 행 높이 반영)
   const orphans=S.nodes.filter(n=>n._d===undefined&&!sideIds.has(n.id)&&!tfSet.has(n.id));
@@ -3841,10 +3697,10 @@ function _autoLayoutCore(){
     cy=depY[d]+Math.ceil((depH[d]+ROW_GAP)/20)*20;
   });
 
-  // 트리 노드 위치 적용 (_lx가 있는 것 = place()에서 배치된 것)
+  // 트리 노드 위치 적용 (_lx가 있는 것 = tidy 배치에서 놓인 것). x는 반올림 없이 그대로
   const treeNodes=S.nodes.filter(n=>n._lx!==undefined&&!sideIds.has(n.id));
   treeNodes.forEach(n=>{
-    n.x=Math.round((n._lx||0)/20)*20;
+    n.x=n._lx||0;
     n.y=depY[n._d]??PAD_Y;
   });
 
@@ -3878,87 +3734,19 @@ function _autoLayoutCore(){
     const C=besideCols(p);
     [[p._bs.R,1],[p._bs.L,-1]].forEach(([cards,dir])=>{
       let prevY=p.y,prevH=0;
-      const bW=bwOf(cards), bS=stepOf(bW);
+      const bW=bwOf(cards), bS=bW+COL_GAP;
       stackRows(cards,C).forEach((cs,ri)=>{
         const y=ri===0?(C>1?c20(p.y+CUR_HH/2+10):p.y):c20(prevY+prevH+20);
-        // 20 격자 반올림으로 부모와의 간격이 COL_GAP/2 미만이 되면 그 행만 한 칸 더 바깥으로
-        // 좌우 나눔: 오른쪽 간격을 정한 뒤 왼쪽은 같은 간격을 거울처럼 쓴다 (양쪽을 따로 반올림하면 20/40px로 갈라진다)
-        const xR=r20(p.x+cardW(p)+COL_GAP), gR=xR-(p.x+cardW(p)), g=gR+(gR<COL_GAP/2?20:0);
+        // 부모와의 간격은 정확히 COL_GAP (좌우 거울), 열 피치 = 슬롯 폭 + COL_GAP
+        const xR=p.x+cardW(p)+COL_GAP, xL=p.x-COL_GAP-bW;
         cs.forEach((a,j)=>{
-          a.x=dir>0?p.x+cardW(p)+g+j*bS:p.x-g-bW-j*bS;
+          a.x=dir>0?xR+j*bS:xL-j*bS;
           a.y=y;
         });
         prevY=y; prevH=Math.max(...cs.map(nh));
       });
     });
   });
-
-  // ─── 형제 서브트리 충돌 해소 (최종 위치 기준) ─────────────
-  // equalizeSiblingGaps()는 그룹 안 형제를 오른쪽으로 벌리면서 첫 배치에서 예약된 폭을 넘길 수 있다
-  // (혼합 그룹의 leaf 슬롯 → 균등화). 이웃 서브트리와 세로로 겹치는 카드가 COL_GAP/2보다 가까우면
-  // 오른쪽 형제 서브트리를 통째로 밀고 부모를 다시 가운데로. 충돌이 없으면 아무것도 움직이지 않는다.
-  {
-    const treeSet=new Set(treeNodes.map(n=>n.id));
-    const byId=id=>S.nodes.find(n=>n.id===id);
-    const members=(id,out)=>{
-      const n=byId(id); if(!n||!treeSet.has(id)) return out;
-      out.push(n);
-      (n._asides||[]).forEach(aid=>{ const a=byId(aid); if(a&&a.x!==undefined) out.push(a); });
-      nk(id).forEach(k=>members(k,out));
-      return out;
-    };
-    const minGap=COL_GAP/2;
-    const need=(A,B)=>{ // B 묶음을 오른쪽으로 얼마나 밀어야 하는지 (0 = 충돌 없음)
-      let s=0;
-      A.forEach(a=>{ const aw=cardW(a), ah=nh(a);
-        B.forEach(b=>{
-          if(a===b) return;
-          const bw=cardW(b), bh=nh(b);
-          if(!(a.y<b.y+bh&&b.y<a.y+ah)) return;
-          if(b.x-(a.x+aw)>=minGap||a.x-(b.x+bw)>=minGap) return;
-          s=Math.max(s,a.x+aw+COL_GAP-b.x);
-        });
-      });
-      return s>0?c20(s):0;
-    };
-    // 이동 단위: 일반 부모 = 자식 서브트리(x 순), 줄바꿈 부모 = 격자 열(행 간 같은 열은 함께). 세로 1열은 제외
-    const unitsOf=p=>{
-      const ids=nk(p.id).filter(k=>treeSet.has(k));
-      if(p._wrap){
-        const us=[];
-        (p._wrap.rows||[]).forEach(r=>r.forEach((cid,j)=>{ if(treeSet.has(cid)) (us[j]||(us[j]=[])).push(cid); }));
-        return us.filter(Boolean);
-      }
-      return ids.map(byId).sort((a,b)=>a.x-b.x).map(c=>[c.id]);
-    };
-    const uMem=u=>{ const o=[]; u.forEach(id=>members(id,o)); return o; };
-    const parents=treeNodes.filter(p=>!p._col&&unitsOf(p).length>1)
-      .sort((a,b)=>(b._d??0)-(a._d??0)); // 깊은 부모부터
-    parents.forEach(p=>{
-      const us=unitsOf(p);
-      const ch=nk(p.id).filter(k=>treeSet.has(k)).map(byId);
-      const mid=()=>{ const cs=ch.map(c=>c.x+cardW(c)/2); return (Math.min(...cs)+Math.max(...cs))/2; };
-      const m0=mid();
-      const left=uMem(us[0]);
-      let moved=false;
-      for(let i=1;i<us.length;i++){
-        const sub=uMem(us[i]);
-        // 한 번 민 뒤 원래 반대편에 있던 카드와 새로 겹칠 수 있으므로 충돌이 없어질 때까지 반복
-        for(let dx=need(left,sub), guard=0; dx>0&&guard<200; dx=need(left,sub), guard++){
-          moved=true;
-          for(let j=i;j<us.length;j++) uMem(us[j]).forEach(q=>{ q.x+=dx; });
-        }
-        sub.forEach(q=>left.push(q));
-      }
-      if(moved){
-        const dp=Math.round((mid()-m0)/20)*20;
-        if(dp){
-          p.x+=dp;
-          (p._asides||[]).forEach(aid=>{ const a=byId(aid); if(a&&a.x!==undefined) a.x+=dp; });
-        }
-      }
-    });
-  }
 
   // 트리 우측 끝
   const treeR=Math.max(treeNodes.length?Math.max(...treeNodes.map(n=>n.x+cardW(n))):PAD_X+NW,
