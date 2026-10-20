@@ -294,6 +294,9 @@ body.present #mtip{display:none!important;}
 .mr{padding:4px 10px 4px calc(var(--band-w) + 8px);height:var(--mh);position:relative;display:flex;align-items:center;gap:0;border-top:1px solid var(--row-border);box-sizing:border-box;overflow:hidden;}
 .mr:nth-child(even){background:var(--row-even);}
 .nb.mcol{display:grid;padding-left:var(--band-w);background:linear-gradient(var(--band-color,var(--mint)),var(--band-color,var(--mint))) left top/var(--band-w) 100% no-repeat,var(--card-bg);}
+/* 본문 색 띠 옵션(OPT.bodyBand): 켜면 1열 카드도 본문에 띠, 끄면 여러 열 카드도 머리글에만 - 열 수와 무관하게 같은 규칙 (철님 10-20) */
+body.bodyband .nb{padding-left:var(--band-w);background:linear-gradient(var(--band-color,var(--mint)),var(--band-color,var(--mint))) left top/var(--band-w) 100% no-repeat,var(--card-bg);}
+body:not(.bodyband) .nb.mcol{padding-left:0;background:var(--card-bg);}
 :where(.nb.mcol)>.mr:nth-child(even){background:none;}
 .mr.mr-ev{background:var(--row-even);}
 .nb.mcol>.mr[data-cmp="new"]{background:rgba(46,160,67,.18);}
@@ -911,6 +914,11 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
           <span class="opt-val" id="opt-bw-v">12px</span>
         </div>
         <div class="opt-row">
+          <span class="opt-lbl">본문 색 띠</span>
+          <input type="checkbox" id="opt-bodyband" onchange="OPT.bodyBand=this.checked;applyBodyBand();saveOptLS()">
+          <span class="opt-val">모든 카드</span>
+        </div>
+        <div class="opt-row">
           <span class="opt-lbl">카드 모서리</span>
           <input type="range" class="opt-slider" id="opt-cr" min="0" max="40" step="1"
             oninput="OPT.cardRadius=+this.value;document.documentElement.style.setProperty('--card-radius',this.value+'px');document.getElementById('opt-cr-v').textContent=this.value+'px';saveOptLS()">
@@ -1152,7 +1160,7 @@ const OPT = {
   uiMint:'#40D2A7', uiSky:'#60DCF8', uiCoral:'#FF8770', topbarBg:'#2C2C2C',
   statsBg:'#1C1C20', stbarBg:'#1A1A1A',
   // 카드 스타일
-  cardRadius:8, shadowA:0.11, showCnt:true, cntPos:'tr', cntColor:'', cntCc:'sep', cntSize:9, cntDx:0, cntDy:0,
+  cardRadius:8, shadowA:0.11, bodyBand:false, showCnt:true, cntPos:'tr', cntColor:'', cntCc:'sep', cntSize:9, cntDx:0, cntDy:0,
   // 헤더 배경색
   hdrTop:'#1A1A1A', hdrL1:'#2C2C2C', hdrL2:'#383838', hdrL3:'#424242',
   hdrL4:'#4A4A4A', hdrL5:'#525252', hdrTf:'#30304A', hdrSide:'#323232',
@@ -1894,6 +1902,7 @@ function _setCntCtl(){
   [['opt-cntsz',v.fs],['opt-cntdx',v.dx],['opt-cntdy',v.dy]].forEach(([id,x])=>{const e=document.getElementById(id); if(e) e.value=x;});
   applyCntStyle();
 }
+function applyBodyBand(){ document.body.classList.toggle('bodyband',OPT.bodyBand===true); const c=document.getElementById('opt-bodyband'); if(c) c.checked=OPT.bodyBand===true; }
 function _cntPosVal(){return ['mr','br','badge'].indexOf(OPT.cntPos)>=0?OPT.cntPos:'tr';}
 function _cntColorVal(){return /^#[0-9a-fA-F]{6}$/.test(OPT.cntColor||'')?OPT.cntColor:'';}
 function cntFixedColors(hex){
@@ -4309,7 +4318,7 @@ function resetOptions(){
     strokeW:1.8,strokeDashW:1.5,
     uiMint:'#40D2A7',uiSky:'#60DCF8',uiCoral:'#FF8770',topbarBg:'#2C2C2C',
     statsBg:'#1C1C20',stbarBg:'#1A1A1A',
-    cardRadius:8,shadowA:0.11,showCnt:true,cntPos:'tr',cntColor:'',cntCc:'sep',cntSize:9,cntDx:0,cntDy:0,
+    cardRadius:8,shadowA:0.11,bodyBand:false,showCnt:true,cntPos:'tr',cntColor:'',cntCc:'sep',cntSize:9,cntDx:0,cntDy:0,
     canvasBg:'#ECEEF3',cardBg:'#FFFFFF',rowEven:'#FAFBFD',rowBorder:'#F2F3F6',
     hdrTop:'#1A1A1A',hdrL1:'#2C2C2C',hdrL2:'#383838',hdrL3:'#424242',
     hdrL4:'#4A4A4A',hdrL5:'#525252',hdrTf:'#30304A',hdrSide:'#323232',
@@ -4331,6 +4340,7 @@ function resetOptions(){
   applyAllStatusCSS();
   applyAllFontHeights();
   closeOptions(); setTimeout(()=>{openOptions();autoLayout();},50);
+  applyBodyBand();
 }
 
 // ═══ Data File Modal / 연결
@@ -4660,6 +4670,7 @@ function _applyOptObj(d){
     applyAllStatusCSS();
   }
   OPT.showCnt=d.showCnt!==false;{const _c=document.getElementById('opt-showcnt');if(_c)_c.checked=OPT.showCnt;}
+  OPT.bodyBand=d.bodyBand===true; applyBodyBand();
   OPT.cntPos=(d.cntPos==='tr'||d.cntPos==='mr'||d.cntPos==='br'||d.cntPos==='badge')?d.cntPos:'tr';
   OPT.cntColor=(typeof d.cntColor==='string'&&/^#[0-9a-fA-F]{6}$/.test(d.cntColor))?d.cntColor:'';
   OPT.cntCc=(d.cntCc==='sep'||d.cntCc==='inc'||d.cntCc==='exc')?d.cntCc:'sep';
@@ -4926,7 +4937,7 @@ function exportPNG(){
     const hcs=hd?getComputedStyle(hd):null;
     let bw=parseFloat(ecs&&ecs.getPropertyValue('--band-w')); if(!isFinite(bw)) bw=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--band-w')); if(!isFinite(bw)) bw=12;
     const band=ecs?ecs.getPropertyValue('--band-color').trim():'';
-    const x=nd.x,y=nd.y,h=nh(nd),CW=cardW(nd),MC=_mcOf(nd),colW=(CW-bw)/MC;
+    const x=nd.x,y=nd.y,h=nh(nd),CW=cardW(nd),MC=_mcOf(nd),BB=OPT.bodyBand===true,colW=(CW-(BB?bw:0))/MC;  // 본문 색 띠가 켜진 카드만 띠 폭을 뺀다
     ctx.fillStyle='#fff'; ctx.fillRect(x,y,CW,h);
     ctx.strokeStyle=(ecs&&ecs.borderTopColor&&ecs.borderTopWidth!=='0px')?ecs.borderTopColor:'#d0d0d0';
     ctx.lineWidth=1; ctx.setLineDash([]); ctx.strokeRect(x+.5,y+.5,CW-1,h-1);
@@ -4958,10 +4969,10 @@ function exportPNG(){
         ctx.restore();
       }
     }
-    if(MC>1&&band&&(nd.m||[]).length){ ctx.fillStyle=band; ctx.fillRect(x,y+CUR_HH,bw,h-CUR_HH); }
+    if(BB&&band&&(nd.m||[]).length){ ctx.fillStyle=band; ctx.fillRect(x,y+CUR_HH,bw,h-CUR_HH); }
     (nd.m||[]).forEach((m,k)=>{
       const ry=y+CUR_HH+Math.floor(k/MC)*CUR_MH;
-      const mx=MC>1?x+bw+(k%MC)*colW:x, MW=MC>1?colW:NW;  // 1열: 오늘과 같이 카드 전체 폭
+      const mx=x+(BB?bw:0)+(k%MC)*colW, MW=colW;  // 화면과 같은 규칙: 본문 띠가 켜졌을 때만 띠 폭만큼 안쪽에서 시작
       ctx.fillStyle='#e4e4e4'; ctx.fillRect(mx,ry,MW,1);
       let sc=statusColor(m.s);
       const vm=/^var\((--[^)]+)\)$/.exec(sc);
