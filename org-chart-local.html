@@ -957,6 +957,13 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
           <select id="opt-cntcc" onchange="OPT.cntCc=this.value;render();saveOptLS()"><option value="sep">따로 표시</option><option value="inc">포함</option><option value="exc">제외</option></select>
         </div>
         <div class="opt-row">
+          <span class="opt-lbl">인원 수 셈법</span>
+          <select id="opt-cntmode" class="opt-orient-sel" onchange="OPT.cntMode=this.value;render();saveOptLS()">
+            <option value="count">현원 (합산 제외 상태 빼고)</option>
+            <option value="ratio">현원/정원</option>
+          </select>
+        </div>
+        <div class="opt-row">
           <span class="opt-lbl">인원 수 크기</span>
           <input type="range" class="opt-slider" id="opt-cntsz" min="6" max="24" step="1" value="9"
             oninput="OPT.cntSize=+this.value;applyCntStyle();render();saveOptLS()">
@@ -1200,7 +1207,7 @@ const OPT = {
   uiMint:'#40D2A7', uiSky:'#60DCF8', uiCoral:'#FF8770', topbarBg:'#2C2C2C',
   statsBg:'#1C1C20', stbarBg:'#1A1A1A',
   // 카드 스타일
-  cardRadius:8, shadowA:0.11, bodyBand:false, gradColor:false, sbShow:true, sbPos:'tl', sbMode:'auto', sbScale:100, showCnt:true, cntPos:'tr', cntColor:'', cntCc:'sep', cntSize:9, cntDx:0, cntDy:0,
+  cardRadius:8, shadowA:0.11, bodyBand:false, gradColor:false, sbShow:true, sbPos:'tl', sbMode:'auto', sbScale:100, showCnt:true, cntPos:'tr', cntColor:'', cntCc:'sep', cntMode:'count', cntSize:9, cntDx:0, cntDy:0,
   // 헤더 배경색
   hdrTop:'#1A1A1A', hdrL1:'#2C2C2C', hdrL2:'#383838', hdrL3:'#424242',
   hdrL4:'#4A4A4A', hdrL5:'#525252', hdrTf:'#30304A', hdrSide:'#323232',
@@ -1239,7 +1246,7 @@ const OPT = {
     {name:'재직',   statuses:['active']},
     {name:'예정',   statuses:['joining']},
     {name:'휴직',   statuses:['onleave']},
-    {name:'채용',   statuses:['needed','hiring']},
+    {name:'채용',   statuses:['needed','hiring'], excludeTotal:true},  // 채용 필요·채용 중은 자리(TO)일 뿐 인원이 아니다 - 기본 합산 제외 (철님 10-20)
     {name:'퇴사예정',statuses:['leaving']}
   ],
   dataLabel:'데이터'
@@ -1888,12 +1895,16 @@ function cntLabel(nd){
   if(OPT.showCnt===false) return '';
   const defKey=OPT.statusItems[0]?.key||'active';
   const exK=new Set(OPT.statsGroups.filter(g=>g.excludeTotal).flatMap(g=>g.statuses));
-  const ms=(nd.m||[]).filter(m=>!exK.has(m.s||defKey));
+  const all=(nd.m||[]), ms=all.filter(m=>!exK.has(m.s||defKey));
   const C=ms.filter(m=>m.cc===true).length, M=ms.length-C, mode=_cntCcVal();
-  if(mode==='inc') return ms.length>0?ms.length+'명':'';
-  if(mode==='exc') return M>0?M+'명':'';
-  if(M+C===0) return '';
-  return C>0?M+'명 +'+C+'겸':M+'명';
+  // 인원 수 셈법 '현원/정원'(OPT.cntMode==='ratio'): 합산 제외 상태(채용 필요·채용 중 등)까지 넣은 자리 수를 분모로 - 같으면 그냥 N명 (철님 10-20)
+  const ratio=OPT.cntMode==='ratio';
+  const num=(pres,tot)=>ratio&&tot>pres?pres+'/'+tot:String(pres);
+  if(mode==='inc') return (ratio?all.length:ms.length)>0?num(ms.length,all.length)+'명':'';
+  const allM=all.length-all.filter(m=>m.cc===true).length;
+  if(mode==='exc') return (ratio?allM:M)>0?num(M,allM)+'명':'';
+  if(M+C===0&&!(ratio&&allM>0)) return '';
+  return C>0?num(M,allM)+'명 +'+C+'겸':num(M,allM)+'명';
 }
 function _cntStyleVals(){
   const iv=(v,lo,hi,d)=>(Number.isInteger(v)&&v>=lo&&v<=hi)?v:d;
@@ -1955,6 +1966,7 @@ function _setCntCtl(){
   const a=document.getElementById('opt-cntpos'), b=document.getElementById('opt-cntcol');
   if(a)a.value=_cntPosVal(); if(b)b.value=_cntColorVal()||'#808080';
   const c=document.getElementById('opt-cntcc'); if(c)c.value=_cntCcVal();
+  const cm=document.getElementById('opt-cntmode'); if(cm)cm.value=OPT.cntMode==='ratio'?'ratio':'count';
   const v=_cntStyleVals();
   [['opt-cntsz',v.fs],['opt-cntdx',v.dx],['opt-cntdy',v.dy]].forEach(([id,x])=>{const e=document.getElementById(id); if(e) e.value=x;});
   applyCntStyle();
@@ -3464,12 +3476,14 @@ function statsflAvoidCards(){
   const pr=fl.getBoundingClientRect();
   if(!hit(pr)) return;
   const wr=w.getBoundingClientRect();
-  const left=wr.left+20, top=wr.bottom-20-pr.height;
-  const alt={left:left,top:top,right:left+pr.width,bottom:top+pr.height};
-  if(!hit(alt)){
-    fl.style.left=left+'px'; fl.style.top=top+'px';
+  // 빈 자리 후보: 왼쪽 아래, 오른쪽 위, 오른쪽 아래 순. 어디에도 못 두면 접되 저장하지는 않는다 - 자동 접힘이 다음 열기까지 남으면
+  // 패널이 "저절로 사라진" 것처럼 보인다 (10-20: 왼쪽 밀기 제거 뒤 왼쪽 두 자리가 카드로 덮이는 일이 잦아졌다)
+  const spots=[[wr.left+20,wr.bottom-20-pr.height],[wr.right-20-pr.width,wr.top+10],[wr.right-20-pr.width,wr.bottom-20-pr.height]];
+  const free=spots.find(([l,t])=>!hit({left:l,top:t,right:l+pr.width,bottom:t+pr.height}));
+  if(free){
+    fl.style.left=free[0]+'px'; fl.style.top=free[1]+'px';
     fl.style.right='auto'; fl.style.bottom='auto';
-  } else statsflSetCollapsed(true,true);
+  } else statsflSetCollapsed(true,false);
 }
 
 // ═══ Auto layout
@@ -4411,7 +4425,7 @@ function resetOptions(){
     strokeW:1.8,strokeDashW:1.5,
     uiMint:'#40D2A7',uiSky:'#60DCF8',uiCoral:'#FF8770',topbarBg:'#2C2C2C',
     statsBg:'#1C1C20',stbarBg:'#1A1A1A',
-    cardRadius:8,shadowA:0.11,bodyBand:false,gradColor:false,sbShow:true,sbPos:'tl',sbMode:'auto',sbScale:100,showCnt:true,cntPos:'tr',cntColor:'',cntCc:'sep',cntSize:9,cntDx:0,cntDy:0,
+    cardRadius:8,shadowA:0.11,bodyBand:false,gradColor:false,sbShow:true,sbPos:'tl',sbMode:'auto',sbScale:100,showCnt:true,cntPos:'tr',cntColor:'',cntCc:'sep',cntMode:'count',cntSize:9,cntDx:0,cntDy:0,
     canvasBg:'#ECEEF3',cardBg:'#FFFFFF',rowEven:'#FAFBFD',rowBorder:'#F2F3F6',
     hdrTop:'#1A1A1A',hdrL1:'#2C2C2C',hdrL2:'#383838',hdrL3:'#424242',
     hdrL4:'#4A4A4A',hdrL5:'#525252',hdrTf:'#30304A',hdrSide:'#323232',
@@ -4772,6 +4786,7 @@ function _applyOptObj(d){
   OPT.cntPos=(d.cntPos==='tr'||d.cntPos==='mr'||d.cntPos==='br'||d.cntPos==='badge')?d.cntPos:'tr';
   OPT.cntColor=(typeof d.cntColor==='string'&&/^#[0-9a-fA-F]{6}$/.test(d.cntColor))?d.cntColor:'';
   OPT.cntCc=(d.cntCc==='sep'||d.cntCc==='inc'||d.cntCc==='exc')?d.cntCc:'sep';
+  OPT.cntMode=d.cntMode==='ratio'?'ratio':'count';
   { const iv=(v,lo,hi,df)=>(typeof v==='number'&&Number.isInteger(v))?Math.min(hi,Math.max(lo,v)):df;
     OPT.cntSize=iv(d.cntSize,6,24,9); OPT.cntDx=iv(d.cntDx,-100,200,0); OPT.cntDy=iv(d.cntDy,-100,100,0); }
   _setCntCtl();
