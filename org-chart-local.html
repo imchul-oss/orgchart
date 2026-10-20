@@ -562,7 +562,10 @@ body.present #srch-box,body.present #srch-btn{display:none!important;}
 body.present #treeview,body.present #btn-tree{display:none!important;}
 @media print{#treeview,#treeview.tv-open{display:none!important;}}
 #print-stats{display:none;}
+#chart-head{position:absolute;display:none;height:36px;line-height:36px;font-size:20px;font-weight:700;color:#222;white-space:nowrap;overflow:hidden;pointer-events:none;}  /* 조직도 이름 · 기준일 (철님 10-20) - 차트 좌표의 윗 띠, 인쇄·PNG와 같은 자리 */
+#print-head{display:none;}
 @media print{
+  #print-head{display:block;position:fixed;font-weight:700;color:#222;white-space:nowrap;overflow:hidden;z-index:50;line-height:1;}
   #print-stats{display:block;position:fixed;left:20px;top:20px;width:150px;box-sizing:border-box;background:#fff;border:1px solid #d0d0d0;font-size:11px;color:#333;z-index:50;}
   #print-stats .ps-hd{background:#2b2f36;color:#fff;font-weight:700;font-size:12px;padding:5px 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   #print-stats .ps-row{display:flex;align-items:center;gap:6px;padding:2px 10px;}
@@ -1079,6 +1082,28 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
         <div id="opt-line-colors"></div>
         <div id="opt-canvas-colors"></div>
       </div>
+      <div class="opt-sec" data-sec="title">
+        <div class="opt-sec-title" role="button" tabindex="0" aria-expanded="true"><span class="opt-arr">▾</span> 제목</div>
+        <div class="opt-row">
+          <span class="opt-lbl">조직도 이름</span>
+          <input type="text" id="opt-title" maxlength="80" placeholder="예: 회사 조직도" style="flex:1;padding:6px 9px;border:1.5px solid #DDD;border-radius:5px;font-size:13px;outline:none;"
+            oninput="OPT.chartTitle=this.value.slice(0,80);render();saveOptLS()">
+        </div>
+        <div class="opt-row">
+          <span class="opt-lbl">기준일자</span>
+          <input type="date" id="opt-asof" style="padding:5px 8px;border:1.5px solid #DDD;border-radius:5px;font-size:13px;outline:none;"
+            onchange="OPT.asOf=/^\d{4}-\d{2}-\d{2}$/.test(this.value)?this.value:'';render();saveOptLS()">
+          <span class="opt-val">비우면 표시 안 함</span>
+        </div>
+        <div class="opt-row">
+          <span class="opt-lbl">제목 위치</span>
+          <select id="opt-headpos" class="opt-orient-sel" onchange="OPT.headPos=this.value;render();saveOptLS()">
+            <option value="tl">왼쪽 위</option>
+            <option value="tc">가운데 위</option>
+            <option value="tr">오른쪽 위</option>
+          </select>
+        </div>
+      </div>
       <div class="opt-sec" data-sec="logo">
         <div class="opt-sec-title" role="button" tabindex="0" aria-expanded="true"><span class="opt-arr">▾</span> 로고·색상</div>
         <div class="opt-row">
@@ -1208,7 +1233,7 @@ const OPT = {
   uiMint:'#40D2A7', uiSky:'#60DCF8', uiCoral:'#FF8770', topbarBg:'#2C2C2C',
   statsBg:'#1C1C20', stbarBg:'#1A1A1A',
   // 카드 스타일
-  cardRadius:8, shadowA:0.11, bodyBand:false, gradColor:false, sbShow:true, sbPos:'tl', sbMode:'auto', sbScale:100, showCnt:true, cntPos:'tr', cntColor:'', optVer:3, cntCc:'sep', cntMode:'count', cntSize:9, cntDx:0, cntDy:0,
+  cardRadius:8, shadowA:0.11, bodyBand:false, gradColor:false, sbShow:true, sbPos:'tl', sbMode:'auto', sbScale:100, showCnt:true, cntPos:'tr', cntColor:'', optVer:3, chartTitle:'', asOf:'', headPos:'tl', cntCc:'sep', cntMode:'count', cntSize:9, cntDx:0, cntDy:0,
   // 헤더 배경색
   hdrTop:'#1A1A1A', hdrL1:'#2C2C2C', hdrL2:'#383838', hdrL3:'#424242',
   hdrL4:'#4A4A4A', hdrL5:'#525252', hdrTf:'#30304A', hdrSide:'#323232',
@@ -1364,7 +1389,7 @@ function updateGrid(){
 }
 
 // ═══ Render
-function render() { drawTfZone(); drawConns(); drawNodes(); updateCanvas(); updateSt(); renderAnchors(); updateGrid(); scheduleSave(); runLint(); cmpRun(); if(typeof srchApply==='function') srchApply(false); }
+function render() { drawTfZone(); drawConns(); drawNodes(); drawHead(); updateCanvas(); updateSt(); renderAnchors(); updateGrid(); scheduleSave(); runLint(); cmpRun(); if(typeof srchApply==='function') srchApply(false); }
 /* ===== 비교 모드 (저장 대상 아님) ===== */
 var CMP=null; // {file, data:{sheets:[...]}, single:bool, err:string}
 function cmpTrim(v){return String(v==null?'':v).trim();}
@@ -4417,6 +4442,7 @@ function openOptions(){
     {lbl:'현황 패널 배경',   key:'statsBg',  cssVar:'--stats-bg',  val:OPT.statsBg},
     {lbl:'상태바 배경',      key:'stbarBg',  cssVar:'--stbar-bg',  val:OPT.stbarBg},
   ]);
+  _syncHeadInputs();
   // 로고 input 값 sync
   const lt=document.getElementById('opt-logo-txt'); if(lt) lt.value = OPT.logoText ||'조직도';
   const ls=document.getElementById('opt-logo-sub'); if(ls) ls.value = OPT.logoSub || '';
@@ -4439,7 +4465,7 @@ function resetOptions(){
     strokeW:1.8,strokeDashW:1.5,
     uiMint:'#40D2A7',uiSky:'#60DCF8',uiCoral:'#FF8770',topbarBg:'#2C2C2C',
     statsBg:'#1C1C20',stbarBg:'#1A1A1A',
-    cardRadius:8,shadowA:0.11,bodyBand:false,gradColor:false,sbShow:true,sbPos:'tl',sbMode:'auto',sbScale:100,showCnt:true,cntPos:'tr',cntColor:'',optVer:3,cntCc:'sep',cntMode:'count',cntSize:9,cntDx:0,cntDy:0,
+    cardRadius:8,shadowA:0.11,bodyBand:false,gradColor:false,sbShow:true,sbPos:'tl',sbMode:'auto',sbScale:100,showCnt:true,cntPos:'tr',cntColor:'',optVer:3,chartTitle:'',asOf:'',headPos:'tl',cntCc:'sep',cntMode:'count',cntSize:9,cntDx:0,cntDy:0,
     canvasBg:'#ECEEF3',cardBg:'#FFFFFF',rowEven:'#FAFBFD',rowBorder:'#F2F3F6',
     hdrTop:'#1A1A1A',hdrL1:'#2C2C2C',hdrL2:'#383838',hdrL3:'#424242',
     hdrL4:'#4A4A4A',hdrL5:'#525252',hdrTf:'#30304A',hdrSide:'#323232',
@@ -4823,6 +4849,7 @@ function _applyOptObj(d){
   if(d.logoSub!=null)  OPT.logoSub=d.logoSub;
   if(d.logoColor)      OPT.logoColor=d.logoColor;
   if(d.logoSubColor)   OPT.logoSubColor=d.logoSubColor;
+  OPT.chartTitle=typeof d.chartTitle==='string'?d.chartTitle.slice(0,80):''; OPT.asOf=/^\d{4}-\d{2}-\d{2}$/.test(String(d.asOf||''))?d.asOf:''; OPT.headPos=['tl','tc','tr'].includes(d.headPos)?d.headPos:'tl'; _syncHeadInputs();
   OPT.optVer=3;  // 옵션 판: 옛 파일의 빠진 필드는 위에서 정한 기본값으로 채웠다 (철님 10-20)
   if(typeof applyLogo==='function') applyLogo();
 }
@@ -4832,6 +4859,17 @@ function loadObject(d,keepView){
   _adoptData(d,keepView===true);
   if(d.opt) _applyOptObj(d.opt);
   _finishLoad(_hasPositions(S.nodes));
+}
+// ═══ 조직도 이름 · 기준일 (철님 10-20): 차트 위 36px 띠 하나를 화면·PNG·인쇄가 같은 좌표로 그린다
+const HEAD_H=36, HEAD_GAP=16;
+function _headText(){ const t=(OPT.chartTitle||'').trim(), a=(OPT.asOf||'').trim(); if(!t&&!a) return ''; return t&&a?t+' · '+a+' 기준':(t||a+' 기준'); }
+function _headInfo(){ const text=_headText(); if(!text) return null; const pos=['tl','tc','tr'].includes(OPT.headPos)?OPT.headPos:'tl'; return {text,pos,h:HEAD_H,band:HEAD_H+HEAD_GAP,align:pos==='tc'?'center':(pos==='tr'?'right':'left')}; }
+function _syncHeadInputs(){ const t=document.getElementById('opt-title'); if(t) t.value=OPT.chartTitle||''; const a=document.getElementById('opt-asof'); if(a) a.value=OPT.asOf||''; const p=document.getElementById('opt-headpos'); if(p) p.value=['tl','tc','tr'].includes(OPT.headPos)?OPT.headPos:'tl'; }
+function drawHead(){
+  const cvs=document.getElementById('canvas'); if(!cvs) return;
+  let e=document.getElementById('chart-head'); if(!e){ e=document.createElement('div'); e.id='chart-head'; cvs.appendChild(e); }
+  const hi=_headInfo(); if(!hi||!S.nodes.length){ e.style.display='none'; e.textContent=''; return; }
+  const b=_chartBounds(); e.textContent=hi.text; e.style.display='block'; e.style.left=b.x0+'px'; e.style.top=(b.y0-hi.band)+'px'; e.style.width=(b.x1-b.x0)+'px'; e.style.textAlign=hi.align;
 }
 // 로드 마무리 공통부: 저장된 좌표가 있으면 그대로 살리고, 없으면 자동 배치
 function _finishLoad(hasPos){
@@ -5015,7 +5053,9 @@ function exportPNG(){
   const _tz=tfZoneInfo();
   if(_tz){ x0=Math.min(x0,_tz.x); y0=Math.min(y0,_tz.y); x1=Math.max(x1,_tz.x+_tz.w); y1=Math.max(y1,_tz.y+_tz.h); }
   const _pl=_statsBoxPlan({x0,y0,x1,y1});
+  const _cx0=x0,_cx1=x1;  // 카드 범위 (제목 띠의 기준)
   if(_pl){ x0-=_pl.ext.left; x1+=_pl.ext.right; y1+=_pl.ext.bottom; }  // 차트 밖 자리일 때만 그만큼 여백
+  const _hd=_headInfo(); if(_hd) y0-=_hd.band;  // 조직도 이름 · 기준일 띠
   const W=Math.round((x1-x0+80)*2), H=Math.round((y1-y0+80)*2);
   const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
   const ctx=cv.getContext('2d');
@@ -5023,6 +5063,7 @@ function exportPNG(){
   ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
   ctx.setTransform(2,0,0,2,(40-x0)*2,(40-y0)*2);
   const font=getComputedStyle(document.body).fontFamily||'sans-serif';
+  if(_hd){ ctx.save(); ctx.font='bold 20px '+font; ctx.fillStyle='#222'; ctx.textBaseline='middle'; ctx.textAlign=_hd.align; ctx.fillText(_hd.text,_hd.align==='left'?_cx0:(_hd.align==='right'?_cx1:(_cx0+_cx1)/2),y0+_hd.h/2); ctx.restore(); }
   const fitText=(text,left,y,weight,size,avail)=>{
     const m=/^([\d.]+)(.*)$/.exec(String(size)), base=m?parseFloat(m[1]):13, unit=m?m[2]:'px';
     const wp=weight?weight+' ':'';
@@ -5164,8 +5205,10 @@ function preparePrint(){
   const {x0,y0,x1,y1}=_chartBounds();
   const _pl=_statsBoxPlan({x0,y0,x1,y1}), _sd=_pl?_pl.sd:null;
   const _bx0=x0-(_pl?_pl.ext.left:0), _bx1=x1+(_pl?_pl.ext.right:0), _by1=y1+(_pl?_pl.ext.bottom:0);  // 차트 밖 자리일 때만 여백
-  const sc=Math.min((1123-40)/(_bx1-_bx0),(794-40)/(_by1-y0),1);
-  cvs.style.transform=`translate(${20-_bx0*sc}px,${20-y0*sc}px) scale(${sc})`;
+  const _hd=_headInfo(), _ty0=_hd?y0-_hd.band:y0;  // 조직도 이름 · 기준일 띠
+  const sc=Math.min((1123-40)/(_bx1-_bx0),(794-40)/(_by1-_ty0),1);
+  cvs.style.transform=`translate(${20-_bx0*sc}px,${20-_ty0*sc}px) scale(${sc})`;
+  if(_hd){ const hd=document.createElement('div'); hd.id='print-head'; hd.textContent=_hd.text; hd.style.left=(20+(x0-_bx0)*sc)+'px'; hd.style.top=(20+(_hd.h/2-10)*sc)+'px'; hd.style.width=((x1-x0)*sc)+'px'; hd.style.fontSize=(20*sc)+'px'; hd.style.textAlign=_hd.align; document.body.appendChild(hd); }
   if(_pl){
     const r=x=>`<div class="ps-row"><i style="background:${x.col}"></i><span>${esc(x.name)}</span><b>${x.cnt}</b></div>`;
     const bx=document.createElement('div'); bx.id='print-stats';
@@ -5181,7 +5224,7 @@ function restorePrint(){
   const p=_prep; _prep=null;
   const w=document.getElementById('wrap'), cvs=document.getElementById('canvas');
   document.body.classList.remove('printing');
-  { const b=document.getElementById('print-stats'); if(b) b.remove(); }
+  { const b=document.getElementById('print-stats'); if(b) b.remove(); const h=document.getElementById('print-head'); if(h) h.remove(); }
   S.scale=p.scale; cvs.style.transform=p.tf;
   w.scrollLeft=p.sl; w.scrollTop=p.st;
 }
