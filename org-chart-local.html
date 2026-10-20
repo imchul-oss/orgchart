@@ -453,6 +453,9 @@ body:not(.bodyband) .nb.mcol{padding-left:0;background:var(--card-bg);}
 .sfl-total{border-top:1px solid rgba(255,255,255,.12);margin-top:6px;padding-top:7px;display:flex;justify-content:space-between;align-items:center;}
 .sfl-total-lbl{font-size:10px;opacity:.5;}
 .sfl-total-num{font-size:14px;font-weight:800;}
+.sfl-inc{display:inline-flex;align-items:center;gap:2px;font-size:10px;color:#9aa3b2;margin-left:4px;white-space:nowrap;cursor:pointer;}
+.sfl-inc input{margin:0;width:12px;height:12px;}
+.sfl-row.sfl-off .sfl-lbl,.sfl-row.sfl-off .sfl-num{opacity:.55;}
 .sfl-ex-btn{background:none;border:1px solid rgba(255,255,255,.15);border-radius:3px;cursor:pointer;color:rgba(255,255,255,.3);font-size:10px;font-weight:700;padding:0px 4px;line-height:16px;margin-left:2px;transition:.12s;}
 .sfl-ex-btn:hover{color:#fff;border-color:rgba(255,255,255,.5);background:rgba(255,255,255,.1);}
 .sfl-ex-in{color:var(--mint);border-color:var(--mint);opacity:.45;}
@@ -967,7 +970,7 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
           <span class="opt-lbl">인원 수 셈법</span>
           <select id="opt-cntmode" class="opt-orient-sel" onchange="OPT.cntMode=this.value;render();saveOptLS()">
             <option value="count">현원</option>
-            <option value="ratio">현원/정원 (정원 = 현원 + 자리)</option>
+            <option value="ratio">현원/정원 (현황 그룹에서 선택)</option>
           </select>
         </div>
         <div class="opt-row">
@@ -1923,29 +1926,28 @@ function nodeTitle(nd){ return (nd&&(nd.en||nd.ko))||''; }
 function _cntCcVal(){return (OPT.cntCc==='inc'||OPT.cntCc==='exc')?OPT.cntCc:'sep';}
 function _toKeys(){ return new Set(OPT.statusItems.filter(x=>x.to===true).map(x=>x.key)); }  // 자리(TO) 상태: 인원이 아닌 빈 자리 (철님 10-20)
 function _exGroupKeys(){ return new Set(OPT.statsGroups.filter(g=>g.excludeTotal).flatMap(g=>g.statuses)); }  // 합산 제외 그룹의 상태
-function _exKeys(){ const k=_exGroupKeys(); _toKeys().forEach(x=>k.add(x)); return k; }  // 총원·현원에서 빠지는 상태 = 합산 제외 그룹 + 자리
-// ═══ 집계 (철님 10-20): 인원은 여기서만 센다. 카드 인원 수, 현황 탭, 접힌 제목, 시트 탭, 팀 탭, 인쇄·PNG 표가 모두 이 값을 읽는다.
-// memberKind: 'to' 자리 | 'cc' 겸직 항목 | 'xcc' 합산 제외 상태의 겸직 항목(어디에도 안 셈) | 'ex' 합산 제외 상태의 사람 | 'p' 합산하는 사람. 항목 수로 세고 이름으로 합치지 않는다.
+function _exKeys(){ return _exGroupKeys(); }  // 현원에서 빠지는 상태 = 현원 꺼진 그룹의 상태
+// ═══ 집계 (철님 10-20): 인원은 여기서만 센다. 현원·정원은 현황 그룹마다 고른다 (현원 = excludeTotal 아님, 정원 = inTot, 기본 둘 다 포함)
+function _grpFlags(k){ const g=OPT.statsGroups.find(g=>g.statuses.includes(k)); return g?{cur:!g.excludeTotal,tot:g.inTot!==false}:{cur:true,tot:true}; }  // 그룹에 없는 상태는 둘 다 포함
+// memberKind: 'cc' 겸직 항목 | 'xcc' 현원 밖 상태의 겸직 항목(어디에도 안 셈) | 'p' 현원·정원 | 'ponly' 현원만 | 'tot' 정원만(자리) | 'none' 둘 다 아님. 항목 수로 세고 이름으로 합치지 않는다.
 function memberKind(m){
-  const defKey=OPT.statusItems[0]?.key||'active', k=m.s||defKey;
-  if(_toKeys().has(k)) return 'to';
-  const ex=_exGroupKeys().has(k);
-  if(m.cc===true) return ex?'xcc':'cc';
-  return ex?'ex':'p';
+  const defKey=OPT.statusItems[0]?.key||'active', k=m.s||defKey, f=_grpFlags(k);
+  if(m.cc===true) return f.cur?'cc':'xcc';
+  return f.cur?(f.tot?'p':'ponly'):(f.tot?'tot':'none');
 }
-function tally(nodes){ const t={p:0,ex:0,cc:0,xcc:0,to:0}; nodes.forEach(n=>(n.m||[]).forEach(m=>{ t[memberKind(m)]++; })); return t; }
+function tally(nodes){ const t={p:0,ponly:0,tot:0,none:0,cc:0,xcc:0}; nodes.forEach(n=>(n.m||[]).forEach(m=>{ t[memberKind(m)]++; })); t.cur=t.p+t.ponly; t.all=t.p+t.tot; return t; }
 function tallyNode(nd){ return tally([nd]); }
 function scopeNodes(scope){ return scope==='all'?SHEETS.flatMap((_,i)=>_sflSheetNodes(i)):S.nodes; }  // 현재 시트 | 전체 시트
 function cntLabel(nd){
   if(OPT.showCnt===false) return '';
   const t=tallyNode(nd), ratio=OPT.cntMode==='ratio', mode=_cntCcVal();
-  // 현원: '현원' 모드는 합산하는 사람(p), '현원/정원' 모드는 사람 전부(p+ex, 휴직 포함)이고 정원 = 현원 + 자리, 같아도 7/7명 (철님 10-20)
-  const M=ratio?t.p+t.ex:t.p, C=t.cc, X=ratio?t.to:0;
-  const lab=v=>ratio?v+'/'+(v+t.to)+'명':v+'명';
-  if(mode==='inc') return (M+C+X)>0?lab(M+C):'';
-  if(mode==='exc') return (M+X)>0?lab(M):'';
-  if(M+C+X===0) return '';
-  return C>0?lab(M)+' +'+C+'겸':lab(M);
+  // '현원' 모드 = 현원 그룹의 사람, '현원/정원' 모드 = 현원/정원 (정원 그룹의 사람과 자리); 같아도 7/7명 (철님 10-20)
+  const M=t.cur, T=t.all, C=t.cc;
+  const lab=(v,tv)=>ratio?v+'/'+tv+'명':v+'명';
+  if(mode==='inc') return (M+C+(ratio?T:0))>0?lab(M+C,T+C):'';
+  if(mode==='exc') return (M+(ratio?T:0))>0?lab(M,T):'';
+  if(M+C+(ratio?T:0)===0) return '';
+  return C>0?lab(M,T)+' +'+C+'겸':lab(M,T);
 }
 function _cntStyleVals(){
   const iv=(v,lo,hi,d)=>(Number.isInteger(v)&&v>=lo&&v<=hi)?v:d;
@@ -4244,7 +4246,6 @@ function renderStatusCatList(){
       ${mkHexInp(x.color,`OPT.statusItems[${i}].color=this.value;applyStatusColor('${x.key}',this.value);renderSgList()`)}
       <input type="text" class="stcat-lbl" value="${esc(x.label)}"
         oninput="OPT.statusItems[${i}].label=this.value;renderSgList();updateSt();saveOptLS()">
-      <label class="stcat-to" title="자리(TO): 인원이 아닌 빈 자리 - 현원에서 빠지고 정원에만 들어간다"><input type="checkbox" data-to="1"${x.to===true?' checked':''} onchange="OPT.statusItems[${i}].to=this.checked;render();updateSt();saveOptLS()">자리</label>
       <button class="stcat-del" onclick="removeStatusCat(${i})">✕</button>
     </div>`).join('');
 }
@@ -4300,10 +4301,13 @@ function renderSgList(){
             onchange="sgToggle(${i},'${x.key}',this.checked)">
           <span style="color:${x.color}">${esc(x.label)}</span>
         </label>`).join('')}
-        <label class="sg-check" title="현황 탭 총원 합산에서 제외" style="margin-left:6px;border-left:1px solid rgba(0,0,0,.1);padding-left:6px;">
-          <input type="checkbox" ${g.excludeTotal?'checked':''}
-            onchange="OPT.statsGroups[${i}].excludeTotal=this.checked;updateSt();saveOptLS()">
-          <span style="opacity:.55">합산제외</span>
+        <label class="sg-check" title="현원에 포함" style="margin-left:6px;border-left:1px solid rgba(0,0,0,.1);padding-left:6px;">
+          <input type="checkbox" data-inc="cur" ${g.excludeTotal?'':'checked'} onchange="sgSetInc(${i},'cur',this.checked)">
+          <span style="opacity:.7">현원</span>
+        </label>
+        <label class="sg-check" title="정원에 포함">
+          <input type="checkbox" data-inc="tot" ${g.inTot===false?'':'checked'} onchange="sgSetInc(${i},'tot',this.checked)">
+          <span style="opacity:.7">정원</span>
         </label>
       </div>
       <button class="sg-del" onclick="removeSg(${i})">✕</button>
@@ -4845,7 +4849,7 @@ function _applyOptObj(d){
       .filter(g=>g&&typeof g==='object')
       .map(g=>({name:String(g.name||'그룹').slice(0,30),
                 statuses:Array.isArray(g.statuses)?g.statuses.filter(k=>typeof k==='string'):[],
-                ...(g.excludeTotal?{excludeTotal:true}:{})}));
+                ...(g.excludeTotal?{excludeTotal:true}:{}),...(g.inTot===false?{inTot:false}:{})}));
   }
   if(d.dataLabel) OPT.dataLabel=d.dataLabel;
   if(d.logoText!=null) OPT.logoText=d.logoText;
@@ -5415,9 +5419,9 @@ function _sflFit(){
   if(room<160){ const nt=Math.max(60,r.top-(160-room)); fl.style.top=nt+'px'; fl.style.bottom='auto'; r=fl.getBoundingClientRect(); }
   if(r.bottom>lim) b.style.maxHeight=Math.max(80,b.clientHeight-(r.bottom-lim))+'px';
 }
-function _sflStatusOk(m){ const k=memberKind(m); return k==='p'||k==='cc'; }  // 집계 대상 (자리·합산 제외 상태 아님)
-function _sflCounted(m){ return memberKind(m)==='p'; }
-function _sflCountNodes(nodes){ return tally(nodes).p; }
+function _sflStatusOk(m){ const k=memberKind(m); return k==='p'||k==='ponly'||k==='cc'; }  // 현원 집계 대상
+function _sflCounted(m){ const k=memberKind(m); return k==='p'||k==='ponly'; }
+function _sflCountNodes(nodes){ return tally(nodes).cur; }
 
 // ── 팀 탭: 범위(현재/전체 시트), 접기, 카드로 이동
 var _sflScope='cur', _sflFold=new Set();
@@ -5602,13 +5606,12 @@ function _statSummaryData(scope){
   const defKey=OPT.statusItems[0]?.key||'active';
   const all=nodes.flatMap(n=>n.m||[]).filter(m=>m.cc!==true);
   if(!all.length) return null;
-  const incl=OPT.statsGroups.filter(g=>!g.excludeTotal), excl=OPT.statsGroups.filter(g=>g.excludeTotal);
-  const row=g=>({gi:OPT.statsGroups.indexOf(g),name:g.name,cnt:all.filter(m=>g.statuses.includes(m.s||defKey)).length,col:statusItemColor(g.statuses[0])});
+  const row=g=>({gi:OPT.statsGroups.indexOf(g),name:g.name,cnt:all.filter(m=>g.statuses.includes(m.s||defKey)).length,col:statusItemColor(g.statuses[0]),inCur:!g.excludeTotal,inTot:g.inTot!==false});
   const grouped=new Set(OPT.statsGroups.flatMap(g=>g.statuses));
   const orphans=all.filter(m=>!grouped.has(m.s||defKey)).length;
-  const rows=incl.map(row); if(orphans) rows.push({gi:-1,name:'미분류',cnt:orphans,col:'#888'});
+  const rows=OPT.statsGroups.map(row); if(orphans) rows.push({gi:-1,name:'미분류',cnt:orphans,col:'#888',inCur:true,inTot:true});
   const t=tally(nodes);
-  return {rows,total:t.p,excl:excl.map(row),to:t.to,scope,sheet:scope==='all'?'전체':((SHEETS[CUR_SHEET]&&SHEETS[CUR_SHEET].name)||'')};
+  return {rows,total:t.cur,tot:t.all,excl:[],to:t.tot,scope,sheet:scope==='all'?'전체':((SHEETS[CUR_SHEET]&&SHEETS[CUR_SHEET].name)||'')};
 }
 const _SB_W=150;  // 인쇄·PNG 인원 현황표 폭
 // 인쇄·PNG 인원 현황표 자리 계획 (철님 10-20): b = 차트 테두리. 표시 옵션이 꺼졌거나 자료가 없으면 null.
@@ -5677,20 +5680,16 @@ function _statPanelHtml(){
     // ── 현황 탭: _statSummaryData 한 곳에서 (인쇄·PNG 표와 같은 숫자), 현재/전체 시트 전환 (철님 10-20)
     const all=_sflScope==='all';
     html+=`<div class="sfl-scopes"><button class="sfl-scope${all?'':' on'}" data-scope="cur" onclick="_sflSetScope('cur')">현재 시트</button><button class="sfl-scope${all?' on':''}" data-scope="all" onclick="_sflSetScope('all')">전체 시트</button></div>`;
-    const sd=_statSummaryData(_sflScope)||{rows:[],total:0,excl:[]};
-    const rowHtml=(r,ex)=>`<div class="sfl-row">
+    const sd=_statSummaryData(_sflScope)||{rows:[],total:0,tot:0};
+    const box=(r,w,on)=>r.gi>=0?`<label class="sfl-inc" title="${w==='cur'?'현원에 포함':'정원에 포함'}"><input type="checkbox" data-inc="${w}"${on?' checked':''} onchange="sgSetInc(${r.gi},'${w}',this.checked)">${w==='cur'?'현원':'정원'}</label>`:'';
+    sd.rows.forEach(r=>{ html+=`<div class="sfl-row${r.inCur?'':' sfl-off'}">
         <div class="sfl-dot" style="background:${r.col}"></div>
         <span class="sfl-lbl"${r.gi<0?' style="opacity:.6"':''}>${esc(r.name)}</span>
         <span class="sfl-num">${r.cnt}</span>
-        ${r.gi>=0?(ex?`<button class="sfl-ex-btn sfl-ex-in" title="합산 포함으로 이동" onclick="toggleGroupExclude(${r.gi})">＋</button>`:`<button class="sfl-ex-btn" title="합산 제외로 이동" onclick="toggleGroupExclude(${r.gi})">−</button>`):''}
-      </div>`;
-    sd.rows.forEach(r=>{ html+=rowHtml(r,false); });
-    html+=`<div class="sfl-total"><span class="sfl-total-lbl">총원</span><span class="sfl-total-num">${sd.total}</span></div>`;
-    if(sd.excl.length){
-      html+=`<div class="sfl-sec"><div class="sfl-sec-lbl">합산 제외</div>`;
-      sd.excl.forEach(r=>{ html+=rowHtml(r,true); });
-      html+=`</div>`;
-    }
+        ${box(r,'cur',r.inCur)}${box(r,'tot',r.inTot)}
+      </div>`; });
+    html+=`<div class="sfl-total"><span class="sfl-total-lbl">현원</span><span class="sfl-total-num">${sd.total}</span></div>`;
+    html+=`<div class="sfl-total"><span class="sfl-total-lbl">정원</span><span class="sfl-total-num">${sd.tot}</span></div>`;
 
   } else if(_statTab==='job'){
     // ── 직무 탭: 직무 카테고리별 인원 (현황그룹 필터 적용 가능)
@@ -5793,6 +5792,12 @@ function addToCatBtn(el){
   else if(type==='role'){ if(!OPT.roleCats.includes(val)) OPT.roleCats.push(val); }
   else { if(!OPT.areaCats.includes(val)) OPT.areaCats.push(val); }
   renderCatList(type); saveOptLS(); updateStatsPanel();
+}
+function sgSetInc(gi,which,on){  // 현황 탭·옵션 그룹 편집의 현원/정원 체크 (철님 10-20)
+  if(!ADMIN){ updateStatsPanel(); return; }
+  const g=OPT.statsGroups[gi]; if(!g) return;
+  if(which==='cur') g.excludeTotal=!on; else g.inTot=on===true;
+  saveOptLS(); render(); updateStatsPanel(); if(typeof renderSgList==='function'&&document.getElementById('sg-list')) renderSgList();
 }
 function toggleGroupExclude(i){
   if(!ADMIN) return;
