@@ -289,10 +289,7 @@ body.present #mtip{display:none!important;}
 
 /* Member rows */
 .nb{background:var(--card-bg);border-radius:0 0 var(--card-radius) var(--card-radius);overflow:hidden;}
-.nb:empty{position:absolute;left:0;right:0;top:100%;height:22px;min-height:0;background:var(--card-bg);opacity:.9;box-shadow:0 2px 6px rgba(0,0,0,.12);}  /* 구성원이 없는 카드: 배치는 머리글 높이만, ＋ 띠는 머리글 아래에 겹쳐 뜬다 (철님 10-20: 화면과 출력 배치를 같게) */
-.nb:empty::before{content:'＋';display:flex;align-items:center;justify-content:center;height:22px;color:#C8CDD8;font-size:15px;pointer-events:none;}
-body.printing .nb:empty{display:none!important;}
-@media print{.nb:empty{display:none!important;}}
+.nb:empty{height:10px;min-height:10px;}  /* 구성원이 없는 카드의 얇은 아래 마감 (EMPTY_CAP, 철님 10-20) - 화면·인쇄·PNG 같은 높이, 구성원 끌어다 놓는 자리 */
 .mr{padding:4px 10px 4px calc(var(--band-w) + 8px);height:var(--mh);position:relative;display:flex;align-items:center;gap:0;border-top:1px solid var(--row-border);box-sizing:border-box;overflow:hidden;}
 .mr:nth-child(even){background:var(--row-even);}
 .nb.mcol{display:grid;padding-left:var(--band-w);background:linear-gradient(var(--band-color,var(--mint)),var(--band-color,var(--mint))) left top/var(--band-w) 100% no-repeat,var(--card-bg);}
@@ -1211,7 +1208,7 @@ const OPT = {
   uiMint:'#40D2A7', uiSky:'#60DCF8', uiCoral:'#FF8770', topbarBg:'#2C2C2C',
   statsBg:'#1C1C20', stbarBg:'#1A1A1A',
   // 카드 스타일
-  cardRadius:8, shadowA:0.11, bodyBand:false, gradColor:false, sbShow:true, sbPos:'tl', sbMode:'auto', sbScale:100, showCnt:true, cntPos:'tr', cntColor:'', cntCc:'sep', cntMode:'count', cntSize:9, cntDx:0, cntDy:0,
+  cardRadius:8, shadowA:0.11, bodyBand:false, gradColor:false, sbShow:true, sbPos:'tl', sbMode:'auto', sbScale:100, showCnt:true, cntPos:'tr', cntColor:'', optVer:3, cntCc:'sep', cntMode:'count', cntSize:9, cntDx:0, cntDy:0,
   // 헤더 배경색
   hdrTop:'#1A1A1A', hdrL1:'#2C2C2C', hdrL2:'#383838', hdrL3:'#424242',
   hdrL4:'#4A4A4A', hdrL5:'#525252', hdrTf:'#30304A', hdrSide:'#323232',
@@ -1345,7 +1342,8 @@ function init() {
 }
 
 // ═══ Node height
-function nh(nd) { const _m=(nd.m||[]).length; return CUR_HH + (_m ? Math.ceil(_m/_mcOf(nd))*CUR_MH : 0); }  // 구성원이 없는 카드는 어디서나 머리글 높이 (철님 10-20); 화면의 ＋ 띠는 배치 밖 오버레이
+const EMPTY_CAP=10;  // 구성원이 없는 카드의 아래 마감 높이 (철님 10-20: 머리글만 있으면 어색하니 얇게 둥근 마감) - 화면·인쇄·PNG 모두 같은 높이
+function nh(nd) { const _m=(nd.m||[]).length; return CUR_HH + (_m ? Math.ceil(_m/_mcOf(nd))*CUR_MH : EMPTY_CAP); }
 
 // ═══ 인원 열 수 (nd.mc: 2·3·4, 없으면 1열) — 카드 폭 = 색띠 + 열 수 × 일반 카드의 멤버 영역 폭
 const AC_MAX=8, MC_MAX=8;  // 직속 카드 한 줄 개수·인원 열 수 상한 - 배치 계산은 열 수를 변수로 받으므로 입력 검증에만 쓴다 (철님 10-20: 3개 상한에 이유 없음)
@@ -1896,20 +1894,29 @@ function headCount(nd){
 function nodeTitle(nd){ return (nd&&(nd.en||nd.ko))||''; }
 function _cntCcVal(){return (OPT.cntCc==='inc'||OPT.cntCc==='exc')?OPT.cntCc:'sep';}
 function _toKeys(){ return new Set(OPT.statusItems.filter(x=>x.to===true).map(x=>x.key)); }  // 자리(TO) 상태: 인원이 아닌 빈 자리 (철님 10-20)
-function _exKeys(){ const k=new Set(OPT.statsGroups.filter(g=>g.excludeTotal).flatMap(g=>g.statuses)); _toKeys().forEach(x=>k.add(x)); return k; }  // 총원·현원에서 빠지는 상태 = 합산 제외 그룹 + 자리
+function _exGroupKeys(){ return new Set(OPT.statsGroups.filter(g=>g.excludeTotal).flatMap(g=>g.statuses)); }  // 합산 제외 그룹의 상태
+function _exKeys(){ const k=_exGroupKeys(); _toKeys().forEach(x=>k.add(x)); return k; }  // 총원·현원에서 빠지는 상태 = 합산 제외 그룹 + 자리
+// ═══ 집계 (철님 10-20): 인원은 여기서만 센다. 카드 인원 수, 현황 탭, 접힌 제목, 시트 탭, 팀 탭, 인쇄·PNG 표가 모두 이 값을 읽는다.
+// memberKind: 'to' 자리 | 'cc' 겸직 항목 | 'xcc' 합산 제외 상태의 겸직 항목(어디에도 안 셈) | 'ex' 합산 제외 상태의 사람 | 'p' 합산하는 사람. 항목 수로 세고 이름으로 합치지 않는다.
+function memberKind(m){
+  const defKey=OPT.statusItems[0]?.key||'active', k=m.s||defKey;
+  if(_toKeys().has(k)) return 'to';
+  const ex=_exGroupKeys().has(k);
+  if(m.cc===true) return ex?'xcc':'cc';
+  return ex?'ex':'p';
+}
+function tally(nodes){ const t={p:0,ex:0,cc:0,xcc:0,to:0}; nodes.forEach(n=>(n.m||[]).forEach(m=>{ t[memberKind(m)]++; })); return t; }
+function tallyNode(nd){ return tally([nd]); }
+function scopeNodes(scope){ return scope==='all'?SHEETS.flatMap((_,i)=>_sflSheetNodes(i)):S.nodes; }  // 현재 시트 | 전체 시트
 function cntLabel(nd){
   if(OPT.showCnt===false) return '';
-  const defKey=OPT.statusItems[0]?.key||'active';
-  const TO=_toKeys(), exK=_exKeys();
-  const all=(nd.m||[]), persons=all.filter(m=>!TO.has(m.s||defKey)), to=all.length-persons.length;
-  const ratio=OPT.cntMode==='ratio', mode=_cntCcVal();
-  // 현원 = 사람(자리 상태 제외). '현원' 모드는 합산 제외 그룹도 빼고, '현원/정원' 모드는 사람 전부(휴직 포함)를 세며 정원 = 현원 + 자리, 같아도 7/7명으로 표시 (철님 10-20)
-  const ms=ratio?persons:persons.filter(m=>!exK.has(m.s||defKey));
-  const C=ms.filter(m=>m.cc===true).length, M=ms.length-C;
-  const lab=p=>ratio?p+'/'+(p+to)+'명':p+'명';
-  if(mode==='inc') return (ms.length+(ratio?to:0))>0?lab(ms.length):'';
-  if(mode==='exc') return (M+(ratio?to:0))>0?lab(M):'';
-  if(M+C+(ratio?to:0)===0) return '';
+  const t=tallyNode(nd), ratio=OPT.cntMode==='ratio', mode=_cntCcVal();
+  // 현원: '현원' 모드는 합산하는 사람(p), '현원/정원' 모드는 사람 전부(p+ex, 휴직 포함)이고 정원 = 현원 + 자리, 같아도 7/7명 (철님 10-20)
+  const M=ratio?t.p+t.ex:t.p, C=t.cc, X=ratio?t.to:0;
+  const lab=v=>ratio?v+'/'+(v+t.to)+'명':v+'명';
+  if(mode==='inc') return (M+C+X)>0?lab(M+C):'';
+  if(mode==='exc') return (M+X)>0?lab(M):'';
+  if(M+C+X===0) return '';
   return C>0?lab(M)+' +'+C+'겸':lab(M);
 }
 function _cntStyleVals(){
@@ -4432,7 +4439,7 @@ function resetOptions(){
     strokeW:1.8,strokeDashW:1.5,
     uiMint:'#40D2A7',uiSky:'#60DCF8',uiCoral:'#FF8770',topbarBg:'#2C2C2C',
     statsBg:'#1C1C20',stbarBg:'#1A1A1A',
-    cardRadius:8,shadowA:0.11,bodyBand:false,gradColor:false,sbShow:true,sbPos:'tl',sbMode:'auto',sbScale:100,showCnt:true,cntPos:'tr',cntColor:'',cntCc:'sep',cntMode:'count',cntSize:9,cntDx:0,cntDy:0,
+    cardRadius:8,shadowA:0.11,bodyBand:false,gradColor:false,sbShow:true,sbPos:'tl',sbMode:'auto',sbScale:100,showCnt:true,cntPos:'tr',cntColor:'',optVer:3,cntCc:'sep',cntMode:'count',cntSize:9,cntDx:0,cntDy:0,
     canvasBg:'#ECEEF3',cardBg:'#FFFFFF',rowEven:'#FAFBFD',rowBorder:'#F2F3F6',
     hdrTop:'#1A1A1A',hdrL1:'#2C2C2C',hdrL2:'#383838',hdrL3:'#424242',
     hdrL4:'#4A4A4A',hdrL5:'#525252',hdrTf:'#30304A',hdrSide:'#323232',
@@ -4816,7 +4823,15 @@ function _applyOptObj(d){
   if(d.logoSub!=null)  OPT.logoSub=d.logoSub;
   if(d.logoColor)      OPT.logoColor=d.logoColor;
   if(d.logoSubColor)   OPT.logoSubColor=d.logoSubColor;
+  OPT.optVer=3;  // 옵션 판: 옛 파일의 빠진 필드는 위에서 정한 기본값으로 채웠다 (철님 10-20)
   if(typeof applyLogo==='function') applyLogo();
+}
+// 파일 객체 하나를 앱에 싣는 공통 경로 (철님 10-20): 파일 열기·가져오기·판정기가 같은 순서(자료 -> 옵션 -> 마무리)를 쓴다
+function loadObject(d,keepView){
+  if(!d||(!Array.isArray(d.sheets)&&!Array.isArray(d.nodes))) throw new Error('sheets/nodes 필드가 없는 파일입니다.');
+  _adoptData(d,keepView===true);
+  if(d.opt) _applyOptObj(d.opt);
+  _finishLoad(_hasPositions(S.nodes));
 }
 // 로드 마무리 공통부: 저장된 좌표가 있으면 그대로 살리고, 없으면 자동 배치
 function _finishLoad(hasPos){
@@ -5294,6 +5309,7 @@ function importJSON(inp){
         S.nid=Math.max(200,...SHEETS.flatMap(s2=>[...s2.nodes,...s2.conns]).map(x=>parseInt((x.id||'').replace(/\D/g,''))||0));
       }
       if(data.opt) _applyOptObj(data.opt);
+      applyAllFontHeights();  // 가져오기 경로도 파일 열기와 같은 머리글·행 높이 (철님 10-20)
       const b=document.getElementById('btn-data');
       if(b) b.textContent='◈ '+OPT.dataLabel;
       renderSheetTabs();
@@ -5347,24 +5363,18 @@ function _sflFit(){
   if(room<160){ const nt=Math.max(60,r.top-(160-room)); fl.style.top=nt+'px'; fl.style.bottom='auto'; r=fl.getBoundingClientRect(); }
   if(r.bottom>lim) b.style.maxHeight=Math.max(80,b.clientHeight-(r.bottom-lim))+'px';
 }
-function _sflStatusOk(m){
-  const defKey=OPT.statusItems[0]?.key||'active';
-  const ex=_exKeys();
-  return !ex.has(m.s||defKey);
-}
-function _sflCounted(m){ return m.cc!==true&&_sflStatusOk(m); }
-function _sflCountNodes(nodes){
-  let c=0; nodes.forEach(n=>(n.m||[]).forEach(m=>{ if(_sflCounted(m)) c++; }));
-  return c;
-}
+function _sflStatusOk(m){ const k=memberKind(m); return k==='p'||k==='cc'; }  // 집계 대상 (자리·합산 제외 상태 아님)
+function _sflCounted(m){ return memberKind(m)==='p'; }
+function _sflCountNodes(nodes){ return tally(nodes).p; }
 
 // ── 팀 탭: 범위(현재/전체 시트), 접기, 카드로 이동
 var _sflScope='cur', _sflFold=new Set();
 function _sflSheetNodes(i){ return i===CUR_SHEET?S.nodes:((SHEETS[i]&&SHEETS[i].nodes)||[]); }
 function _sflSheetConns(i){ return i===CUR_SHEET?S.conns:((SHEETS[i]&&SHEETS[i].conns)||[]); }
-function _sflNames(nodes,cc){
-  const st=new Set();
-  nodes.forEach(n=>(n&&n.m||[]).forEach(m=>{ if(cc?(m.cc===true&&_sflStatusOk(m)):_sflCounted(m)) st.add(m.n); }));
+function _sflNames(nodes,cc,si){
+  // 항목마다 고유 토큰(시트:카드:순번)을 담는다 - .size는 항목 수, 합칠 때도 이름이 같다고 겹치지 않는다 (철님 10-20: 빈 이름 자리 N개가 1명으로 세던 문제)
+  const st=new Set(), pre=(si==null?CUR_SHEET:si)+':';
+  nodes.forEach(n=>(n&&n.m||[]).forEach((m,i)=>{ const k=memberKind(m); if(cc?k==='cc':k==='p') st.add(pre+n.id+':'+i); }));
   return st;
 }
 function _sflLabel(n){ return (n&&(n.en||n.ko))||''; }
@@ -5409,7 +5419,7 @@ function _sflMapAll(){
     if(nk) (byNorm[nk]=byNorm[nk]||[]).push(String(n.id));
   });
   const own={}, cc={}, unmatched=[];
-  base.forEach(n=>{ const id=String(n.id); own[id]=_sflNames([n],false); cc[id]=_sflNames([n],true); });
+  base.forEach(n=>{ const id=String(n.id); own[id]=_sflNames([n],false,0); cc[id]=_sflNames([n],true,0); });
   for(let i=1;i<SHEETS.length;i++){
     const nodes=_sflSheetNodes(i), conns=_sflSheetConns(i), byId={}, memo={};
     nodes.forEach(n=>{ byId[String(n.id)]=n; });
@@ -5435,7 +5445,7 @@ function _sflMapAll(){
     };
     nodes.forEach(n=>{
       const id=String(n.id), b=map(id,new Set());
-      if(b){ _sflNames([n],false).forEach(x=>own[b].add(x)); _sflNames([n],true).forEach(x=>cc[b].add(x)); }
+      if(b){ _sflNames([n],false,i).forEach(x=>own[b].add(x)); _sflNames([n],true,i).forEach(x=>cc[b].add(x)); }
       else unmatched.push({sheet:i,n});
     });
   }
@@ -5486,7 +5496,7 @@ function _sflTeamHtml(){
       });
     }
     const names=new Set();
-    SHEETS.forEach((_,i)=>_sflNames(_sflSheetNodes(i),false).forEach(x=>names.add(x)));
+    SHEETS.forEach((_,i)=>_sflNames(_sflSheetNodes(i),false,i).forEach(x=>names.add(x)));
     html+=`<div class="sfl-total"><span class="sfl-total-lbl sfl-ell">전체</span><span class="sfl-total-num">${names.size}</span></div>`;
   } else {
     html+=`<div class="sfl-total"><span class="sfl-total-lbl sfl-ell">${esc(SHEETS[CUR_SHEET]?SHEETS[CUR_SHEET].name:'')}</span><span class="sfl-total-num">${_sflNames(S.nodes,false).size}</span></div>`;
@@ -5535,17 +5545,18 @@ function _sflSumField(nd){
 }
 
 // 현황 탭과 같은 숫자 - 인쇄·PNG의 인원 현황표가 쓴다 (화면 창과 따로 세면 두 값이 갈라진다)
-function _statSummaryData(){
+function _statSummaryData(scope){
+  scope=scope||_sflScope; const nodes=scopeNodes(scope);
   const defKey=OPT.statusItems[0]?.key||'active';
-  const all=S.nodes.flatMap(n=>n.m||[]).filter(m=>m.cc!==true);
+  const all=nodes.flatMap(n=>n.m||[]).filter(m=>m.cc!==true);
   if(!all.length) return null;
   const incl=OPT.statsGroups.filter(g=>!g.excludeTotal), excl=OPT.statsGroups.filter(g=>g.excludeTotal);
-  const row=g=>({name:g.name,cnt:all.filter(m=>g.statuses.includes(m.s||defKey)).length,col:statusItemColor(g.statuses[0])});
+  const row=g=>({gi:OPT.statsGroups.indexOf(g),name:g.name,cnt:all.filter(m=>g.statuses.includes(m.s||defKey)).length,col:statusItemColor(g.statuses[0])});
   const grouped=new Set(OPT.statsGroups.flatMap(g=>g.statuses));
   const orphans=all.filter(m=>!grouped.has(m.s||defKey)).length;
-  const exclKeys=_exKeys();
-  const rows=incl.map(row); if(orphans) rows.push({name:'미분류',cnt:orphans,col:'#888'});
-  return {rows,total:all.filter(m=>!exclKeys.has(m.s||defKey)).length,excl:excl.map(row),sheet:(SHEETS[CUR_SHEET]&&SHEETS[CUR_SHEET].name)||''};
+  const rows=incl.map(row); if(orphans) rows.push({gi:-1,name:'미분류',cnt:orphans,col:'#888'});
+  const t=tally(nodes);
+  return {rows,total:t.p,excl:excl.map(row),to:t.to,scope,sheet:scope==='all'?'전체':((SHEETS[CUR_SHEET]&&SHEETS[CUR_SHEET].name)||'')};
 }
 const _SB_W=150;  // 인쇄·PNG 인원 현황표 폭
 // 인쇄·PNG 인원 현황표 자리 계획 (철님 10-20): b = 차트 테두리. 표시 옵션이 꺼졌거나 자료가 없으면 null.
@@ -5596,47 +5607,21 @@ function updateStatsPanel(){
   let html='';
 
   if(_statTab==='summary'){
-    // ── 현황 탭: statsGroups 기준 인원 + 총원 (합산 제외 그룹 분리)
-    const incl=OPT.statsGroups.filter(g=>!g.excludeTotal);
-    const excl=OPT.statsGroups.filter(g=>g.excludeTotal);
-    const allGroupedKeys=new Set(OPT.statsGroups.flatMap(g=>g.statuses));
-    incl.forEach(g=>{
-      const gi=OPT.statsGroups.indexOf(g);
-      const cnt=allMembers.filter(m=>g.statuses.includes(m.s||defKey)).length;
-      const col=statusItemColor(g.statuses[0]);
-      html+=`<div class="sfl-row">
-        <div class="sfl-dot" style="background:${col}"></div>
-        <span class="sfl-lbl">${esc(g.name)}</span>
-        <span class="sfl-num">${cnt}</span>
-        <button class="sfl-ex-btn" title="합산 제외로 이동" onclick="toggleGroupExclude(${gi})">−</button>
+    // ── 현황 탭: _statSummaryData 한 곳에서 (인쇄·PNG 표와 같은 숫자), 현재/전체 시트 전환 (철님 10-20)
+    const all=_sflScope==='all';
+    html+=`<div class="sfl-scopes"><button class="sfl-scope${all?'':' on'}" data-scope="cur" onclick="_sflSetScope('cur')">현재 시트</button><button class="sfl-scope${all?' on':''}" data-scope="all" onclick="_sflSetScope('all')">전체 시트</button></div>`;
+    const sd=_statSummaryData(_sflScope)||{rows:[],total:0,excl:[]};
+    const rowHtml=(r,ex)=>`<div class="sfl-row">
+        <div class="sfl-dot" style="background:${r.col}"></div>
+        <span class="sfl-lbl"${r.gi<0?' style="opacity:.6"':''}>${esc(r.name)}</span>
+        <span class="sfl-num">${r.cnt}</span>
+        ${r.gi>=0?(ex?`<button class="sfl-ex-btn sfl-ex-in" title="합산 포함으로 이동" onclick="toggleGroupExclude(${r.gi})">＋</button>`:`<button class="sfl-ex-btn" title="합산 제외로 이동" onclick="toggleGroupExclude(${r.gi})">−</button>`):''}
       </div>`;
-    });
-    // 어느 그룹에도 배정되지 않은 상태의 멤버
-    const orphans=allMembers.filter(m=>!allGroupedKeys.has(m.s||defKey));
-    if(orphans.length){
-      html+=`<div class="sfl-row">
-        <div class="sfl-dot" style="background:#888"></div>
-        <span class="sfl-lbl" style="opacity:.6">미분류</span>
-        <span class="sfl-num">${orphans.length}</span>
-      </div>`;
-    }
-    // 총원 = 전체 - 합산제외 그룹 (미분류 포함)
-    const exclKeys=_exKeys();
-    const totalCnt=allMembers.filter(m=>!exclKeys.has(m.s||defKey)).length;
-    html+=`<div class="sfl-total"><span class="sfl-total-lbl">총원</span><span class="sfl-total-num">${totalCnt}</span></div>`;
-    if(excl.length){
+    sd.rows.forEach(r=>{ html+=rowHtml(r,false); });
+    html+=`<div class="sfl-total"><span class="sfl-total-lbl">총원</span><span class="sfl-total-num">${sd.total}</span></div>`;
+    if(sd.excl.length){
       html+=`<div class="sfl-sec"><div class="sfl-sec-lbl">합산 제외</div>`;
-      excl.forEach(g=>{
-        const gi=OPT.statsGroups.indexOf(g);
-        const cnt=allMembers.filter(m=>g.statuses.includes(m.s||defKey)).length;
-        const col=statusItemColor(g.statuses[0]);
-        html+=`<div class="sfl-row">
-          <div class="sfl-dot" style="background:${col}"></div>
-          <span class="sfl-lbl">${esc(g.name)}</span>
-          <span class="sfl-num">${cnt}</span>
-          <button class="sfl-ex-btn sfl-ex-in" title="합산 포함으로 이동" onclick="toggleGroupExclude(${gi})">＋</button>
-        </div>`;
-      });
+      sd.excl.forEach(r=>{ html+=rowHtml(r,true); });
       html+=`</div>`;
     }
 
@@ -5679,15 +5664,16 @@ function updateStatsPanel(){
     html+=`<div class="sfl-total"><span class="sfl-total-lbl">${esc(lbl)}</span><span class="sfl-total-num">${filtered.length}</span></div>`;
 
   } else if(_statTab==='sheet'){
-    const cnts=SHEETS.map((sh,i)=>_sflCountNodes(i===CUR_SHEET?S.nodes:sh.nodes));
-    const names=new Set();
-    SHEETS.forEach((sh,i)=>(i===CUR_SHEET?S.nodes:sh.nodes).forEach(n=>(n.m||[]).forEach(m=>{ if(_sflCounted(m)) names.add(m.n); })));
+    const cnts=SHEETS.map((sh,i)=>_sflCountNodes(_sflSheetNodes(i)));
+    const names=new Set();  // 이름 기준은 '시트 중복' 안내에만 쓴다 - 합계는 항목 수 (철님 10-20)
+    SHEETS.forEach((sh,i)=>_sflSheetNodes(i).forEach(n=>(n.m||[]).forEach(m=>{ if(_sflCounted(m)&&String(m.n||'').trim()) names.add(m.n.trim()); })));
     SHEETS.forEach((sh,i)=>{
       html+=`<div class="sfl-row${i===CUR_SHEET?' cur':''}" data-sheet="${i}" style="cursor:pointer" onclick="switchSheet(${i})"><span class="sfl-lbl sfl-ell">${esc(sh.name)}</span><span class="sfl-num">${cnts[i]}</span></div>`;
     });
-    html+=`<div class="sfl-total"><span class="sfl-total-lbl">전체</span><span class="sfl-total-num">${names.size}</span></div>`;
-    const dup=cnts.reduce((a,b)=>a+b,0)-names.size;
-    if(dup>0) html+=`<div class="sfl-dup">시트 중복 ${dup}명</div>`;
+    const sum=cnts.reduce((a,b)=>a+b,0);
+    html+=`<div class="sfl-total"><span class="sfl-total-lbl">전체</span><span class="sfl-total-num">${sum}</span></div>`;
+    const dup=sum-names.size-(sum-SHEETS.reduce((a,sh,i)=>a+_sflSheetNodes(i).reduce((b,n)=>b+(n.m||[]).filter(m=>_sflCounted(m)&&String(m.n||'').trim()).length,0),0));
+    if(dup>0) html+=`<div class="sfl-dup">같은 이름 ${dup}명 (시트 중복 가능)</div>`;
 
   } else if(_statTab==='team'){
     html+=_sflTeamHtml();
@@ -5717,9 +5703,8 @@ function updateStatsPanel(){
   const ttl=document.getElementById('statsfl-title');
   const flEl=document.getElementById('statsfl');
   if(ttl){
-    const ex=_exKeys();
-    const tot=allMembers.filter(m=>!ex.has(m.s||defKey)).length;
-    ttl.textContent=(flEl&&flEl.classList.contains('collapsed'))?`인원 현황 ${tot}명`:'인원 현황';
+    const sdT=_statSummaryData(_sflScope), tot=sdT?sdT.total:0;
+    ttl.textContent=(flEl&&flEl.classList.contains('collapsed'))?`인원 현황 ${tot}명${_sflScope==='all'?' (전체)':''}`:'인원 현황';
   }
 }
 function addToCatBtn(el){
