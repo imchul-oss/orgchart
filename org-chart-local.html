@@ -1930,7 +1930,47 @@ function besideSplit(P,cards){
   const nR=P.ad==='L'?0:P.ad==='B'?Math.ceil(n/2):n;
   return {R:ord.slice(0,nR),L:ord.slice(nR)};
 }
-const besideCols=P=>(P&&Number.isInteger(P.ac)&&P.ac>=2&&P.ac<=AC_MAX)?P.ac:1;
+const besideCols=P=>(P&&P.ac==='pos')?_besideColsFromPos(P):(P&&Number.isInteger(P.ac)&&P.ac>=2&&P.ac<=AC_MAX)?P.ac:1;
+// 구간 [s,e] 목록을 시작점 순(안정 정렬)으로 겹침 병합한 그룹 수 — start < end 이면 같은 그룹 (ELK interactive layering 규칙)
+function _countMergedSpans(spans){
+  const ord=spans.slice().sort((a,b)=>a.s-b.s);
+  let cnt=0, end=-Infinity;
+  ord.forEach(sp=>{ if(cnt>0&&sp.s<end) end=Math.max(end,sp.e); else { cnt++; end=sp.e; } });
+  return cnt;
+}
+// ac='pos': 현재 놓인 beside 카드들의 열 수 (좌우 각각 x 구간 병합, 큰 쪽)
+// 배치 계산 중에는 시작 시점의 위치(_ox/_oy)를 읽는다 - 계산 도중 카드 x/y가 먼저 바뀌어, 위치에서 읽는 열 수·줄 구성이 흔들리지 않도록 (세션 수정 10-20)
+function _posX(n){ return (S._layingOut&&typeof n._ox==='number')?n._ox:n.x; }
+function _posY(n){ return (S._layingOut&&typeof n._oy==='number')?n._oy:n.y; }
+function _besideColsFromPos(P){
+  if(!P) return 1;
+  const ids=new Set();
+  S.conns.forEach(k=>{ if(k.f!==P.id) return; const n=S.nodes.find(x=>x.id===k.t); if(n&&n.aside===true) ids.add(n.id); });
+  S.nodes.forEach(n=>{ if(n.type==='side'&&sideBesideParent(n.id)===P.id) ids.add(n.id); });
+  const cards=[...ids].map(id=>S.nodes.find(n=>n.id===id)).filter(n=>n&&typeof _posX(n)==='number'&&isFinite(_posX(n)));
+  const px=(typeof _posX(P)==='number'&&isFinite(_posX(P)))?_posX(P):0;
+  const span=n=>({s:_posX(n),e:_posX(n)+cardW(n)});
+  const r=_countMergedSpans(cards.filter(n=>_posX(n)>=px).map(span));
+  const l=_countMergedSpans(cards.filter(n=>_posX(n)<px).map(span));
+  return Math.min(AC_MAX,Math.max(r,l,1));
+}
+// kl='rows': 자식 id들을 현재 위치로 줄 나눔. 세로 구간 [y, y+nh] 병합 → 줄(위→아래), 줄 안은 x 순(안정 정렬).
+// 위치(x·y 숫자)가 없는 카드는 기존 순서대로 마지막 줄 끝에 붙인다 (줄이 없으면 그들끼리 한 줄)
+function _rowsFromPos(ch){
+  const num=v=>typeof v==='number'&&isFinite(v);
+  const items=[], noPos=[];
+  ch.forEach((cid,i)=>{ const n=S.nodes.find(x=>x.id===cid); if(n&&num(_posX(n))&&num(_posY(n))) items.push({id:cid,n,i}); else noPos.push(cid); });
+  items.sort((a,b)=>(_posY(a.n)-_posY(b.n))||(a.i-b.i));
+  const rows=[]; let cur=null, end=-Infinity;
+  items.forEach(it=>{
+    const s=_posY(it.n), e=s+nh(it.n);
+    if(cur&&s<end){ cur.push(it); end=Math.max(end,e); }
+    else { cur=[it]; rows.push(cur); end=e; }
+  });
+  const out=rows.map(r=>r.sort((a,b)=>(_posX(a.n)-_posX(b.n))||(a.i-b.i)).map(it=>it.id));
+  if(noPos.length){ if(out.length) out[out.length-1].push(...noPos); else out.push(noPos); }
+  return out;
+}
 
 // ─── Draw connections (SVG) — 실선·점선 모두 버스 패턴 (스타일만 구분)
 function drawConns() {
@@ -2956,8 +2996,9 @@ function openEdit(id){
     <div class="fg">
       <label class="fl">하위 조직 배치</label>
       <select class="fs" id="ei-kl">
-        <option value="row" ${nd.kl!=='col'?'selected':''}>가로 (기본)</option>
+        <option value="row" ${nd.kl!=='col'&&nd.kl!=='rows'?'selected':''}>가로 (기본)</option>
         <option value="col" ${nd.kl==='col'?'selected':''}>세로 1열</option>
+        <option value="rows" ${nd.kl==='rows'?'selected':''}>현재 위치대로 줄 나눔</option>
       </select>
     </div>
     <div class="fg">
@@ -2975,7 +3016,8 @@ function openEdit(id){
     <div class="fg">
       <label class="fl">직속 카드 한 줄 개수</label>
       <select class="fs" id="ei-ac">
-        ${Array.from({length:AC_MAX},(_,i)=>i+1).map(v=>`<option value="${v}"${besideCols(nd)===v?' selected':''}>${v}개${v===1?' (기본)':''}</option>`).join('')}
+        ${Array.from({length:AC_MAX},(_,i)=>i+1).map(v=>`<option value="${v}"${nd.ac!=='pos'&&besideCols(nd)===v?' selected':''}>${v}개${v===1?' (기본)':''}</option>`).join('')}
+        <option value="pos"${nd.ac==='pos'?' selected':''}>현재 위치대로</option>
       </select>
     </div>
     <div class="fg">
@@ -3083,10 +3125,10 @@ function saveModal(){
   nd.en=document.getElementById('ei-en').value.trim();
   nd.ko=document.getElementById('ei-ko').value.trim();
   nd.type=document.getElementById('ei-type').value;
-  if(document.getElementById('ei-kl').value==='col') nd.kl='col'; else delete nd.kl;
+  { const kl=document.getElementById('ei-kl').value; if(kl==='col'||kl==='rows') nd.kl=kl; else delete nd.kl; }
   { const kn=parseInt(document.getElementById('ei-kn').value,10); if(kn>=1) nd.kn=kn; else delete nd.kn; }
   { const ad=document.getElementById('ei-ad').value; if(ad==='L'||ad==='B') nd.ad=ad; else delete nd.ad; }
-  { const ac=parseInt(document.getElementById('ei-ac').value,10); if(Number.isInteger(ac)&&ac>=2&&ac<=AC_MAX) nd.ac=ac; else delete nd.ac; }
+  { const acv=document.getElementById('ei-ac').value, ac=parseInt(acv,10); if(acv==='pos') nd.ac='pos'; else if(Number.isInteger(ac)&&ac>=2&&ac<=AC_MAX) nd.ac=ac; else delete nd.ac; }
   { const mcEl=document.getElementById('ei-mc'), mc=mcEl?parseInt(mcEl.value,10):NaN; if(Number.isInteger(mc)&&mc>=2&&mc<=MC_MAX) nd.mc=mc; else delete nd.mc; }
   if(document.getElementById('ei-aside').checked) nd.aside=true; else delete nd.aside;
   { const se=document.getElementById('ei-sum'); if(se){ if(se.value) nd.sum=se.value; else delete nd.sum; } }
@@ -3374,7 +3416,9 @@ function _posCmp(po,a,b){
 // 숨은 카드의 x/y 는 건드리지 않는다. 접힌 카드가 없으면 그대로 기존 배치.
 function autoLayout(){
   const _H=collHidden();
-  if(!_H.size) return _autoLayoutCore();
+  S._layingOut=true;
+  const _done=()=>{ S._layingOut=false; S.nodes.forEach(n=>{ delete n._ox; delete n._oy; }); };
+  if(!_H.size){ try{ return _autoLayoutCore(); } finally{ _done(); } }
   const allN=S.nodes, allC=S.conns;
   const visN=allN.filter(n=>!_H.has(n.id));
   const visC=(allC||[]).filter(c=>!_H.has(c.f)&&!_H.has(c.t));
@@ -3390,7 +3434,7 @@ function autoLayout(){
   window.render=function(){ restore(); return realRender.apply(this,arguments); };
   S.nodes=visN; S.conns=visC;
   try{ return _autoLayoutCore(); }
-  finally{ restore(); }
+  finally{ restore(); _done(); }
 }
 function _autoLayoutCore(){
   const _po=(SHEETS[CUR_SHEET]&&SHEETS[CUR_SHEET].posOrient)||'down';
@@ -3405,6 +3449,7 @@ function _autoLayoutCore(){
 
   S.busY={};
   S.nodes.forEach(n=>{ delete n._d; delete n._lx; delete n._wrap; delete n._col; delete n._asides; delete n._bs; });
+  S.nodes.forEach(n=>{ n._ox=n.x; n._oy=n.y; });  // 위치 기반 추론(_posX/_posY)이 읽는 시작 시점 스냅샷
 
   const sideIds=new Set(S.nodes.filter(n=>n.type==='side').map(n=>n.id));
 
@@ -3575,6 +3620,29 @@ function _autoLayoutCore(){
       return fin(cR);
     }
     // ─── 한 줄 최대 조직 수: 모두 leaf인 넓은 그룹은 행으로 줄바꿈
+    // ─── kl='rows': 손으로 놓은 줄 구성·순서를 그대로 쓰고 간격·정렬만 맞춘다
+    if(nd.kl==='rows' && ch.length>1 && ch.every(cid=>tk(cid).length===0)){
+      const x0=L, wrows=_rowsFromPos(ch), per=Math.max(1,...wrows.map(r=>r.length)), cols=per;
+      const wbs={}, colL=[], colR=[], colW=[];
+      wrows.forEach(row=>row.forEach((cid,j)=>{
+        const cn=S.nodes.find(n=>n.id===cid); if(!cn) return;
+        const b=leafBeside(cn); wbs[cid]=b;
+        colW[j]=Math.max(colW[j]||0,cardW(cn));
+        colL[j]=Math.max(colL[j]||0,b.l); colR[j]=Math.max(colR[j]||0,b.rw);
+      }));
+      const colX=j=>{ let e=colL[j]||0; for(let i=0;i<j;i++) e+=(colL[i]||0)+(colR[i]||0)+(colW[i]||NW)+COL_GAP; return x0+e; };
+      let wR=0;
+      wrows.forEach(row=>row.forEach((cid,j)=>{
+        const cn=S.nodes.find(n=>n.id===cid); if(!cn) return;
+        cn._d=nd._d+1;
+        cn._lx=Math.round(colX(j)/20)*20;
+        wR=Math.max(wR,wbs[cid].r(cn._lx));
+      }));
+      const k=Math.ceil(cols/2);
+      nd._lx=(colX(k)-COL_GAP/2)-cardW(nd)/2;
+      nd._wrap={N:per,x0,per,rows:wrows};
+      return fin(wideFix(Math.max(colX(cols-1)+(colW[cols-1]||NW),wR)));
+    }
     const WN=(Number.isInteger(nd.kn)&&nd.kn>0)?nd.kn:(OPT.wrapN|0);
     if(WN>0 && ch.length>WN && ch.every(cid=>tk(cid).length===0)){
       const x0=L, nrows=Math.ceil(ch.length/WN), per=Math.ceil(ch.length/nrows), cols=per;
@@ -5247,10 +5315,10 @@ function importCSV(inp){
             x:+g('x')||0,y:+g('y')||0,color:g('color')||'',m:[]};
           const t=v=>String(v==null?'':v).trim();
           const mc=t(g('mc')); if(/^\d+$/.test(mc)&&+mc>=2&&+mc<=MC_MAX) nn.mc=+mc;
-          if(t(g('kl'))==='col') nn.kl='col';
+          { const kl=t(g('kl')); if(kl==='col'||kl==='rows') nn.kl=kl; }
           const kn=t(g('kn')); if(/^\d+$/.test(kn)&&+kn>=1) nn.kn=+kn;
           const ad=t(g('ad')); if(ad==='L'||ad==='B') nn.ad=ad;
-          const ac=t(g('ac')); if(/^\d+$/.test(ac)&&+ac>=2&&+ac<=AC_MAX) nn.ac=+ac;
+          const ac=t(g('ac')); if(ac==='pos') nn.ac='pos'; else if(/^\d+$/.test(ac)&&+ac>=2&&+ac<=AC_MAX) nn.ac=+ac;
           const as=t(g('aside')); if(as==='1'||as==='true') nn.aside=true;
           const sm=t(g('sum')); if(sm&&_ID_RE.test(sm)) nn.sum=sm;
           const tc=t(g('tc')); if(/^#[0-9a-fA-F]{6}$/.test(tc)) nn.tc=tc;
