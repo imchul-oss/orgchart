@@ -857,6 +857,14 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
           </select>
         </div>
         <div class="opt-row">
+          <span class="opt-lbl">하위 줄 높이</span>
+          <select id="opt-rowmode" class="opt-orient-sel"
+            onchange="OPT.rowMode=this.value;autoLayout();saveOptLS()">
+            <option value="depth">전체 줄 맞춤 (기본)</option>
+            <option value="local">부모 바로 아래</option>
+          </select>
+        </div>
+        <div class="opt-row">
           <span class="opt-lbl">상하 간격</span>
           <input type="range" class="opt-slider" id="opt-rg" min="20" max="400" step="10"
             oninput="OPT.rowGap=+this.value;document.getElementById('opt-rg-v').textContent=this.value+'px';scheduleOptLayout()">
@@ -1153,7 +1161,7 @@ const OPT = {
   lhH:1.2, lhC:1.2, hdrH:0, rowH:0,
   // 카드/배치
   nw:228, bandW:12,
-  rowGap:80, colGap:44, padX:80, padY:60, wrapN:0, orient:'down',
+  rowGap:80, colGap:44, padX:80, padY:60, wrapN:0, orient:'down', rowMode:'depth',
   // 선
   strokeW:1.8, strokeDashW:1.5,
   // 브랜드 / UI 액센트
@@ -3712,6 +3720,16 @@ function _autoLayoutCore(){
     n.x=n._lx||0;
     n.y=depY[n._d]??PAD_Y;
   });
+  // 하위 줄 높이 '부모 바로 아래'(OPT.rowMode==='local'): 자식 줄을 차트 전체의 깊이 줄이 아니라 부모 묶음(카드+직속 카드) 바로
+  // 아래에 둔다. 종류 단계를 건너뛴 자식(k>=2)은 부모 줄 간격의 k배 아래. 가로 배치는 묶음 단위라 영향이 없다 (철님 10-20:
+  // 긴 카드 하나 때문에 다른 부모의 하위 줄이 멀리 내려가는 것을 줄인다). 고아 카드는 전체 깊이 줄(depY)을 그대로 쓴다.
+  if(OPT.rowMode==='local'){
+    const tset=new Set(treeNodes.map(n=>n.id));
+    const kidsOf=n=>treeNodes.filter(c=>pars[c.id]===n.id);
+    const step=n=>Math.ceil((bsH(n)+ROW_GAP)/20)*20;
+    const visit=n=>{ const st=step(n); kidsOf(n).forEach(c=>{ const k=Math.max(1,(c._d??((n._d??0)+1))-(n._d??0)); c.y=n.y+k*st; visit(c); }); };
+    treeNodes.filter(n=>!(pars[n.id]&&tset.has(pars[n.id]))).forEach(r=>{ r.y=PAD_Y; visit(r); });
+  }
 
   // 줄바꿈 그룹: 2행 이후는 직전 행 최하단 아래로 로컬 적재
   treeNodes.forEach(p=>{
@@ -4261,6 +4279,7 @@ function openOptions(){
   {const w=document.getElementById('opt-wrap'),wv=document.getElementById('opt-wrap-v');
    if(w) w.value=OPT.wrapN||0; if(wv) wv.textContent=OPT.wrapN?OPT.wrapN+'개':'끔';}
   sv('opt-orient',OPT.orient||'down');
+  sv('opt-rowmode',OPT.rowMode||'depth');
   sl('opt-rg',OPT.rowGap); sl('opt-cg',OPT.colGap); sl('opt-px',OPT.padX);
   sl('opt-py', OPT.padY);
   // 높이
@@ -4314,7 +4333,7 @@ function resetOptions(){
   if(!confirm('모든 옵션을 초기값으로 되돌릴까요?')) return;
   Object.assign(OPT,{
     fsEn:12,fsKo:8,fsMn:11,fsMf:9,fsMr2:9,fsMa:9,lhH:1.2,lhC:1.2,hdrH:0,rowH:0,
-    nw:228,bandW:12,rowGap:80,colGap:44,padX:80,padY:60,wrapN:0,orient:'down',
+    nw:228,bandW:12,rowGap:80,colGap:44,padX:80,padY:60,wrapN:0,orient:'down',rowMode:'depth',
     strokeW:1.8,strokeDashW:1.5,
     uiMint:'#40D2A7',uiSky:'#60DCF8',uiCoral:'#FF8770',topbarBg:'#2C2C2C',
     statsBg:'#1C1C20',stbarBg:'#1A1A1A',
@@ -4661,6 +4680,7 @@ function _applyOptObj(d){
   const numKeys=['fsEn','fsKo','fsMn','fsMf','fsMr2','fsMa','lhH','lhC','hdrH','rowH','nw','bandW','rowGap','colGap','padX','padY','strokeW','strokeDashW','cardRadius','shadowA','wrapN'];
   numKeys.forEach(k=>{if(d[k]!=null){OPT[k]=+d[k];_applyOptCSS(k,+d[k]);}});
   OPT.orient=(d.orient==='right'||d.orient==='left')?d.orient:'down';
+  OPT.rowMode=(d.rowMode==='local')?'local':'depth';{const _s=document.getElementById('opt-rowmode');if(_s)_s.value=OPT.rowMode;}
   const colKeys=['uiMint','uiSky','uiCoral','topbarBg','statsBg','stbarBg','hdrTop','hdrL1','hdrL2','hdrL3','hdrL4','hdrL5','hdrTf','hdrSide','bandTop','bandL1','bandL2','bandL3','bandL4','bandL5','bandTf','bandSide','canvasBg','cardBg','rowEven','rowBorder','connSolid','connDash','gridDot','txtHdrEn','txtHdrKo','txtMn','txtMf','txtMr2','txtMa'];
   colKeys.forEach(k=>{if(d[k]&&/^#[0-9a-fA-F]{3,8}$/.test(String(d[k]))){OPT[k]=d[k];_applyOptCSS(k,d[k]);}});
   if(d.statusItems){
