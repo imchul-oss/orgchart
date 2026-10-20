@@ -3666,15 +3666,18 @@ function _autoLayoutCore(){
         box={w:Math.max(sh+gw,sh+px+cw+e.r), off:sh+px, kids:kidsArr, x0:sh};
         nd._wrap={N,x0:0,per,rows:wrows};
       } else {
-        // 일반 부모: 자식 상자를 왼쪽부터 G 간격으로 나란히, 부모 카드는 첫·끝 자식 카드 중심의 가운데
+        // 일반 부모: 자식 상자를 왼쪽부터 G 간격으로 나란히, 부모 카드는 가운데 자식 카드 위
         let x=0; const ks=[];
         ch.forEach(cid=>{ const b=_tidyBox(cid,nd._d); if(!b) return; ks.push({id:cid,x,b}); x+=b.w+G; });
         if(!ks.length){
           box={w:e.l+cw+e.r, off:e.l, kids:[]};
         } else {
           const cR=x-G, k1=ks[0], kk=ks[ks.length-1];
-          const c1=k1.x+k1.b.off+cardW(byId(k1.id))/2, ck=kk.x+kk.b.off+cardW(byId(kk.id))/2;
-          const px=(c1+ck)/2-cw/2, sh=Math.max(0,e.l-px);
+          // 부모 카드는 가운데 자식 위 (짝수면 가운데 두 자식의 중간). 첫·끝 자식 중간으로 하면 자식 칸 폭이 고르지 않을 때
+          // (예: 세로 열이 달린 형제) 가운데 자식 위에 오지 않는다 (철님 10-20)
+          const cen=k=>k.x+k.b.off+cardW(byId(k.id))/2, nK=ks.length;
+          const mid=nK%2?cen(ks[(nK-1)/2]):(cen(ks[nK/2-1])+cen(ks[nK/2]))/2;
+          const px=mid-cw/2, sh=Math.max(0,e.l-px);
           box={w:Math.max(sh+cR,sh+px+cw+e.r), off:sh+px, kids:ks.map(k=>({id:k.id,x:k.x+sh}))};
         }
       }
@@ -3903,10 +3906,7 @@ function _autoLayoutCore(){
   S.scale=sc;
 
   const rnd=S.nodes.find(n=>n.id===root.id);
-  // 루트를 뷰포트 수평 중앙에 배치 — 트리 넓이 무관하게 항상 적용
-  const needLeft=Math.ceil(vw/(2*sc)-cardW(rnd)/2);
-  const shiftX=Math.max(0, needLeft-rnd.x);
-  if(shiftX>0) S.nodes.forEach(n=>n.x+=shiftX);
+  // (제거 10-20) 루트를 화면 중앙에 두려고 카드 위치를 오른쪽으로 밀던 단계: 보기 위치는 아래 스크롤로 맞추고, 카드 좌표는 배치 결과 그대로 둔다
 
   const cvs=document.getElementById('canvas');
   cvs.style.marginLeft='';
