@@ -1434,7 +1434,7 @@ function cmpFocus(id){
 }
 function _cmpIsSeat(mm){ if(!mm) return false; if(!cmpTrim(mm.n)) return true; const k=memberKind(mm); return k==='tot'; }  // 자리 = 이름 없음 또는 정원에만 드는 상태 (철님 10-21)
 function _cmpStatusLabel(v){ const it=OPT.statusItems.find(x=>x.key===v); return it?it.label:v; }
-const CMP_KINDS=[['join','입사'],['leave','퇴사'],['move','이동'],['change','변경'],['cc','겸직'],['orgnew','조직 신설'],['orggone','조직 폐지'],['seat','채용 자리']];
+const CMP_KINDS=[['join','입사'],['leave','퇴사'],['move','이동'],['change','변경'],['cc','겸직'],['orgnew','조직 신설'],['orggone','조직 폐지'],['seat','공석 직위']];
 function cmpRun(){
   cmpClear();
   if(!CMP){const o=document.getElementById('cmp-panel'); if(o) o.remove(); return;}
@@ -1485,7 +1485,7 @@ function cmpRun(){
       if(d.length){add('change',[k,org(a.nd),d.map(x=>x[0]+' '+x[1]+' → '+x[2]).join(' / ')],a.nd.id,org(a.nd),k);marks.push([a,'changed',d.map(x=>x[0]+' '+x[1]+' → '+x[2]).join(', ')]);}
     });
   });
-  // 채용 자리: 소속별 자리 수와 상태 구성을 전후로 세어 차이만 보인다
+  // 공석 직위: 소속별 자리 수와 상태 구성을 전후로 세어 차이만 보인다 (철님 10-21: 이름은 '공석 직위')
   const seats=nodes=>{const m=new Map();nodes.forEach(nd=>(nd.m||[]).forEach(mm=>{if(!(mm&&mm.cc!==true&&_cmpIsSeat(mm)))return;const o=org(nd);if(!m.has(o))m.set(o,{n:0,st:{},nid:nd.id});const e=m.get(o);e.n++;const lb=_cmpStatusLabel(mm.s||OPT.statusItems[0]?.key||'active');e.st[lb]=(e.st[lb]||0)+1;}));return m;};
   const sb=seats(BN), sa=seats(AN);
   const seatUp=o=>((sa.get(o)||{n:0}).n>(sb.get(o)||{n:0}).n);
