@@ -245,7 +245,22 @@ body.present #tb-more,body.present #tb-more-panel{display:none!important;}
 #cmp-panel .cmp-h{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;}
 #cmp-panel .cmp-err{color:#c00;}
 #cmp-panel .cmp-cnt{margin-bottom:6px;font-weight:600;}
-#cmp-panel .cmp-item{padding:3px 0;border-top:1px solid #eee;cursor:pointer;}
+#cmp-panel{width:380px!important;}
+#cmp-panel .cmp-cnt{display:flex;flex-wrap:wrap;gap:4px;font-weight:400;}
+#cmp-panel .cmp-chip{background:#f1f3f6;border-radius:10px;padding:1px 8px;font-size:12px;}
+#cmp-panel .cmp-chip[data-k=join]{background:#e3f6ee}#cmp-panel .cmp-chip[data-k=leave]{background:#fde8e4}#cmp-panel .cmp-chip[data-k=move]{background:#e6f0fd}#cmp-panel .cmp-chip[data-k=seat]{background:#fff3df}
+#cmp-panel .cmp-out{display:block;font-size:12px;color:#555;margin:6px 0 2px;}
+#cmp-panel .cmp-sec{margin-top:8px;}
+#cmp-panel .cmp-sec-h{font-weight:700;font-size:12px;color:#333;border-bottom:2px solid #d8dde6;padding-bottom:2px;}
+#cmp-panel .cmp-tbl{width:100%;border-collapse:collapse;font-size:12px;}
+#cmp-panel .cmp-tbl td{padding:3px 4px;border-bottom:1px solid #eee;vertical-align:top;}
+#cmp-panel .cmp-tbl td.c0{font-weight:600;white-space:nowrap;}
+#cmp-panel .cmp-tbl td.c1{color:#556;}
+#cmp-panel .cmp-tbl td.c2{color:#777;}
+.mr[data-cmp="seat"]{background:rgba(255,179,71,.22);}
+.mr[data-cmp="seat"]::after{content:'공석';background:#e08a00;}
+#cmp-panel .cmp-item{cursor:pointer;}
+#cmp-panel .cmp-item:hover td{background:#f6f8fb;}
 .nd .mr:active{cursor:grabbing;}
 .nd .nact button{cursor:pointer;}
 .nd.sel{outline:2.5px solid var(--sky);outline-offset:2px;}
@@ -1417,12 +1432,17 @@ function cmpFocus(id){
   w.scrollLeft=Math.max(0,(nd.x+cardW(nd)/2)*S.scale-w.clientWidth/2);
   w.scrollTop=Math.max(0,(nd.y+nh(nd)/2)*S.scale-w.clientHeight/2);
 }
+function _cmpIsSeat(mm){ if(!mm) return false; if(!cmpTrim(mm.n)) return true; const k=memberKind(mm); return k==='tot'; }  // 자리 = 이름 없음 또는 정원에만 드는 상태 (철님 10-21)
+function _cmpStatusLabel(v){ const it=OPT.statusItems.find(x=>x.key===v); return it?it.label:v; }
+const CMP_KINDS=[['join','입사'],['leave','퇴사'],['move','이동'],['change','변경'],['cc','겸직'],['orgnew','조직 신설'],['orggone','조직 폐지'],['seat','채용 자리']];
 function cmpRun(){
   cmpClear();
   if(!CMP){const o=document.getElementById('cmp-panel'); if(o) o.remove(); return;}
   const p=cmpPanel();
+  const out=CMP.out!==false;
   const head='<div class="cmp-h"><b>비교: '+esc(CMP.file)+' → 현재</b> <button id="cmp-exit" type="button">비교 끝내기</button></div>';
-  const bind=()=>{const b=document.getElementById('cmp-exit'); if(b) b.onclick=cmpExit;};
+  const bind=()=>{const b=document.getElementById('cmp-exit'); if(b) b.onclick=cmpExit; const o=document.getElementById('cmp-out'); if(o) o.onchange=()=>{ CMP.out=o.checked; };};
+  CMP.rows=null;
   if(CMP.err){
     p.removeAttribute('data-join');
     p.innerHTML='<div class="cmp-h"><b>비교</b> <button id="cmp-exit" type="button">비교 끝내기</button></div><div class="cmp-err">'+esc(CMP.err)+'</div>';
@@ -1443,67 +1463,91 @@ function cmpRun(){
     if(a) cmap.set(i,a);
   });
   const mapped=new Set(cmap.values());
-  const occ=(nodes,cc)=>{const m=new Map();nodes.forEach((nd,ni)=>(nd.m||[]).forEach((mm,mi)=>{if((mm&&mm.cc===true)!==cc)return;const k=cmpTrim(mm.n);if(!m.has(k))m.set(k,[]);m.get(k).push({nd,ni,mm,mi});}));return m;};
+  const org=nd=>cmpTrim(nd&&(nd.en||nd.ko))||'';
+  const occ=(nodes,cc)=>{const m=new Map();nodes.forEach((nd,ni)=>(nd.m||[]).forEach((mm,mi)=>{if((mm&&mm.cc===true)!==cc)return;if(!cc&&_cmpIsSeat(mm))return;const k=cmpTrim(mm.n);if(!m.has(k))m.set(k,[]);m.get(k).push({nd,ni,mm,mi});}));return m;};
   const bo=occ(BN,false), ao=occ(AN,false);
   const bcc=occ(BN,true), acc=occ(AN,true);
-  const items=[]; let c={join:0,leave:0,move:0,change:0,orgnew:0,orggone:0};
+  const rows=[]; let c={join:0,leave:0,move:0,change:0,orgnew:0,orggone:0,seat:0};
   const marks=[];
-  const add=(kind,text,nid)=>{items.push({kind,text,nid});c[kind]++;};
+  // cells: plain strings; kind 'cc' rows are reported with data-kind change (the 겸직 section is a view, not a new kind)
+  const add=(kind,cells,nid,sortOrg,sortName)=>{rows.push({kind,cells,nid,so:sortOrg||'',sn:sortName||''});c[kind==='cc'?'change':kind]++;};
   const F=[['r','직위'],['f','직무'],['s','상태']];
   const bi=new Map(); BN.forEach((b,i)=>bi.set(b,i));
+  const diffOf=(b,a)=>{const d=[];F.forEach(([f,l])=>{const o=cmpTrim(b.mm[f]),n=cmpTrim(a.mm[f]);if(o!==n){const lb=v=>f==='s'?_cmpStatusLabel(v):v;d.push([l,lb(o)||'(없음)',lb(n)||'(없음)']);}});return d;};
   ao.forEach((alist,k)=>{
     const blist=bo.get(k)||[];
     alist.forEach((a,j)=>{
       const b=blist[j];
-      if(!b){add('join','입사: '+esc(k)+' ('+esc(a.nd.en||'')+')',a.nd.id);marks.push([a,'new','']);return;}
+      if(!b){add('join',[k,org(a.nd),cmpTrim(a.mm.r)],a.nd.id,org(a.nd),k);marks.push([a,'new','']);return;}
       const mp=cmap.get(bi.get(b.nd));
-      if(mp!==a.nd){add('move','이동: '+esc(k)+' '+esc(b.nd.en||'')+' → '+esc(a.nd.en||''),a.nd.id);marks.push([a,'moved','이전: '+(b.nd.en||'')]);return;}
-      const diffs=[],tl=[];
-      F.forEach(([f,l])=>{const o=cmpTrim(b.mm[f]),n=cmpTrim(a.mm[f]);if(o!==n){const lb=v=>{if(f!=='s')return v;const it=OPT.statusItems.find(x=>x.key===v);return it?it.label:v;};const ol=lb(o),nl=lb(n);diffs.push(esc(l)+' '+esc(ol)+' → '+esc(nl));tl.push(l+' '+ol+' → '+nl);}});
-      if(diffs.length){add('change','변경: '+esc(k)+' '+diffs.join(', '),a.nd.id);marks.push([a,'changed',tl.join(', ')]);}
+      if(mp!==a.nd){add('move',[k,org(b.nd)+' → '+org(a.nd)],a.nd.id,org(a.nd),k);marks.push([a,'moved','이전: '+org(b.nd)]);return;}
+      const d=diffOf(b,a);
+      if(d.length){add('change',[k,org(a.nd),d.map(x=>x[0]+' '+x[1]+' → '+x[2]).join(' / ')],a.nd.id,org(a.nd),k);marks.push([a,'changed',d.map(x=>x[0]+' '+x[1]+' → '+x[2]).join(', ')]);}
     });
   });
+  // 채용 자리: 소속별 자리 수와 상태 구성을 전후로 세어 차이만 보인다
+  const seats=nodes=>{const m=new Map();nodes.forEach(nd=>(nd.m||[]).forEach(mm=>{if(!(mm&&mm.cc!==true&&_cmpIsSeat(mm)))return;const o=org(nd);if(!m.has(o))m.set(o,{n:0,st:{},nid:nd.id});const e=m.get(o);e.n++;const lb=_cmpStatusLabel(mm.s||OPT.statusItems[0]?.key||'active');e.st[lb]=(e.st[lb]||0)+1;}));return m;};
+  const sb=seats(BN), sa=seats(AN);
+  const seatUp=o=>((sa.get(o)||{n:0}).n>(sb.get(o)||{n:0}).n);
   bo.forEach((blist,k)=>{
     const alist=ao.get(k)||[];
     blist.forEach((b,j)=>{
       if(j<alist.length) return;
       const mp=cmap.get(bi.get(b.nd));
-      add('leave','퇴사: '+esc(k)+' ('+esc(b.nd.en||'')+', '+esc(cmpTrim(b.mm.r))+')',mp?mp.id:null);
+      add('leave',[k,org(b.nd),cmpTrim(b.mm.r)+(seatUp(org(b.nd))?' · 공석 전환':'')],mp?mp.id:null,org(b.nd),k);  // 같은 소속에 자리가 늘었으면 퇴사 뒤 공석으로 본다
     });
   });
-  AN.forEach(a=>{if(!mapped.has(a)) add('orgnew','조직 신설: '+esc(a.en||''),a.id);});
-  BN.forEach((b,i)=>{if(!cmap.has(i)) add('orggone','조직 폐지: '+esc(b.en||'')+' ('+(b.m||[]).filter(mm=>!(mm&&mm.cc===true)).length+'명)',null);});
+  AN.forEach(a=>{if(!mapped.has(a)) add('orgnew',[org(a)],a.id,org(a),'');});
+  BN.forEach((b,i)=>{if(!cmap.has(i)) add('orggone',[org(b),'('+(b.m||[]).filter(mm=>!(mm&&mm.cc===true)&&!_cmpIsSeat(mm)).length+'명)'],null,org(b),'');});
   // 겸직(cc) 행: 이름별로 카드 기준 짝짓기
-  const ccAdds=[],ccChanges=[],ccGones=[];
   const ccSame=(b,a)=>{const mp=cmap.get(bi.get(b.nd)); if(mp) return mp===a.nd; return cmpTrim(b.nd.en)===cmpTrim(a.nd.en);};
   acc.forEach((alist,k)=>{
     const blist=bcc.get(k)||[]; const used=new Set();
     alist.forEach(a=>{
       const j=blist.findIndex((b,x)=>!used.has(x)&&ccSame(b,a));
-      if(j<0){ccAdds.push(['겸직 추가: '+esc(k)+' ('+esc(a.nd.en||'')+')',a.nd.id]);marks.push([a,'new','']);return;}
-      used.add(j); const b=blist[j];
-      const diffs=[],tl=[];
-      F.forEach(([f,l])=>{const o=cmpTrim(b.mm[f]),n=cmpTrim(a.mm[f]);if(o!==n){const lb=v=>{if(f!=='s')return v;const it=OPT.statusItems.find(x=>x.key===v);return it?it.label:v;};const ol=lb(o),nl=lb(n);diffs.push(esc(l)+' '+esc(ol)+' → '+esc(nl));tl.push(l+' '+ol+' → '+nl);}});
-      if(diffs.length){ccChanges.push(['변경: '+esc(k)+' (겸직) '+diffs.join(', '),a.nd.id]);marks.push([a,'changed','(겸직) '+tl.join(', ')]);}
+      if(j<0){add('cc',[k,org(a.nd),'겸직 추가'],a.nd.id,org(a.nd),k);marks.push([a,'new','']);return;}
+      used.add(j); const b=blist[j]; const d=diffOf(b,a);
+      if(d.length){add('cc',[k,org(a.nd),'겸직 '+d.map(x=>x[0]+' '+x[1]+' → '+x[2]).join(' / ')],a.nd.id,org(a.nd),k);marks.push([a,'changed','(겸직) '+d.map(x=>x[0]+' '+x[1]+' → '+x[2]).join(', ')]);}
     });
-    blist.forEach((b,x)=>{if(used.has(x))return; const mp=cmap.get(bi.get(b.nd)); ccGones.push(['겸직 해제: '+esc(k)+' ('+esc(b.nd.en||'')+')',mp?mp.id:null]);});
+    blist.forEach((b,x)=>{if(used.has(x))return; const mp=cmap.get(bi.get(b.nd)); add('cc',[k,org(b.nd),'겸직 해제'],mp?mp.id:null,org(b.nd),k);});
   });
   bcc.forEach((blist,k)=>{
     if(acc.has(k)) return;
-    blist.forEach(b=>{const mp=cmap.get(bi.get(b.nd)); ccGones.push(['겸직 해제: '+esc(k)+' ('+esc(b.nd.en||'')+')',mp?mp.id:null]);});
+    blist.forEach(b=>{const mp=cmap.get(bi.get(b.nd)); add('cc',[k,org(b.nd),'겸직 해제'],mp?mp.id:null,org(b.nd),k);});
   });
-  ccChanges.concat(ccAdds,ccGones).forEach(([t,nid])=>add('change',t,nid));
+  new Set([...sb.keys(),...sa.keys()]).forEach(o=>{
+    const B=sb.get(o)||{n:0,st:{}}, A=sa.get(o)||{n:0,st:{},nid:null}; if(A.n===B.n&&JSON.stringify(A.st)===JSON.stringify(B.st)) return;
+    const dlt=A.n-B.n; const st=Object.entries(A.st).map(([k,v])=>k+' '+v).join(', ')||'없음';
+    add('seat',[o,(dlt>0?'+':'')+dlt,'지금 '+A.n+' ('+st+')'],A.nid||null,o,'');
+  });
+  // 새로 생긴 자리: 소속별 증가분만큼 그 카드의 뒤쪽 자리 행에 '공석' 꼬리표
+  AN.forEach(nd=>{ const o=org(nd); const up=(sa.get(o)||{n:0}).n-(sb.get(o)||{n:0}).n; if(up<=0) return; const idx=(nd.m||[]).map((mm,mi)=>[mm,mi]).filter(([mm])=>mm&&mm.cc!==true&&_cmpIsSeat(mm)).map(x=>x[1]); idx.slice(-up).forEach(mi=>marks.push([{nd,mi},'seat',''])); });
   // 마크 적용
   marks.forEach(([a,kind,title])=>{
     const row=document.querySelector('#n'+CSS.escape(String(a.nd.id))+' .mr[data-mi="'+a.mi+'"]');
     if(row){row.setAttribute('data-cmp',kind); if(title) row.setAttribute('title',title);}
   });
   AN.forEach(a=>{if(!mapped.has(a)){const el=document.getElementById('n'+a.id); if(el) el.setAttribute('data-cmp','new');}});
-  for(const k in c) p.setAttribute('data-'+k,c[k]);
-  p.innerHTML=head+'<div class="cmp-cnt">입사 '+c.join+' · 퇴사 '+c.leave+' · 이동 '+c.move+' · 변경 '+c.change+' · 조직 신설 '+c.orgnew+' · 조직 폐지 '+c.orggone+'</div>'+
-    items.map((it,i)=>'<div class="cmp-item" data-kind="'+it.kind+'" data-i="'+i+'"'+(it.nid!=null?' data-nid="'+esc(it.nid)+'"':'')+'>'+it.text+'</div>').join('');
+  for(const k in c) if(k!=='seat') p.setAttribute('data-'+k,c[k]);
+  p.setAttribute('data-seat',c.seat);
+  rows.sort((x,y)=>x.so.localeCompare(y.so,'ko')||x.sn.localeCompare(y.sn,'ko'));
+  CMP.rows=rows;
+  const cnt=k=>rows.filter(r=>r.kind===k).length;
+  const chips=CMP_KINDS.filter(([k])=>cnt(k)).map(([k,l])=>'<span class="cmp-chip" data-k="'+k+'">'+l+' <b>'+cnt(k)+'</b></span>').join('')||'<span class="cmp-none">달라진 것이 없습니다</span>';
+  const secs=CMP_KINDS.filter(([k])=>cnt(k)).map(([k,l])=>'<div class="cmp-sec" data-k="'+k+'"><div class="cmp-sec-h">'+l+' <b>'+cnt(k)+'</b></div><table class="cmp-tbl">'+
+    rows.filter(r=>r.kind===k).map(r=>'<tr class="cmp-item" data-kind="'+(r.kind==='cc'?'change':r.kind)+'"'+(r.nid!=null?' data-nid="'+esc(r.nid)+'"':'')+'>'+r.cells.map((x,ci)=>'<td class="c'+ci+'">'+esc(x)+'</td>').join('')+'</tr>').join('')+'</table></div>').join('');
+  p.innerHTML=head+'<div class="cmp-cnt">'+chips+'</div>'+
+    '<label class="cmp-out"><input type="checkbox" id="cmp-out"'+(out?' checked':'')+'> 그림·인쇄에 변경 내역 포함</label>'+secs;
   bind();
   p.querySelectorAll('.cmp-item[data-nid]').forEach(e=>e.onclick=()=>cmpFocus(e.getAttribute('data-nid')));
+}
+// 인쇄·PNG 표에 붙는 변경 내역 (패널과 같은 rows)
+function _cmpTableItems(){
+  if(!CMP||!CMP.rows||CMP.out===false) return [];
+  const items=[{t:'sec',name:'변경 내역 · '+(CMP.file||'')+' → 현재'}];
+  CMP_KINDS.forEach(([k,l])=>{ const rs=CMP.rows.filter(r=>r.kind===k); if(!rs.length) return; items.push({t:'sec',name:l+' '+rs.length});
+    rs.forEach(r=>items.push({t:'row',name:r.cells[0],sub:r.cells.slice(1).filter(Boolean).join(' · '),cnt:'',col:'',dim:false,ind:0})); });
+  return items;
 }
 function cmpLoad(file){
   const fr=new FileReader();
@@ -5618,7 +5662,7 @@ const _SB_W=150;  // 인쇄·PNG 인원 현황표 폭
 // 위치(sbPos) 모서리에 두되, 자리(sbMode)가 auto면 그 모서리에 카드가 없을 때만 차트 안에 넣고 아니면 차트 밖 세로 칸에 둔다.
 // 반환: {sd,s,w,h,h0,x,y,inside,ext} - x,y는 차트 좌표의 표 왼쪽 위, s는 배율, ext는 차트 밖에 더 필요한 여백.
 function _statsBoxPlan(b){
-  if(OPT.sbShow===false) return null;
+  if(OPT.sbShow===false&&!_cmpTableItems().length) return null;
   const sd=_statTableData(); if(!sd||!sd.items.length) return null;
   const s=Math.max(0.6,Math.min(1.6,(OPT.sbScale||100)/100)), h0=_statSummaryH(sd), w=(sd.w||_SB_W)*s, h=h0*s;
   const pos=['tl','tr','bl','br'].includes(OPT.sbPos)?OPT.sbPos:'tl', mode=['auto','outside','inside'].includes(OPT.sbMode)?OPT.sbMode:'auto';
@@ -5639,7 +5683,7 @@ function _statsBoxPlan(b){
 const STAT_TAB_NAMES={summary:'인원 현황',job:'직무',role:'직책',area:'분야',sheet:'시트',team:'팀'};
 // 인쇄·PNG 표의 내용 = 패널이 지금 보여 주는 탭·범위·필터 그대로 (철님 10-20). 패널 html을 그대로 읽어 줄로 바꾼다.
 function _statTableData(){
-  const tmp=document.createElement('div'); tmp.innerHTML=_statPanelHtml();
+  const tmp=document.createElement('div'); tmp.innerHTML=OPT.sbShow===false?'':_statPanelHtml();
   const items=[];
   tmp.querySelectorAll('.sfl-row,.sfl-total,.sfl-sec-lbl,.sfl-dup').forEach(el=>{
     if(el.style&&el.style.display==='none') return;  // 접힌 팀 줄은 패널에서도 안 보인다
@@ -5653,12 +5697,13 @@ function _statTableData(){
     } else if(el.classList.contains('sfl-sec-lbl')){ items.push({t:'sec',name:el.textContent.trim()}); }
     else { items.push({t:'note',name:el.textContent.trim()}); }
   });
-  const tab=STAT_TAB_NAMES[_statTab]||'인원 현황', all=_sflScope==='all'&&(_statTab==='summary'||_statTab==='team');
+  const _cmpIt=_cmpTableItems(); _cmpIt.forEach(x=>items.push(x));  // 비교 중이면 변경 내역을 표 끝에 붙인다 (철님 10-21)
+  const tab=OPT.sbShow===false?'변경 내역':(STAT_TAB_NAMES[_statTab]||'인원 현황'), all=_sflScope==='all'&&(_statTab==='summary'||_statTab==='team');
   const sheet=_statTab==='sheet'?'':(all?'전체':((SHEETS[CUR_SHEET]&&SHEETS[CUR_SHEET].name)||''));
   const tots=items.filter(i=>i.t==='total'), total=tots.length?(parseInt(tots[tots.length-1].cnt)||0):0;
   const mc=_statTableData._c||(_statTableData._c=document.createElement('canvas').getContext('2d')), font=getComputedStyle(document.body).fontFamily||'sans-serif';
   let need=0; items.forEach(it=>{ mc.font=(it.t==='total'?'bold 12px ':'11px ')+font; let w=mc.measureText(it.name).width+(it.t==='row'?(it.col?24:10)+it.ind:10)+10+mc.measureText(String(it.cnt||'')).width+12; if(it.sub){ mc.font='9px '+font; w+=mc.measureText(it.sub).width+8; } if(w>need) need=w; });
-  const w=Math.max(_SB_W,Math.min(280,Math.ceil(need)));  // 폭은 가장 긴 줄에 맞춘다 (150~280px)
+  const w=Math.max(_SB_W,Math.min(_cmpIt.length?380:280,Math.ceil(need)));  // 폭은 가장 긴 줄에 맞춘다 (150~280px, 변경 내역이 있으면 380px까지)
   return {items,title:tab+(sheet?' · '+sheet:''),total,tab:_statTab,w,sheet};
 }
 function _statSummaryH(sd){ return sd?34+sd.items.reduce((a,it)=>a+(it.t==='row'?18:it.t==='total'?24:it.t==='sec'?20:16),0)+8:0; }
