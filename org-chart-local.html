@@ -1196,12 +1196,12 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
   <div id="modal">
     <div class="mh2">
       <h2 id="mtitle">조직 수정</h2>
-      <button class="mcl" onclick="closeModal()">✕</button>
+      <button class="mcl" onclick="cancelModal()">✕</button>
     </div>
     <div class="mb" id="mbody"></div>
     <div class="mf2">
       <button class="bdel" id="bdel" onclick="delCurrent()">🗑 삭제</button>
-      <button class="bca" onclick="closeModal()">취소</button>
+      <button class="bca" onclick="cancelModal()">취소</button>
       <button class="bach" onclick="saveAndAddChild()" title="저장 후 하위 조직 추가">＋ 하위 조직</button>
       <button class="bsv" onclick="saveModal()">저장</button>
     </div>
@@ -3267,6 +3267,7 @@ function openEdit(id){
   document.getElementById('ov').classList.add('show');
   initMerDnd();
   initOrdDnd();
+  _edSnap=_edState();
 }
 function syncBandDefault(){
   const def=document.getElementById('ei-color-def');
@@ -3362,7 +3363,18 @@ function saveModal(){
 }
 function closeModal(){
   document.getElementById('ov').classList.remove('show');
-  S.eid=null;
+  S.eid=null; _edSnap=null;
+}
+// 창을 열 때의 입력값과 비교한다. 고쳤다가 원래 값으로 돌려 놓았으면 고친 내용이 없는 것으로 본다
+let _edSnap=null;
+function _edState(){
+  const b=document.getElementById('mbody'); if(!b) return '';
+  return JSON.stringify([...b.querySelectorAll('input,select,textarea')].map(e=>(e.type==='checkbox'||e.type==='radio')?e.checked:e.value)
+    .concat([...b.querySelectorAll('[data-id]')].map(e=>e.dataset.id)));
+}
+function cancelModal(){
+  if(S.eid!=null&&_edSnap!==null&&_edState()!==_edSnap&&!confirm('저장하지 않은 변경이 있습니다.\n저장하지 않고 닫을까요?')) return;
+  closeModal();
 }
 function initMerDnd(){
   const list=document.getElementById('mlist');
@@ -4174,7 +4186,7 @@ function startWayDrag(e,key){
 
 // ═══ Options
 let _optLayoutTimer=null;
-function scheduleOptLayout(){ clearTimeout(_optLayoutTimer); _optLayoutTimer=setTimeout(autoLayout,200); }
+function scheduleOptLayout(){ clearTimeout(_optLayoutTimer); _optLayoutTimer=setTimeout(()=>{ _optLayoutTimer=null; autoLayout(); _hCheckpoint(); },200); }
 function applyCardWidth(v){
   v=Math.round(v/20)*20;
   OPT.nw=v; NW=v;
@@ -4331,8 +4343,12 @@ function addStatusCat(){
   document.getElementById('statuscat-lbl').value='';
   renderStatusCatList(); renderSgList(); updateSt(); saveOptLS();
 }
+// 이 값을 쓰는 사람 수 (모든 시트)
+function _useCount(test){ _syncSheet(); let n=0; SHEETS.forEach(sh=>(sh.nodes||[]).forEach(nd=>(nd.m||[]).forEach(m=>{ if(test(m)) n++; }))); return n; }
+const _UNDO_TIP='지운 뒤에는 되돌리기(↶)로 살릴 수 있습니다.';
 function removeStatusCat(i){
-  const key=OPT.statusItems[i]?.key;
+  const key=OPT.statusItems[i]?.key, def=OPT.statusItems[0]?.key;
+  if(key&&!confirm(`'${OPT.statusItems[i].label}' 상태를 지울까요?\n이 상태인 ${_useCount(m=>(m.s||def)===key)}명은 현황 그룹에서 빠져 인원 수와 출력 현황표가 바뀝니다.\n${_UNDO_TIP}`)) return;
   OPT.statusItems.splice(i,1);
   // statsGroups에서 해당 key 제거
   if(key) OPT.statsGroups.forEach(g=>{ g.statuses=g.statuses.filter(k=>k!==key); });
@@ -4355,6 +4371,8 @@ function addCat(type){
   inp.value=''; renderCatList(type); saveOptLS(); updateStatsPanel();
 }
 function removeCat(type,i){
+  const fld=type==='job'?'f':type==='role'?'r':'a', v=(type==='job'?OPT.jobCats:type==='role'?OPT.roleCats:OPT.areaCats)[i];
+  if(v!=null&&!confirm(`'${v}' 분류를 지울까요?\n이 분류를 쓰는 ${_useCount(m=>m[fld]===v)}명의 값은 그대로 남고, 고르는 목록에서만 빠집니다.\n${_UNDO_TIP}`)) return;
   if(type==='job') OPT.jobCats.splice(i,1);
   else if(type==='role') OPT.roleCats.splice(i,1);
   else OPT.areaCats.splice(i,1);
@@ -4395,7 +4413,7 @@ function addStatsGroup(){
   OPT.statsGroups.push({name:'그룹',statuses:[]});
   renderSgList(); updateSt(); saveOptLS();
 }
-function removeSg(i){ OPT.statsGroups.splice(i,1); renderSgList(); updateSt(); saveOptLS(); }
+function removeSg(i){ const g=OPT.statsGroups[i]; if(g){ const def=OPT.statusItems[0]?.key, n=_useCount(m=>(g.statuses||[]).includes(m.s||def)); if(!confirm(`'${g.name}' 현황 그룹을 지울까요?\n이 그룹에 든 ${n}명이 현황 합계와 출력 현황표에서 빠집니다.\n${_UNDO_TIP}`)) return; } OPT.statsGroups.splice(i,1); renderSgList(); updateSt(); saveOptLS(); }
 function renameCat(type,i,val){
   const oldVal=type==='job'?OPT.jobCats[i]:type==='role'?OPT.roleCats[i]:OPT.areaCats[i];
   if(type==='job') OPT.jobCats[i]=val;
@@ -4725,13 +4743,13 @@ async function pwSubmit(){
 let _saveTimer=null, _saving=false;
 // ═══ 되돌리기 / 다시 하기 (history)
 let _hUndo=[], _hRedo=[], _hLast=null, _hAdminBase=false;
-function _hState(){ _syncSheet(); return {s:JSON.stringify(_cleanSheets()), cur:CUR_SHEET}; }
+function _hState(){ _syncSheet(); return {s:JSON.stringify(_cleanSheets()), o:JSON.stringify(OPT), cur:CUR_SHEET}; }
 function _hDragging(){
   return !!(S.drag||S.wdrag||S.pan||_mrDrag||(typeof anchorDrag!=='undefined'&&anchorDrag));
 }
 function _hButtons(){
   const u=document.getElementById('btn-undo'), r=document.getElementById('btn-redo');
-  if(u) u.disabled=!_hUndo.length;
+  if(u) u.disabled=!_hUndo.length&&!(_hDefer||_optLayoutTimer||_optDrag);  // 미뤄 둔 옵션 변경도 되돌릴 수 있다
   if(r) r.disabled=!_hRedo.length;
 }
 function _hReset(){
@@ -4739,12 +4757,22 @@ function _hReset(){
   try{ _hLast=_hState(); }catch(_){ _hLast=null; }
   _hButtons();
 }
-function _hCheckpoint(){
+let _optEditAt=0, _optDrag=false, _hDefer=null;
+(function(){ const opt=e=>{ const t=e.target; if(t&&t.closest&&t.closest('#optov,#dataov')) _optEditAt=Date.now(); };
+  document.addEventListener('input',opt,true); document.addEventListener('change',opt,true);
+  document.addEventListener('pointerdown',e=>{ const t=e.target; if(t&&t.type==='range'&&t.closest&&t.closest('#optov')) _optDrag=true; },true);
+  document.addEventListener('pointerup',()=>{ if(_optDrag){ _optDrag=false; _optEditAt=Date.now(); } },true); })();
+function _hCheckpoint(force){
   if(!ADMIN){ if(!_hDragging()) _hReset(); return; }
   if(_hDragging()) return;
+  if(_hBusy) return;  // 되돌리는 도중에는 적지 않는다
+  // 옵션 창·데이터 창에서 값을 바꾸는 중(슬라이더를 쥔 동안, 마지막 입력 뒤 0.4초, 자동 배치 대기)에는 적지 않고 미룬다.
+  // 저장(scheduleSave)이 입력마다 부르므로, 미루지 않으면 '새 옵션 + 옛 배치'가 한 걸음으로 남는다 (UIUX ORGV r1 B1)
+  if(force){ if(_optLayoutTimer){ clearTimeout(_optLayoutTimer); _optLayoutTimer=null; autoLayout(); } }
+  else if(_optLayoutTimer||_optDrag||Date.now()-_optEditAt<400){ clearTimeout(_hDefer); _hDefer=setTimeout(()=>{ _hDefer=null; _hCheckpoint(); },420); _hButtons(); return; }
   const cur=_hState();
   if(!_hLast){ _hLast=cur; _hButtons(); return; }
-  if(cur.s!==_hLast.s){
+  if(cur.s!==_hLast.s||cur.o!==_hLast.o){
     _hUndo.push(_hLast);
     if(_hUndo.length>50) _hUndo.shift();
     _hRedo=[];
@@ -4752,7 +4780,15 @@ function _hCheckpoint(){
   _hLast=cur;
   _hButtons();
 }
+let _hBusy=false;
 function _hRestore(st){
+  _hBusy=true;
+  try{ if(st.o&&st.o!==JSON.stringify(OPT)){
+    _applyOptObj(JSON.parse(st.o)); applyAllStatusCSS(); applyAllFontHeights(); saveOptLS();
+    const b=document.getElementById('btn-data'); if(b) b.textContent='◈ '+OPT.dataLabel;
+    if(document.getElementById('optov').classList.contains('show')) openOptions();
+    if(document.getElementById('dataov').classList.contains('show')) openData();
+  } }finally{ _hBusy=false; }
   SHEETS=JSON.parse(st.s);
   const i=Math.min(Math.max(0,st.cur|0),SHEETS.length-1);
   _loadSheet(i);
@@ -4763,15 +4799,15 @@ function _hRestore(st){
   scheduleSave();
 }
 function undoEdit(){
-  if(!ADMIN||!_hUndo.length) return;
-  _hCheckpoint();
+  if(!ADMIN) return;
+  _hCheckpoint(true);  // 아직 적지 않은 옵션 변경(미뤄 둔 걸음)부터 적는다. 기록이 비어 있어도 그 변경은 되돌린다
   if(!_hUndo.length) return;
   _hRedo.push(_hLast);
   _hRestore(_hUndo.pop());
 }
 function redoEdit(){
   if(!ADMIN||!_hRedo.length) return;
-  _hCheckpoint();
+  _hCheckpoint(true);
   if(!_hRedo.length) return;
   _hUndo.push(_hLast);
   _hRestore(_hRedo.pop());
@@ -6017,7 +6053,7 @@ document.addEventListener('keydown',e=>{
     if(document.getElementById('cloudov').classList.contains('show')){ closeFileModal(); return; }
     if(document.getElementById('dataov').classList.contains('show')){ closeData(); return; }
     if(document.getElementById('optov').classList.contains('show')){ closeOptions(); return; }
-    if(document.getElementById('ov').classList.contains('show')){ closeModal(); return; }
+    if(document.getElementById('ov').classList.contains('show')){ cancelModal(); return; }
   }
 });
 
