@@ -813,7 +813,7 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
 <div id="dataov" onclick="if(event.target===this)closeData()">
   <div id="datamodal">
     <div class="dat-head">
-      <input class="dat-head-lbl" id="data-title-inp" value="데이터"
+      <input class="dat-head-lbl" id="data-title-inp" aria-label="데이터 단추 이름" value="데이터"
         onchange="OPT.dataLabel=this.value;document.getElementById('btn-data').textContent='◈ '+this.value;saveOptLS()">
       <button class="mcl" onclick="closeData()">✕</button>
     </div>
@@ -5932,6 +5932,32 @@ function toggleGroupExclude(i){
   OPT.statsGroups[i].excludeTotal=!OPT.statsGroups[i].excludeTotal;
   saveOptLS(); updateStatsPanel();
 }
+// 창 안 입력에 이름 잇기 (UIUX M5, 10-23): 줄 이름표는 그 줄 첫 입력에 묶고(누르면 초점), 나머지 입력은 aria-label
+const _A11Y_F={s:'상태',f:'직무',r:'직책',a:'분야',n:'이름',cc:'겸직'};
+let _a11yN=0;
+function _a11yBind(root){
+  if(!root) return;
+  const use=e=>e.type!=='hidden';
+  root.querySelectorAll('.opt-row,.fg').forEach(row=>{
+    let lb=row.querySelector(':scope > .opt-lbl, :scope > .fl'); if(!lb) return;
+    const c=[...row.querySelectorAll('input,select,textarea')].find(use); if(!c||c.closest('.mer')) return;  // 소속 멤버 줄은 목록 제목
+    if(lb.tagName!=='LABEL'){ const n=document.createElement('label'); [...lb.attributes].forEach(a=>n.setAttribute(a.name,a.value)); n.innerHTML=lb.innerHTML; lb.replaceWith(n); lb=n; }
+    if(!c.id) c.id='a11y-'+(++_a11yN);
+    if(lb.htmlFor!==c.id) lb.htmlFor=c.id;
+  });
+  root.querySelectorAll('input,select,textarea').forEach(c=>{
+    if(!use(c)||c.getAttribute('aria-label')||(c.labels&&c.labels.length)||c.title) return;
+    let nm='';
+    const df=c.getAttribute('data-f'); if(df&&_A11Y_F[df]) nm=_A11Y_F[df];
+    if(!nm&&c.closest('.cat-tag,.stcat-tag')){ const sc=c.closest('.dat-sec'), h=sc&&sc.querySelector('.dat-sec-title'); nm=(h?h.textContent.trim():'분류')+' 항목'; }
+    if(!nm){ const row=c.closest('.opt-row,.fg'), lb=row&&row.querySelector(':scope > label'); if(lb) nm=lb.textContent.split('—')[0].trim(); }
+    if(!nm){ const ch=c.closest('.chex'), p=ch&&ch.parentElement; if(p){ const t=[...p.children].find(x=>x!==ch&&x.tagName!=='BUTTON'&&!x.querySelector('input,select,textarea,button')&&x.textContent.trim()); if(t) nm=t.textContent.trim(); } }
+    if(!nm&&c.placeholder) nm=c.placeholder;
+    if(!nm){ const sc=c.closest('.dat-sec'), h=sc&&sc.querySelector('.dat-sec-title'); nm=h?h.textContent.trim():'입력'; }
+    if(c.classList.contains('chex-t')) nm+=' 색상 코드';
+    c.setAttribute('aria-label',nm);
+  });
+}
 // 플로팅 패널 드래그
 (()=>{
   let _d=null;
@@ -5951,6 +5977,14 @@ function toggleGroupExclude(i){
     el.style.right='auto'; el.style.bottom='auto';
   });
   document.addEventListener('mouseup',()=>{ if(_d){ _d=null; _sflFit(); } });  // 끌기가 끝나면 다시 맞춤 (UIUX A5)
+  // 시트 탭이 넘치면 휠로 옆으로 넘긴다 (UIUX H1, 10-23: 스크롤 막대를 숨겨 마우스로 닿지 않던 탭)
+  const sb=document.getElementById('sheetbar');
+  if(sb) sb.addEventListener('wheel',e=>{ if(sb.scrollWidth<=sb.clientWidth+1) return; const dv=Math.abs(e.deltaX)>Math.abs(e.deltaY)?e.deltaX:e.deltaY; if(!dv) return; sb.scrollLeft+=dv; e.preventDefault(); },{passive:false});
+  // 창(옵션·데이터·조직 수정)을 열면 초점을 창 안 첫 입력으로, 입력마다 이름을 잇는다 (UIUX M5, M6)
+  ['optov','dataov','ov'].forEach(id=>{ const ov=document.getElementById(id); if(!ov) return; let open=ov.classList.contains('show'), q=0;
+    new MutationObserver(()=>{ if(q) return; q=requestAnimationFrame(()=>{ q=0; const now=ov.classList.contains('show'); if(now) _a11yBind(ov);
+      if(now&&!open){ const f=[...ov.querySelectorAll('input,select,textarea')].find(e=>e.type!=='hidden'&&e.getClientRects().length); if(f) f.focus({preventScroll:true}); }
+      open=now; }); }).observe(ov,{attributes:true,attributeFilter:['class'],childList:true,subtree:true}); });
   let _rz=0; window.addEventListener('resize',()=>{ cancelAnimationFrame(_rz); _rz=requestAnimationFrame(_sflFit); });
   const tg=document.getElementById('statsfl-tog');
   if(tg) tg.addEventListener('click',()=>{
