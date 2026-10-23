@@ -5707,6 +5707,38 @@ function _statTableData(){
   return {items,title:tab+(sheet?' · '+sheet:''),total,tab:_statTab,w,sheet};
 }
 function _statSummaryH(sd){ return sd?34+sd.items.reduce((a,it)=>a+(it.t==='row'?18:it.t==='total'?24:it.t==='sec'?20:16),0)+8:0; }
+// 직무·직책·분야 탭 본문 (철님 10-23): 현황 탭의 현원/정원 체크를 그대로 따른다.
+// 그룹 필터가 없으면 칸별 숫자는 현원만 세고, 현원에서 빠진 그룹(채용 자리 등)은 흐린 줄로 따로 보이며, 합계는 현원·정원 두 줄.
+function _sflCatHtml(filtered,grpDef,key,cats,ct){
+  const defKey=OPT.statusItems[0]?.key||'active';
+  const isCur=m=>{ const k=memberKind(m); return k==='p'||k==='ponly'; };
+  const base=grpDef?filtered:filtered.filter(isCur);
+  let html='';
+  cats.forEach(cat=>{
+    const cnt=base.filter(m=>m[key]===cat).length;
+    if(!cnt) return;
+    html+=`<div class="sfl-row"><span class="sfl-lbl">${esc(cat)}</span><span class="sfl-num">${cnt}</span></div>`;
+  });
+  const other=base.filter(m=>m[key]&&!cats.includes(m[key]));
+  if(other.length){
+    const vals={};other.forEach(m=>{vals[m[key]]=(vals[m[key]]||0)+1;});
+    Object.entries(vals).forEach(([v,c])=>{
+      html+=`<div class="sfl-row"><span class="sfl-lbl" style="opacity:.55">↳ ${esc(v)}</span><span class="sfl-num">${c}</span><button class="sfl-ex-btn sfl-ex-in" title="카테고리에 추가" data-ct="${ct}" data-cv="${esc(v)}" onclick="addToCatBtn(this)">+</button></div>`;
+    });
+  }
+  const noCnt=base.filter(m=>!m[key]).length;
+  if(noCnt) html+=`<div class="sfl-row"><span class="sfl-lbl" style="opacity:.35">미입력</span><span class="sfl-num">${noCnt}</span></div>`;
+  if(grpDef){
+    html+=`<div class="sfl-total"><span class="sfl-total-lbl">${esc(grpDef.name)}</span><span class="sfl-total-num">${filtered.length}</span></div>`;
+    return html;
+  }
+  OPT.statsGroups.forEach(g=>{ if(!g.excludeTotal) return; const c=filtered.filter(m=>g.statuses.includes(m.s||defKey)).length;
+    if(c) html+=`<div class="sfl-row"><span class="sfl-lbl" style="opacity:.55">${esc(g.name)}</span><span class="sfl-num">${c}</span></div>`; });
+  const tot=filtered.filter(m=>{ const k=memberKind(m); return k==='p'||k==='tot'; }).length;
+  html+=`<div class="sfl-total"><span class="sfl-total-lbl">현원</span><span class="sfl-total-num">${base.length}</span></div>`;
+  html+=`<div class="sfl-total"><span class="sfl-total-lbl">정원</span><span class="sfl-total-num">${tot}</span></div>`;
+  return html;
+}
 // 패널 본문 html (철님 10-20): 패널과 인쇄·PNG 표가 같은 html에서 나온다 - 탭·범위·필터 그대로
 function _statPanelHtml(){
   const grpSel=document.getElementById('statsfl-grp');
@@ -5737,42 +5769,10 @@ function _statPanelHtml(){
     html+=`<div class="sfl-total"><span class="sfl-total-lbl">정원</span><span class="sfl-total-num">${sd.tot}</span></div>`;
 
   } else if(_statTab==='job'){
-    // ── 직무 탭: 직무 카테고리별 인원 (현황그룹 필터 적용 가능)
-    OPT.jobCats.forEach(cat=>{
-      const cnt=filtered.filter(m=>m.f===cat).length;
-      if(!cnt) return;
-      html+=`<div class="sfl-row"><span class="sfl-lbl">${esc(cat)}</span><span class="sfl-num">${cnt}</span></div>`;
-    });
-    const otherMs=filtered.filter(m=>m.f&&!OPT.jobCats.includes(m.f));
-    if(otherMs.length){
-      const vals={};otherMs.forEach(m=>{vals[m.f]=(vals[m.f]||0)+1;});
-      Object.entries(vals).forEach(([v,c])=>{
-        html+=`<div class="sfl-row"><span class="sfl-lbl" style="opacity:.55">↳ ${esc(v)}</span><span class="sfl-num">${c}</span><button class="sfl-ex-btn sfl-ex-in" title="카테고리에 추가" data-ct="job" data-cv="${esc(v)}" onclick="addToCatBtn(this)">+</button></div>`;
-      });
-    }
-    const noCnt=filtered.filter(m=>!m.f).length;
-    if(noCnt) html+=`<div class="sfl-row"><span class="sfl-lbl" style="opacity:.35">미입력</span><span class="sfl-num">${noCnt}</span></div>`;
-    const lbl=grpDef?grpDef.name:'전체';
-    html+=`<div class="sfl-total"><span class="sfl-total-lbl">${esc(lbl)}</span><span class="sfl-total-num">${filtered.length}</span></div>`;
+    html+=_sflCatHtml(filtered,grpDef,'f',OPT.jobCats,'job');
 
   } else if(_statTab==='role'){
-    // ── 직책 탭: 직책 카테고리별 인원 (현황그룹 필터 적용 가능)
-    OPT.roleCats.forEach(cat=>{
-      const cnt=filtered.filter(m=>m.r===cat).length;
-      if(!cnt) return;
-      html+=`<div class="sfl-row"><span class="sfl-lbl">${esc(cat)}</span><span class="sfl-num">${cnt}</span></div>`;
-    });
-    const otherMr=filtered.filter(m=>m.r&&!OPT.roleCats.includes(m.r));
-    if(otherMr.length){
-      const vals={};otherMr.forEach(m=>{vals[m.r]=(vals[m.r]||0)+1;});
-      Object.entries(vals).forEach(([v,c])=>{
-        html+=`<div class="sfl-row"><span class="sfl-lbl" style="opacity:.55">↳ ${esc(v)}</span><span class="sfl-num">${c}</span><button class="sfl-ex-btn sfl-ex-in" title="카테고리에 추가" data-ct="role" data-cv="${esc(v)}" onclick="addToCatBtn(this)">+</button></div>`;
-      });
-    }
-    const noCnt=filtered.filter(m=>!m.r).length;
-    if(noCnt) html+=`<div class="sfl-row"><span class="sfl-lbl" style="opacity:.35">미입력</span><span class="sfl-num">${noCnt}</span></div>`;
-    const lbl=grpDef?grpDef.name:'전체';
-    html+=`<div class="sfl-total"><span class="sfl-total-lbl">${esc(lbl)}</span><span class="sfl-total-num">${filtered.length}</span></div>`;
+    html+=_sflCatHtml(filtered,grpDef,'r',OPT.roleCats,'role');
 
   } else if(_statTab==='sheet'){
     const cnts=SHEETS.map((sh,i)=>_sflCountNodes(_sflSheetNodes(i)));
@@ -5790,23 +5790,7 @@ function _statPanelHtml(){
     html+=_sflTeamHtml();
 
   } else if(_statTab==='area'){
-    // ── 분야 탭: 분야 카테고리별 인원 (현황그룹 필터 적용 가능)
-    OPT.areaCats.forEach(cat=>{
-      const cnt=filtered.filter(m=>m.a===cat).length;
-      if(!cnt) return;
-      html+=`<div class="sfl-row"><span class="sfl-lbl">${esc(cat)}</span><span class="sfl-num">${cnt}</span></div>`;
-    });
-    const otherMa=filtered.filter(m=>m.a&&!OPT.areaCats.includes(m.a));
-    if(otherMa.length){
-      const vals={};otherMa.forEach(m=>{vals[m.a]=(vals[m.a]||0)+1;});
-      Object.entries(vals).forEach(([v,c])=>{
-        html+=`<div class="sfl-row"><span class="sfl-lbl" style="opacity:.55">↳ ${esc(v)}</span><span class="sfl-num">${c}</span><button class="sfl-ex-btn sfl-ex-in" title="카테고리에 추가" data-ct="area" data-cv="${esc(v)}" onclick="addToCatBtn(this)">+</button></div>`;
-      });
-    }
-    const noCnt=filtered.filter(m=>!m.a).length;
-    if(noCnt) html+=`<div class="sfl-row"><span class="sfl-lbl" style="opacity:.35">미입력</span><span class="sfl-num">${noCnt}</span></div>`;
-    const lbl=grpDef?grpDef.name:'전체';
-    html+=`<div class="sfl-total"><span class="sfl-total-lbl">${esc(lbl)}</span><span class="sfl-total-num">${filtered.length}</span></div>`;
+    html+=_sflCatHtml(filtered,grpDef,'a',OPT.areaCats,'area');
   }
 
   return html;
