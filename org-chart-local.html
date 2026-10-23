@@ -198,6 +198,13 @@ body:not(.printing) #svgl .cpath-dash{stroke-width:max(calc(var(--stroke-dash-w)
 .opt-sec.collapsed>*:not(.opt-sec-title){display:none;}
 .opt-sec.collapsed>.opt-sec-title{margin-bottom:0;}
 .opt-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.pre-row{display:flex;align-items:center;gap:6px;margin-bottom:6px;}
+.pre-name{flex:1;min-width:0;border:1px solid #D0D0D0;border-radius:5px;padding:4px 6px;font-size:12px;}
+.pre-b{font-size:11px;padding:4px 8px;border:1px solid #C8C8C8;border-radius:5px;background:#fff;color:#333;cursor:pointer;white-space:nowrap;}
+.pre-b:hover:not(:disabled){background:#F2F2F2;}
+.pre-b:disabled{opacity:.45;cursor:default;}
+.pre-at{font-size:10px;color:#666;width:62px;text-align:right;white-space:nowrap;}
+.pre-hint{font-size:11px;color:#666;line-height:1.5;margin-top:2px;}
 .opt-lbl{font-size:12px;color:#555;min-width:100px;}
 .opt-val{font-size:11px;color:#999;min-width:32px;text-align:right;}
 .opt-slider{flex:1;accent-color:var(--mint);cursor:pointer;}
@@ -893,6 +900,11 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
       <button class="mcl" onclick="closeOptions()">✕</button>
     </div>
     <div class="opt-body">
+      <div class="opt-sec" data-sec="preset">
+        <div class="opt-sec-title" role="button" tabindex="0" aria-expanded="true"><span class="opt-arr">▾</span> 옵션 묶음</div>
+        <div id="opt-presets"></div>
+        <div class="pre-hint">지금의 겉모습 옵션(배치, 카드, 글꼴, 선, 색)을 칸에 저장해 두고 언제든 불러옵니다. 상태, 분류, 제목은 바뀌지 않습니다. 칸은 조직도 파일에 함께 저장됩니다.</div>
+      </div>
       <div class="opt-sec" data-sec="layout">
         <div class="opt-sec-title" role="button" tabindex="0" aria-expanded="true"><span class="opt-arr">▾</span> 배치</div>
         <div class="opt-row">
@@ -4447,7 +4459,7 @@ function _optColorRows(rows){ // [{lbl, key, cssVar, val}]
       ${mkHexInp(r.val,`applyColor('${r.key}','${r.cssVar}',this.value);this.closest('.opt-color-row').querySelector('.opt-color-dot').style.background=this.value`)}
     </div>`).join('');
 }
-var OPTSEC_DEF={layout:1,card:1,count:1,font:0,line:0,logo:0};
+var OPTSEC_DEF={preset:1,layout:1,card:1,count:1,font:0,line:0,logo:0};
 var _optSecMem=null; // 세션 내 섹션 상태 - localStorage가 막힌 환경에서도 접기/펼치기가 동작하도록 메모리에 든다
 function _optSecLoad(){
   if(_optSecMem) return _optSecMem;
@@ -4548,6 +4560,7 @@ function openOptions(){
   const lsc=document.getElementById('opt-logo-subcol'); if(lsc) lsc.value = OPT.logoSubColor || '#808080';
   const lscv=document.getElementById('opt-logo-subcol-v'); if(lscv) lscv.textContent = (OPT.logoSubColor||'#808080').toUpperCase();
   applyOptSecs();
+  renderPresets();
   document.getElementById('optov').classList.add('show');
 }
 function closeOptions(){
@@ -4921,7 +4934,38 @@ async function saveDataToFile(){
 }
 
 // ═══ 데이터 불러오기 (파일 / localStorage)
+// ═══ 옵션 묶음 3칸 (철님 10-23): 겉모습 옵션만 칸에 담는다. 자료에 속하는 값(상태, 분류, 현황 그룹, 제목, 로고 글자)은 담지 않는다
+var _PRE_N=3, _PRE_SKIP=['presets','statusItems','jobCats','roleCats','areaCats','statsGroups','chartTitle','asOf','dataLabel','logoText','logoSub','optVer','printPaper'];
+var _PRE_LAYOUT=['nw','bandW','rowGap','colGap','padX','padY','wrapN','orient','rowMode','fsEn','fsKo','fsMn','fsMf','fsMr2','fsMa','lhH','lhC','hdrH','rowH'];
+function _preClean(o){ const r={}; if(!o||typeof o!=='object'||Array.isArray(o)) return r; Object.keys(o).forEach(k=>{ if(!_PRE_SKIP.includes(k)) r[k]=JSON.parse(JSON.stringify(o[k])); }); return r; }
+function _preNorm(a){ const r=[]; a=Array.isArray(a)?a:[];
+  for(let i=0;i<_PRE_N;i++){ const p=a[i]; r.push(p&&typeof p==='object'&&!Array.isArray(p)?{name:String(p.name||'').slice(0,30),opt:p.opt&&typeof p.opt==='object'&&!Array.isArray(p.opt)?_preClean(p.opt):null,at:typeof p.at==='string'?p.at.slice(0,10):''}:{name:'',opt:null,at:''}); }
+  return r; }
+function renderPresets(){
+  const el=document.getElementById('opt-presets'); if(!el) return;
+  el.innerHTML=_preNorm(OPT.presets).map((p,i)=>`<div class="pre-row"><input class="pre-name" aria-label="묶음 ${i+1} 이름" placeholder="묶음 ${i+1}" maxlength="30" value="${esc(p.name)}" onchange="presetName(${i},this.value)"><button class="pre-b" onclick="presetSave(${i})">저장</button><button class="pre-b" onclick="presetLoad(${i})"${p.opt?'':' disabled'}>불러오기</button><span class="pre-at">${p.at?esc(p.at):'비어 있음'}</span></div>`).join('');
+}
+function presetName(i,v){ const a=_preNorm(OPT.presets); a[i].name=String(v||'').trim().slice(0,30); OPT.presets=a; saveOptLS(); }
+function presetSave(i){
+  const a=_preNorm(OPT.presets), el=document.querySelectorAll('#opt-presets .pre-name')[i];
+  const nm=((el&&el.value.trim())||a[i].name||'').slice(0,30);
+  if(a[i].opt&&!confirm(`'${nm||('묶음 '+(i+1))}' 칸에 지금 옵션을 덮어쓸까요?`)) return;
+  a[i]={name:nm,opt:_preClean(OPT),at:new Date().toISOString().slice(0,10)}; OPT.presets=a; saveOptLS(); renderPresets();
+}
+function presetLoad(i){
+  const p=_preNorm(OPT.presets)[i]; if(!p.opt) return;
+  const relay=_PRE_LAYOUT.some(k=>(k in p.opt)&&p.opt[k]!==OPT[k]);
+  _hBusy=true;  // 옵션과 배치를 다 바꾼 뒤에 한 번만 적는다 (불러오기 한 번이 되돌리기 한 걸음)
+  try{
+    _applyOptObj(Object.assign(JSON.parse(JSON.stringify(OPT)),p.opt));
+    applyAllStatusCSS(); applyAllFontHeights(); saveOptLS();
+    if(document.getElementById('optov').classList.contains('show')) openOptions();
+    if(relay) autoLayout(); else render();
+  }finally{ _hBusy=false; }
+  _hCheckpoint();
+}
 function _applyOptObj(d){
+  OPT.presets=_preNorm(d.presets);
   const numKeys=['fsEn','fsKo','fsMn','fsMf','fsMr2','fsMa','lhH','lhC','hdrH','rowH','nw','bandW','rowGap','colGap','padX','padY','strokeW','strokeDashW','cardRadius','shadowA','wrapN'];
   numKeys.forEach(k=>{if(d[k]!=null){OPT[k]=+d[k];_applyOptCSS(k,+d[k]);}});
   OPT.orient=(d.orient==='right'||d.orient==='left')?d.orient:'down';
