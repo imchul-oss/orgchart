@@ -447,6 +447,20 @@ body:not(.bodyband) .nb.mcol{padding-left:0;background:var(--card-bg);}
 .sfl-row{display:flex;align-items:center;gap:7px;padding:3px 0;}
 .sfl-foot{position:sticky;bottom:0;background:var(--stats-bg);padding-bottom:1px;}  /* 목록을 내려도 합계는 늘 보인다 (철님 10-23) */
 .sfl-row.sfl-short .sfl-num{color:#FFB347;}  /* 정원보다 현원이 적은 칸 */
+/* 조회 탭 (철님 10-23) */
+.sfl-qchips{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px;}
+.sfl-qchip{display:inline-flex;align-items:center;gap:2px;padding:2px 3px 2px 7px;border-radius:10px;background:rgba(255,255,255,.14);font-size:10px;}
+.sfl-qchip b{font-weight:400;opacity:.6;margin-right:2px;}
+.sfl-qx{border:none;background:none;color:inherit;opacity:.65;cursor:pointer;font-size:12px;line-height:1;padding:0 2px;}
+.sfl-qx:hover{opacity:1;}
+.sfl-qadd{display:flex;gap:4px;margin-bottom:6px;}
+.sfl-qadd select{flex:1;min-width:0;}
+.sfl-qsum{display:none;}
+.sfl-qby{display:flex;align-items:center;gap:6px;margin:4px 0 2px;font-size:10px;opacity:.85;}
+.sfl-qby select{flex:1;min-width:0;}
+.sfl-qhint{font-size:10px;opacity:.45;padding:2px 0 4px;}
+.sfl-qsub{font-size:9px;opacity:.5;white-space:nowrap;}
+.sfl-qlist{max-width:240px;}
 .sfl-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
 .sfl-lbl{flex:1;font-size:11px;opacity:.7;}
 .sfl-num{font-size:13px;font-weight:700;}
@@ -778,6 +792,7 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
     <button class="sfl-tab" onclick="switchStatTab(this,'area')">분야</button>
     <button class="sfl-tab" onclick="switchStatTab(this,'sheet')">시트</button>
     <button class="sfl-tab" onclick="switchStatTab(this,'team')">팀</button>
+    <button class="sfl-tab" onclick="switchStatTab(this,'query')">조회</button>
   </div>
   <div id="statsfl-filter" style="display:none;margin-bottom:8px;">
     <select id="statsfl-grp" class="sfl-grp-sel" onchange="updateStatsPanel()">
@@ -5688,13 +5703,14 @@ function _statsBoxPlan(b){
   }
   return {sd,s,w,h,h0,x,y,inside,ext,pos,mode};
 }
-const STAT_TAB_NAMES={summary:'인원 현황',job:'직무',role:'직책',area:'분야',sheet:'시트',team:'팀'};
+const STAT_TAB_NAMES={summary:'인원 현황',job:'직무',role:'직책',area:'분야',sheet:'시트',team:'팀',query:'조회'};
 // 인쇄·PNG 표의 내용 = 패널이 지금 보여 주는 탭·범위·필터 그대로 (철님 10-20). 패널 html을 그대로 읽어 줄로 바꾼다.
 function _statTableData(){
   const tmp=document.createElement('div'); tmp.innerHTML=OPT.sbShow===false?'':_statPanelHtml();
   const items=[];
   tmp.querySelectorAll('.sfl-row,.sfl-total,.sfl-sec-lbl,.sfl-dup').forEach(el=>{
     if(el.style&&el.style.display==='none') return;  // 접힌 팀 줄은 패널에서도 안 보인다
+    if(el.closest('[data-noprint]')) return;  // 조회 탭 명단은 화면에만 (철님 10-23)
     if(el.classList.contains('sfl-row')){
       const l=el.querySelector('.sfl-lbl'), n=el.querySelector('.sfl-num'), d=el.querySelector('.sfl-dot');
       const name=l?l.textContent.replace(/\s+/g,' ').trim():''; if(!name) return;
@@ -5706,7 +5722,7 @@ function _statTableData(){
     else { items.push({t:'note',name:el.textContent.trim()}); }
   });
   const _cmpIt=_cmpTableItems(); _cmpIt.forEach(x=>items.push(x));  // 비교 중이면 변경 내역을 표 끝에 붙인다 (철님 10-21)
-  const tab=OPT.sbShow===false?'변경 내역':(STAT_TAB_NAMES[_statTab]||'인원 현황'), all=_sflScope==='all'&&(_statTab==='summary'||_statTab==='team');
+  const tab=OPT.sbShow===false?'변경 내역':(STAT_TAB_NAMES[_statTab]||'인원 현황'), all=_sflScope==='all'&&(_statTab==='summary'||_statTab==='team'||_statTab==='query');
   const sheet=_statTab==='sheet'?'':(all?'전체':((SHEETS[CUR_SHEET]&&SHEETS[CUR_SHEET].name)||''));
   const tots=items.filter(i=>i.t==='total'), total=tots.length?(parseInt(tots[tots.length-1].cnt)||0):0;
   const mc=_statTableData._c||(_statTableData._c=document.createElement('canvas').getContext('2d')), font=getComputedStyle(document.body).fontFamily||'sans-serif';
@@ -5730,6 +5746,62 @@ function _sflCatHtml(filtered,grpDef,key,cats,ct){
   html+=row('미입력',base.filter(m=>!m[key]),'opacity:.35');
   const t=num(base);
   html+=`<div class="sfl-foot"><div class="sfl-total"><span class="sfl-total-lbl">${grpDef?esc(grpDef.name):'합계'}</span><span class="sfl-total-num">${t.t}</span></div></div>`;
+  return html;
+}
+// ═══ 조회 탭 (철님 10-23): 직무·직책·분야·팀·상태를 조건으로 겹쳐 센다. 같은 항목의 값끼리는 '또는', 다른 항목끼리는 '그리고'.
+// 결과는 현원/정원, 나눠 보기 항목별 줄, 명단(화면에만). 정원·현원 판단은 다른 탭처럼 현황 탭의 체크(memberKind)를 따른다.
+let _qConds=[], _qK='', _qBy='team';
+const _Q_FIELDS=[['f','직무'],['r','직책'],['a','분야'],['team','팀'],['st','상태']];
+function _qRecs(){
+  const out=[], idx=_sflScope==='all'?SHEETS.map((_,i)=>i):[CUR_SHEET];
+  idx.forEach(i=>_sflSheetNodes(i).forEach(n=>(n.m||[]).forEach(m=>{
+    if(m.cc===true) return;  // 겸직 항목은 빼서 한 사람을 한 번만 센다
+    const k=memberKind(m); if(k!=='p'&&k!=='ponly'&&k!=='tot') return;
+    out.push({m,team:_sflLabel(n),cur:k!=='tot',tot:k!=='ponly'});
+  })));
+  return out;
+}
+function _qVal(x,k){ if(k==='team') return x.team||''; if(k==='st') return x.m.s||(OPT.statusItems[0]?.key||'active'); return x.m[k]||''; }
+function _qValLbl(k,v){ if(v==='') return '미입력'; if(k==='st'){ const it=OPT.statusItems.find(s=>s.key===v); return it?it.label:v; } return v; }
+function _qFieldLbl(k){ const f=_Q_FIELDS.find(x=>x[0]===k); return f?f[1]:k; }
+function _qMatch(x){ const by={}; _qConds.forEach(c=>{ (by[c.k]=by[c.k]||[]).push(c.v); }); return Object.entries(by).every(([k,vs])=>vs.includes(_qVal(x,k))); }
+function _qVals(recs,k){  // 값 순서: 카테고리 순서, 그 밖의 값, 미입력
+  const seen=[], have=new Set(recs.map(x=>_qVal(x,k)));
+  const pre=k==='f'?OPT.jobCats:k==='r'?OPT.roleCats:k==='a'?OPT.areaCats:k==='st'?OPT.statusItems.map(s=>s.key):[];
+  pre.forEach(v=>{ if(have.has(v)&&!seen.includes(v)) seen.push(v); });
+  recs.forEach(x=>{ const v=_qVal(x,k); if(v!==''&&!seen.includes(v)) seen.push(v); });
+  if(have.has('')) seen.push('');
+  return seen;
+}
+function _qFrac(list){ const a=list.filter(x=>x.cur).length,b=list.filter(x=>x.tot).length; return {t:a+'/'+b,short:b>a}; }
+function _qAdd(v){ if(v==='__'||!_qK) return; if(!_qConds.some(c=>c.k===_qK&&c.v===v)) _qConds.push({k:_qK,v}); updateStatsPanel(); }
+function _qDel(i){ _qConds.splice(i,1); updateStatsPanel(); }
+function _qHtml(){
+  const all=_sflScope==='all';
+  let html=`<div class="sfl-scopes"><button class="sfl-scope${all?'':' on'}" data-scope="cur" onclick="_sflSetScope('cur')">현재 시트</button><button class="sfl-scope${all?' on':''}" data-scope="all" onclick="_sflSetScope('all')">전체 시트</button></div>`;
+  const recs=_qRecs(), hit=recs.filter(_qMatch);
+  if(_qConds.length) html+=`<div class="sfl-qchips">${_qConds.map((c,i)=>`<span class="sfl-qchip"><b>${esc(_qFieldLbl(c.k))}</b>${esc(_qValLbl(c.k,c.v))}<button class="sfl-qx" title="조건 빼기" onclick="_qDel(${i})">×</button></span>`).join('')}</div>`;
+  html+=`<div class="sfl-qadd"><select id="sfl-q-k" class="sfl-grp-sel" onchange="_qK=this.value;updateStatsPanel()"><option value="">+ 조건</option>${_Q_FIELDS.map(([k,l])=>`<option value="${k}"${k===_qK?' selected':''}>${l}</option>`).join('')}</select>`;
+  if(_qK) html+=`<select id="sfl-q-v" class="sfl-grp-sel" onchange="_qAdd(this.value)"><option value="__">값 선택</option>${_qVals(recs,_qK).filter(v=>!_qConds.some(c=>c.k===_qK&&c.v===v)).map(v=>`<option value="${esc(v)}">${esc(_qValLbl(_qK,v))}</option>`).join('')}</select>`;
+  html+=`</div>`;
+  if(!_qConds.length) html+=`<div class="sfl-qhint">조건을 고르면 겹치는 인원을 셉니다</div>`;
+  else { const g={}; _qConds.forEach(c=>{ (g[c.k]=g[c.k]||[]).push(_qValLbl(c.k,c.v)); });
+    html+=`<div class="sfl-dup sfl-qsum">조건: ${esc(Object.entries(g).map(([k,vs])=>_qFieldLbl(k)+' '+vs.join(', ')).join(' · '))}</div>`; }
+  html+=`<div class="sfl-qby">나눠 보기<select id="sfl-q-by" class="sfl-grp-sel" onchange="_qBy=this.value;updateStatsPanel()"><option value="">없음</option>${_Q_FIELDS.map(([k,l])=>`<option value="${k}"${k===_qBy?' selected':''}>${l}</option>`).join('')}</select></div>`;
+  if(_qBy){
+    _qVals(hit,_qBy).forEach(v=>{ const list=hit.filter(x=>_qVal(x,_qBy)===v), f=_qFrac(list);
+      html+=`<div class="sfl-row${f.short?' sfl-short':''}"><span class="sfl-lbl sfl-ell"${v===''?' style="opacity:.35"':''}>${esc(_qValLbl(_qBy,v))}</span><span class="sfl-num">${f.t}</span></div>`; });
+  }
+  if(_qConds.length){
+    const defKey=OPT.statusItems[0]?.key||'active';
+    html+=`<div class="sfl-qlist" data-noprint><div class="sfl-sec-lbl">명단 ${hit.length}</div>`;
+    hit.forEach(x=>{ const nm=String(x.m.n||'').trim(), st=(x.m.s||defKey)!==defKey?_qValLbl('st',x.m.s):'';
+      const sub=[x.m.r,x.team,st].filter(Boolean).join(' · ');
+      html+=`<div class="sfl-row"><span class="sfl-lbl sfl-ell"${nm?'':' style="opacity:.55"'}>${nm?esc(nm):'(채용 자리)'}</span><span class="sfl-qsub">${esc(sub)}</span></div>`; });
+    html+=`</div>`;
+  }
+  const t=_qFrac(hit);
+  html+=`<div class="sfl-foot"><div class="sfl-total"><span class="sfl-total-lbl">${_qConds.length?'해당':'전체'}</span><span class="sfl-total-num">${t.t}</span></div></div>`;
   return html;
 }
 // 패널 본문 html (철님 10-20): 패널과 인쇄·PNG 표가 같은 html에서 나온다 - 탭·범위·필터 그대로
@@ -5784,6 +5856,8 @@ function _statPanelHtml(){
 
   } else if(_statTab==='area'){
     html+=_sflCatHtml(filtered,grpDef,'a',OPT.areaCats,'area');
+  } else if(_statTab==='query'){
+    html+=_qHtml();
   }
 
   return html;
