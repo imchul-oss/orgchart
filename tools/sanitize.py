@@ -23,7 +23,7 @@ def sub_once(pattern, repl, text, what):
 
 
 def sanitize(t):
-    t = sub_once(r"<title>[^<]*</title>", "<title>조직도 (Local)</title>", t, "<title>")
+    t = sub_once(r"<title>[^<]*</title>", "<title>조직도</title>", t, "<title>")
     t = sub_once(r'(<span class="tl">)[^<]*(</span>)', r"\g<1>조직도\g<2>", t, "logo span")
     t = sub_once(r"(logoText\s*:\s*)'[^']*'", r"\g<1>''", t, "OPT.logoText")
     for key in ("jobCats", "roleCats", "areaCats"):

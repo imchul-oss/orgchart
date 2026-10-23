@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>조직도 (Local)</title>
+<title>조직도</title>
 <style>
 /* ── Brand Colors ─────────────────────────────── */
 :root {
@@ -92,6 +92,8 @@ body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);ov
 .tb-arrow:hover{background:rgba(255,255,255,.15);}
 #tb-hide{margin-right:12px;}
 #topbar>.tsub{flex-shrink:1;}
+#topbar.tb-tight{gap:5px;}
+#topbar.tb-tight .tb{padding:6px 9px;}
 #topbar.tb-compact .tdv{display:none;}
 #topbar.tb-compact .tb[data-icon]{font-size:0;padding:6px 9px;}
 #topbar.tb-compact .tb[data-icon]::before{content:attr(data-icon);font-size:12px;}
@@ -648,7 +650,7 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
 <!-- Topbar -->
 <div id="topbar">
   <span class="tl">조직도</span>
-  <span class="tsub">조직도 · Org Chart</span>
+  <span class="tsub">조직도</span>
   <div class="tdv"></div>
   <button class="tb tb-g adm-only" onclick="autoLayout()">⟳ 자동 배치</button>
   <div id="zctrl">
@@ -674,7 +676,7 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
   <button class="tb tb-g adm-only" id="btn-data" onclick="openData()">◈ 데이터</button>
   <div class="tdv"></div>
   <div class="dd-wrap">
-    <button class="tb tb-g" onclick="toggleDD('ddloc')">📁 Local ▾</button>
+    <button class="tb tb-g" onclick="toggleDD('ddloc')">📁 파일 ▾</button>
     <div id="ddloc" class="dd">
       <div style="padding:6px 15px 2px;font-size:10px;color:#999;font-weight:700;letter-spacing:1px;">내려받기</div>
       <button class="ddi" onclick="exportCSV();closeDD()">CSV 파일</button>
@@ -710,12 +712,12 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
 <!-- Local Data File Modal -->
 <div id="cloudov" onclick="if(event.target===this)closeFileModal()">
   <div id="cloudmodal">
-    <h3>📄 데이터 파일</h3>
+    <h3>📄 파일 연결</h3>
     <div id="cm-status"></div>
     <p style="font-size:12px;color:#777;line-height:1.6;margin-bottom:14px;">
       조직도 데이터를 담는 JSON 파일을 지정합니다. 한 번 지정하면 다음에 열 때
       자동으로 그 파일을 불러오고, 관리자 모드의 저장도 그 파일에 기록됩니다.
-      파일 미지정 시 브라우저 저장소(localStorage)만 사용합니다.
+      파일을 지정하지 않으면 이 브라우저 저장소에만 저장합니다.
     </p>
     <div class="cm-foot" style="flex-wrap:wrap;">
       <button class="bca" onclick="disconnectFile()" style="margin-right:auto">연결 해제</button>
@@ -749,7 +751,7 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
 <!-- File reconnect banner -->
 <div id="lint-panel"></div>
 <div id="file-banner">
-  <span id="file-banner-txt">📄 데이터 파일 다시 연결</span>
+  <span id="file-banner-txt">📄 파일 다시 연결</span>
   <button onclick="reconnectFile()">연결</button>
 </div>
 
@@ -820,7 +822,7 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
     <div class="dat-body">
       <!-- 직무 카테고리 -->
       <div class="dat-sec">
-        <div class="dat-sec-title">직무 카테고리</div>
+        <div class="dat-sec-title">직무 분류</div>
         <div class="cat-list" id="jobcat-list"></div>
         <div class="cat-add">
           <input id="jobcat-inp" placeholder="새 직무 입력" onkeydown="if(event.key==='Enter')addCat('job')">
@@ -829,7 +831,7 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
       </div>
       <!-- 직책 카테고리 -->
       <div class="dat-sec">
-        <div class="dat-sec-title">직책 카테고리</div>
+        <div class="dat-sec-title">직책 분류</div>
         <div class="cat-list" id="rolecat-list"></div>
         <div class="cat-add">
           <input id="rolecat-inp" placeholder="새 직책 입력" onkeydown="if(event.key==='Enter')addCat('role')">
@@ -838,7 +840,7 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
       </div>
       <!-- 분야 카테고리 -->
       <div class="dat-sec">
-        <div class="dat-sec-title">분야 카테고리</div>
+        <div class="dat-sec-title">분야 분류</div>
         <div class="cat-list" id="areacat-list"></div>
         <div class="cat-add">
           <input id="areacat-inp" placeholder="새 분야 입력" onkeydown="if(event.key==='Enter')addCat('area')">
@@ -847,7 +849,7 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
       </div>
       <!-- 상태 카테고리 -->
       <div class="dat-sec">
-        <div class="dat-sec-title">상태 카테고리</div>
+        <div class="dat-sec-title">상태 분류</div>
         <div class="cat-list" id="statuscat-list"></div>
         <div class="cat-add">
           <input id="statuscat-lbl" placeholder="상태 이름" style="flex:1;min-width:60px" onkeydown="if(event.key==='Enter')addStatusCat()">
@@ -863,7 +865,7 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
       </div>
       <!-- 색상 — 헤더 배경 -->
       <div class="dat-sec">
-        <div class="dat-sec-title">카드 헤더 배경색</div>
+        <div class="dat-sec-title">카드 머리글 배경색</div>
         <div id="dat-hdr-colors"></div>
       </div>
       <!-- 색상 — 타입 띠 -->
@@ -875,11 +877,6 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
       <div class="dat-sec">
         <div class="dat-sec-title">카드 본문 색상</div>
         <div id="dat-ui-colors"></div>
-      </div>
-      <!-- 색상 — 텍스트 -->
-      <div class="dat-sec">
-        <div class="dat-sec-title">글씨 색상</div>
-        <div id="dat-txt-colors"></div>
       </div>
     </div>
     <div class="opt-foot">
@@ -934,7 +931,7 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
           <span class="opt-val" id="opt-cg-v">44px</span>
         </div>
         <div class="opt-row">
-          <span class="opt-lbl">사이드 여백</span>
+          <span class="opt-lbl">좌우 여백</span>
           <input type="range" class="opt-slider" id="opt-px" min="0" max="300" step="10"
             oninput="OPT.padX=+this.value;document.getElementById('opt-px-v').textContent=this.value+'px';scheduleOptLayout()">
           <span class="opt-val" id="opt-px-v">80px</span>
@@ -949,7 +946,7 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
       <div class="opt-sec" data-sec="card">
         <div class="opt-sec-title" role="button" tabindex="0" aria-expanded="true"><span class="opt-arr">▾</span> 카드</div>
         <div class="opt-row">
-          <span class="opt-lbl">헤더 높이 (0=자동)</span>
+          <span class="opt-lbl">머리글 높이 (0=자동)</span>
           <input type="range" class="opt-slider" id="opt-hdrh" min="0" max="240" step="2"
             oninput="OPT.hdrH=+this.value;document.getElementById('opt-hdrh-v').textContent=this.value+'px';applyAllFontHeights();render();saveOptLS()">
           <span class="opt-val" id="opt-hdrh-v">0px</span>
@@ -1101,7 +1098,7 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
           <span class="opt-val" id="opt-fsma-v">9px</span>
         </div>
         <div class="opt-row">
-          <span class="opt-lbl">헤더 줄간격</span>
+          <span class="opt-lbl">머리글 줄간격</span>
           <input type="range" class="opt-slider" id="opt-lhh" min="0.6" max="3" step="0.05"
             oninput="OPT.lhH=+this.value;document.getElementById('opt-lhh-v').textContent=(+this.value).toFixed(2);document.documentElement.style.setProperty('--lh-h',this.value);applyAllFontHeights();render();saveOptLS()">
           <span class="opt-val" id="opt-lhh-v">1.20</span>
@@ -1114,7 +1111,7 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
         </div>
       </div>
       <div class="opt-sec" data-sec="line">
-        <div class="opt-sec-title" role="button" tabindex="0" aria-expanded="true"><span class="opt-arr">▾</span> 선·캔버스</div>
+        <div class="opt-sec-title" role="button" tabindex="0" aria-expanded="true"><span class="opt-arr">▾</span> 선·그림 영역</div>
         <div class="opt-row">
           <span class="opt-lbl">실선 굵기</span>
           <input type="range" class="opt-slider" id="opt-sw" min="0.5" max="10" step="0.5"
@@ -1184,7 +1181,7 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
         <div class="opt-sub" style="font-size:11px;font-weight:700;color:#777;margin:8px 0 2px;">글자</div>
         <div id="opt-txt-colors"></div>
         <div id="opt-ui-colors"></div>
-        <p style="font-size:11px;color:#999;">카드 헤더·띠 색상은 <b>◈ 데이터</b> 패널에 있습니다.</p>
+        <p style="font-size:11px;color:#999;">카드 머리글·띠 색상은 <b>◈ 데이터</b> 패널에 있습니다.</p>
       </div>
     </div>
     <div class="opt-foot">
@@ -1308,7 +1305,7 @@ const OPT = {
   ],
   // 로고 (좌상단)
   logoText: '',
-  logoSub : '조직도 · Org Chart',
+  logoSub : '조직도',
   logoColor: '#40D2A7',
   logoSubColor: '#808080',
   // 드롭다운 카테고리
@@ -1659,7 +1656,7 @@ function runLint(){
     b.setAttribute('data-overlap',r.overlap); b.setAttribute('data-cross',r.cross);
     b.setAttribute('data-broken',r.brokenN); b.setAttribute('data-count',r.count);
     b.textContent=r.count===0?'✓ 배치 이상 없음':'⚠ 배치 점검 '+r.count+'건';
-    b.style.color=r.count===0?'#16a34a':'#dc2626';
+    b.style.color=r.count===0?'#4ade80':'#fca5a5';  // 어두운 도구줄 위 4.5:1 이상 (UIUX T1)
   }
   const bad=new Set();
   r.overlaps.forEach(p=>{bad.add(p[0].id);bad.add(p[1].id);});
@@ -3174,11 +3171,11 @@ function openEdit(id){
   const mrows=(nd.m||[]).map((m,i)=>merRow(m)).join('');
   document.getElementById('mbody').innerHTML=`
     <div class="fg">
-      <label class="fl">조직명 (영문) <small style="color:#aaa">— 헤더 대문자 표시</small></label>
+      <label class="fl">조직명 (영문) <small style="color:#aaa">— 머리글 대문자 표시</small></label>
       <input class="fi" id="ei-en" value="${esc(nd.en||'')}">
     </div>
     <div class="fg">
-      <label class="fl">조직명 (한글) <small style="color:#aaa">— 서브타이틀</small></label>
+      <label class="fl">조직명 (한글) <small style="color:#aaa">— 부제</small></label>
       <input class="fi" id="ei-ko" value="${esc(nd.ko||'')}">
     </div>
     <div class="fg">
@@ -4293,7 +4290,7 @@ function openData(){
     {lbl:'짝수행 배경', key:'rowEven',   cssVar:'--row-even',   val:OPT.rowEven},
     {lbl:'행 구분선',   key:'rowBorder', cssVar:'--row-border', val:OPT.rowBorder},
   ]);
-  document.getElementById('dat-txt-colors').innerHTML=_datColorRows([
+  const _dtc=document.getElementById('dat-txt-colors'); if(_dtc) _dtc.innerHTML=_datColorRows([
     {lbl:'헤더 영문',  key:'txtHdrEn', cssVar:'--txt-hdr-en', val:OPT.txtHdrEn},
     {lbl:'헤더 한글',  key:'txtHdrKo', cssVar:'--txt-hdr-ko', val:OPT.txtHdrKo},
     {lbl:'멤버 이름',  key:'txtMn',    cssVar:'--txt-mn',     val:OPT.txtMn},
@@ -4498,7 +4495,7 @@ function openOptions(){
   sv('opt-dw',OPT.strokeDashW); document.getElementById('opt-dw-v').textContent=OPT.strokeDashW+'px';
   // 캔버스 색상
   document.getElementById('opt-canvas-colors').innerHTML=_optColorRows([
-    {lbl:'캔버스 배경', key:'canvasBg', cssVar:'--bg',       val:OPT.canvasBg},
+    {lbl:'그림 영역 배경', key:'canvasBg', cssVar:'--bg',       val:OPT.canvasBg},
     {lbl:'그리드 점',   key:'gridDot',  cssVar:'--grid-dot', val:OPT.gridDot},
   ]);
   // 선 색상
@@ -4508,8 +4505,8 @@ function openOptions(){
   ]);
   // 글자 색상
   {const tcEl=document.getElementById('opt-txt-colors'); if(tcEl) tcEl.innerHTML=_optColorRows([
-    {lbl:'헤더 제목', key:'txtHdrEn', cssVar:'--txt-hdr-en', val:OPT.txtHdrEn},
-    {lbl:'헤더 부제', key:'txtHdrKo', cssVar:'--txt-hdr-ko', val:OPT.txtHdrKo},
+    {lbl:'머리글 제목', key:'txtHdrEn', cssVar:'--txt-hdr-en', val:OPT.txtHdrEn},
+    {lbl:'머리글 부제', key:'txtHdrKo', cssVar:'--txt-hdr-ko', val:OPT.txtHdrKo},
     {lbl:'멤버 이름', key:'txtMn',    cssVar:'--txt-mn',     val:OPT.txtMn},
     {lbl:'직무',      key:'txtMf',    cssVar:'--txt-mf',     val:OPT.txtMf},
     {lbl:'직책',      key:'txtMr2',   cssVar:'--txt-mr2',    val:OPT.txtMr2},
@@ -4517,9 +4514,9 @@ function openOptions(){
   ]);}
   // UI 색상
   document.getElementById('opt-ui-colors').innerHTML=_optColorRows([
-    {lbl:'민트 (액센트)',    key:'uiMint',   cssVar:'--mint',      val:OPT.uiMint},
-    {lbl:'스카이 (선택)',    key:'uiSky',    cssVar:'--sky',       val:OPT.uiSky},
-    {lbl:'코랄 (연결모드)',  key:'uiCoral',  cssVar:'--coral',     val:OPT.uiCoral},
+    {lbl:'강조 색',          key:'uiMint',   cssVar:'--mint',      val:OPT.uiMint},
+    {lbl:'선택 표시 색',     key:'uiSky',    cssVar:'--sky',       val:OPT.uiSky},
+    {lbl:'연결 모드 색',     key:'uiCoral',  cssVar:'--coral',     val:OPT.uiCoral},
     {lbl:'상단바 배경',      key:'topbarBg', cssVar:'--dark',      val:OPT.topbarBg},
     {lbl:'현황 패널 배경',   key:'statsBg',  cssVar:'--stats-bg',  val:OPT.statsBg},
     {lbl:'상태바 배경',      key:'stbarBg',  cssVar:'--stbar-bg',  val:OPT.stbarBg},
@@ -4928,7 +4925,7 @@ function _applyOptObj(d){
   }
   if(d.dataLabel) OPT.dataLabel=d.dataLabel;
   if(d.logoText!=null) OPT.logoText=d.logoText;
-  if(d.logoSub!=null)  OPT.logoSub=d.logoSub;
+  if(d.logoSub!=null)  OPT.logoSub=d.logoSub==='조직도 · Org Chart'?'조직도':d.logoSub;  // 예전 기본값은 새 기본값으로 (철님이 직접 쓴 글은 그대로)
   if(d.logoColor)      OPT.logoColor=d.logoColor;
   if(d.logoSubColor)   OPT.logoSubColor=d.logoSubColor;
   OPT.chartTitle=typeof d.chartTitle==='string'?d.chartTitle.slice(0,80):''; OPT.asOf=/^\d{4}-\d{2}-\d{2}$/.test(String(d.asOf||''))?d.asOf:''; OPT.headPos=['tl','tc','tr'].includes(d.headPos)?d.headPos:'tl'; _syncHeadInputs();
@@ -5772,7 +5769,7 @@ function _sflCatHtml(filtered,grpDef,key,cats,ct){
   let html='';
   cats.forEach(cat=>{ html+=row(esc(cat),base.filter(m=>m[key]===cat)); });
   const vals={}; base.filter(m=>m[key]&&!cats.includes(m[key])).forEach(m=>{ (vals[m[key]]=vals[m[key]]||[]).push(m); });
-  Object.entries(vals).forEach(([v,list])=>{ html+=row('↳ '+esc(v),list,'opacity:.55',`<button class="sfl-ex-btn sfl-ex-in" title="카테고리에 추가" data-ct="${ct}" data-cv="${esc(v)}" onclick="addToCatBtn(this)">+</button>`); });
+  Object.entries(vals).forEach(([v,list])=>{ html+=row('↳ '+esc(v),list,'opacity:.55',`<button class="sfl-ex-btn sfl-ex-in" title="분류에 추가" data-ct="${ct}" data-cv="${esc(v)}" onclick="addToCatBtn(this)">+</button>`); });
   html+=row('미입력',base.filter(m=>!m[key]),'opacity:.35');
   const t=num(base);
   html+=`<div class="sfl-foot"><div class="sfl-total"><span class="sfl-total-lbl">${grpDef?esc(grpDef.name):'합계 (현원/정원)'}</span><span class="sfl-total-num">${t.t}</span></div></div>`;
@@ -6068,7 +6065,7 @@ function tbLayout(){
       if(el.parentNode!==bar) bar.insertBefore(el,ref||more);
       ref=el;
     }
-    bar.classList.remove('tb-compact');
+    bar.classList.remove('tb-compact','tb-tight');
     more.style.display='none';
     // 아이콘/제목 갱신
     _tbOrder.forEach(el=>{
@@ -6081,6 +6078,7 @@ function tbLayout(){
     });
     const over=()=>bar.scrollWidth>bar.clientWidth;
     if(!over()) return;
+    bar.classList.add('tb-tight'); if(!over()) return;  // 여백만 줄여 맞으면 글자를 지킨다
     bar.classList.add('tb-compact');
     if(!over()) return;
     const cands=_tbOrder.filter(el=>el.tagName==='BUTTON'||el.id==='zctrl'||el.classList.contains('dd-wrap'))
@@ -6088,7 +6086,7 @@ function tbLayout(){
     const rank=el=>{
       if(el.id==='zctrl') return 8;
       const t=(el.textContent||'').trim();
-      const keys=['데이터','옵션','Local','파일','연결선','조직 추가','발표','모두 펼치기','배치 이상|배치 점검|✓|⚠','비교','#zctrl','검색','저장','#btn-undo','#btn-redo','화면 맞춤','자동 배치'];
+      const keys=['데이터','옵션','📁','파일','연결선','조직 추가','발표','모두 펼치기','배치 이상|배치 점검|✓|⚠','비교','#zctrl','검색','저장','#btn-undo','#btn-redo','화면 맞춤','자동 배치'];
       for(let i=0;i<keys.length;i++){
         const k=keys[i];
         if(k[0]==='#'){ if(el.id===k.slice(1)) return i; }
@@ -6191,7 +6189,7 @@ function applyLogo(){
           }catch(fe){
             // 파일이 깨졌으면 조용히 넘어가지 않고 알린 뒤 브라우저 백업으로 폴백
             const ss=document.getElementById('ssave');
-            if(ss) ss.textContent='⚠ 데이터 파일 읽기 실패('+String(fe.message||fe).slice(0,40)+') — 브라우저 백업 표시 중';
+            if(ss) ss.textContent='⚠ 연결한 파일 읽기 실패('+String(fe.message||fe).slice(0,40)+') — 브라우저 백업 표시 중';
           }
         } else {
           // 권한 재확인 필요 — 배너 한 번 클릭으로 재연결
