@@ -444,7 +444,9 @@ body:not(.bodyband) .nb.mcol{padding-left:0;background:var(--card-bg);}
 .sfl-sec-lbl{font-size:9px;opacity:.4;letter-spacing:.6px;margin-bottom:4px;}
 .sfl-grp-sel{width:100%;background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.16);border-radius:5px;font-size:10px;padding:4px 6px;cursor:pointer;}
 .sfl-grp-sel option{background:#2a2a30;color:#fff;}
-.sfl-row{display:flex;align-items:center;gap:7px;padding:4px 0;}
+.sfl-row{display:flex;align-items:center;gap:7px;padding:3px 0;}
+.sfl-foot{position:sticky;bottom:0;background:var(--stats-bg);padding-bottom:1px;}  /* 목록을 내려도 합계는 늘 보인다 (철님 10-23) */
+.sfl-row.sfl-short .sfl-num{color:#FFB347;}  /* 정원보다 현원이 적은 칸 */
 .sfl-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
 .sfl-lbl{flex:1;font-size:11px;opacity:.7;}
 .sfl-num{font-size:13px;font-weight:700;}
@@ -5462,7 +5464,8 @@ function _sflFit(){
   const fl=document.getElementById('statsfl'), b=document.getElementById('statsfl-body');
   if(!fl||!b||fl.classList.contains('collapsed')||getComputedStyle(fl).display==='none') return;
   b.style.maxHeight='';
-  let r=fl.getBoundingClientRect(); const lim=innerHeight-10;
+  let r=fl.getBoundingClientRect(); let lim=innerHeight-10;
+  ['sheetbar','stbar'].forEach(id=>{ const e=document.getElementById(id); if(!e||getComputedStyle(e).display==='none') return; const t=e.getBoundingClientRect().top; if(t>r.top+100&&t-8<lim) lim=t-8; });  // 아래 막대에 가리지 않게
   if(r.bottom<=lim) return;
   const room=b.clientHeight-(r.bottom-lim);
   if(room<160){ const nt=Math.max(60,r.top-(160-room)); fl.style.top=nt+'px'; fl.style.bottom='auto'; r=fl.getBoundingClientRect(); }
@@ -5602,9 +5605,9 @@ function _sflTeamHtml(){
     }
     const names=new Set();
     SHEETS.forEach((_,i)=>_sflNames(_sflSheetNodes(i),false,i).forEach(x=>names.add(x)));
-    html+=`<div class="sfl-total"><span class="sfl-total-lbl sfl-ell">전체</span><span class="sfl-total-num">${names.size}</span></div>`;
+    html+=`<div class="sfl-foot"><div class="sfl-total"><span class="sfl-total-lbl sfl-ell">전체</span><span class="sfl-total-num">${names.size}</span></div></div>`;
   } else {
-    html+=`<div class="sfl-total"><span class="sfl-total-lbl sfl-ell">${esc(SHEETS[CUR_SHEET]?SHEETS[CUR_SHEET].name:'')}</span><span class="sfl-total-num">${_sflNames(S.nodes,false).size}</span></div>`;
+    html+=`<div class="sfl-foot"><div class="sfl-total"><span class="sfl-total-lbl sfl-ell">${esc(SHEETS[CUR_SHEET]?SHEETS[CUR_SHEET].name:'')}</span><span class="sfl-total-num">${_sflNames(S.nodes,false).size}</span></div></div>`;
   }
   return html;
 }
@@ -5713,35 +5716,20 @@ function _statTableData(){
 }
 function _statSummaryH(sd){ return sd?34+sd.items.reduce((a,it)=>a+(it.t==='row'?18:it.t==='total'?24:it.t==='sec'?20:16),0)+8:0; }
 // 직무·직책·분야 탭 본문 (철님 10-23): 현황 탭의 현원/정원 체크를 그대로 따른다.
-// 그룹 필터가 없으면 칸별 숫자는 현원만 세고, 현원에서 빠진 그룹(채용 자리 등)은 흐린 줄로 따로 보이며, 합계는 현원·정원 두 줄.
+// 그룹 필터가 없으면 줄마다 현원/정원을 쓰고 정원이 더 많은 줄은 주황색, 합계도 현원/정원 한 줄 (철님 10-23).
 function _sflCatHtml(filtered,grpDef,key,cats,ct){
-  const defKey=OPT.statusItems[0]?.key||'active';
-  const isCur=m=>{ const k=memberKind(m); return k==='p'||k==='ponly'; };
-  const base=grpDef?filtered:filtered.filter(isCur);
+  const isCur=m=>{ const k=memberKind(m); return k==='p'||k==='ponly'; }, isTot=m=>{ const k=memberKind(m); return k==='p'||k==='tot'; };
+  const base=grpDef?filtered:filtered.filter(m=>isCur(m)||isTot(m));
+  // 그룹 필터가 있으면 그 그룹 인원 수 하나, 없으면 현원/정원 (철님 10-23: 어느 칸이 정원보다 모자란지 보이게)
+  const num=list=>grpDef?{t:String(list.length),short:false,n:list.length}:(()=>{ const a=list.filter(isCur).length,b=list.filter(isTot).length; return {t:a+'/'+b,short:b>a,n:a+b}; })();
+  const row=(lbl,list,lst,extra)=>{ const v=num(list); if(!v.n) return ''; return `<div class="sfl-row${v.short?' sfl-short':''}"><span class="sfl-lbl"${lst?` style="${lst}"`:''}>${lbl}</span><span class="sfl-num">${v.t}</span>${extra||''}</div>`; };
   let html='';
-  cats.forEach(cat=>{
-    const cnt=base.filter(m=>m[key]===cat).length;
-    if(!cnt) return;
-    html+=`<div class="sfl-row"><span class="sfl-lbl">${esc(cat)}</span><span class="sfl-num">${cnt}</span></div>`;
-  });
-  const other=base.filter(m=>m[key]&&!cats.includes(m[key]));
-  if(other.length){
-    const vals={};other.forEach(m=>{vals[m[key]]=(vals[m[key]]||0)+1;});
-    Object.entries(vals).forEach(([v,c])=>{
-      html+=`<div class="sfl-row"><span class="sfl-lbl" style="opacity:.55">↳ ${esc(v)}</span><span class="sfl-num">${c}</span><button class="sfl-ex-btn sfl-ex-in" title="카테고리에 추가" data-ct="${ct}" data-cv="${esc(v)}" onclick="addToCatBtn(this)">+</button></div>`;
-    });
-  }
-  const noCnt=base.filter(m=>!m[key]).length;
-  if(noCnt) html+=`<div class="sfl-row"><span class="sfl-lbl" style="opacity:.35">미입력</span><span class="sfl-num">${noCnt}</span></div>`;
-  if(grpDef){
-    html+=`<div class="sfl-total"><span class="sfl-total-lbl">${esc(grpDef.name)}</span><span class="sfl-total-num">${filtered.length}</span></div>`;
-    return html;
-  }
-  OPT.statsGroups.forEach(g=>{ if(!g.excludeTotal) return; const c=filtered.filter(m=>g.statuses.includes(m.s||defKey)).length;
-    if(c) html+=`<div class="sfl-row"><span class="sfl-lbl" style="opacity:.55">${esc(g.name)}</span><span class="sfl-num">${c}</span></div>`; });
-  const tot=filtered.filter(m=>{ const k=memberKind(m); return k==='p'||k==='tot'; }).length;
-  html+=`<div class="sfl-total"><span class="sfl-total-lbl">현원</span><span class="sfl-total-num">${base.length}</span></div>`;
-  html+=`<div class="sfl-total"><span class="sfl-total-lbl">정원</span><span class="sfl-total-num">${tot}</span></div>`;
+  cats.forEach(cat=>{ html+=row(esc(cat),base.filter(m=>m[key]===cat)); });
+  const vals={}; base.filter(m=>m[key]&&!cats.includes(m[key])).forEach(m=>{ (vals[m[key]]=vals[m[key]]||[]).push(m); });
+  Object.entries(vals).forEach(([v,list])=>{ html+=row('↳ '+esc(v),list,'opacity:.55',`<button class="sfl-ex-btn sfl-ex-in" title="카테고리에 추가" data-ct="${ct}" data-cv="${esc(v)}" onclick="addToCatBtn(this)">+</button>`); });
+  html+=row('미입력',base.filter(m=>!m[key]),'opacity:.35');
+  const t=num(base);
+  html+=`<div class="sfl-foot"><div class="sfl-total"><span class="sfl-total-lbl">${grpDef?esc(grpDef.name):'합계'}</span><span class="sfl-total-num">${t.t}</span></div></div>`;
   return html;
 }
 // 패널 본문 html (철님 10-20): 패널과 인쇄·PNG 표가 같은 html에서 나온다 - 탭·범위·필터 그대로
@@ -5770,8 +5758,8 @@ function _statPanelHtml(){
         <span class="sfl-num">${r.cnt}</span>
         ${box(r,'cur',r.inCur)}${box(r,'tot',r.inTot)}
       </div>`; });
-    html+=`<div class="sfl-total"><span class="sfl-total-lbl">현원</span><span class="sfl-total-num">${sd.total}</span></div>`;
-    html+=`<div class="sfl-total"><span class="sfl-total-lbl">정원</span><span class="sfl-total-num">${sd.tot}</span></div>`;
+    html+=`<div class="sfl-foot"><div class="sfl-total"><span class="sfl-total-lbl">현원</span><span class="sfl-total-num">${sd.total}</span></div>`;
+    html+=`<div class="sfl-total"><span class="sfl-total-lbl">정원</span><span class="sfl-total-num">${sd.tot}</span></div></div>`;
 
   } else if(_statTab==='job'){
     html+=_sflCatHtml(filtered,grpDef,'f',OPT.jobCats,'job');
