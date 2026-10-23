@@ -618,6 +618,9 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
   #srch-box,#srch-btn{display:none!important;}
   .nd.srch-hit,.nd.srch-hit.srch-cur{outline:none!important;}
   .mr.srch-row{background:inherit!important;}
+  body.cmp-noout .mr[data-cmp]{background:inherit!important;}
+  body.cmp-noout .mr[data-cmp]::after{content:none!important;display:none!important;}
+  body.cmp-noout .nd[data-cmp]{outline:none!important;}
   @page{size:A4 landscape;margin:0}
   body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
   *{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
@@ -1435,6 +1438,7 @@ function render() { drawTfZone(); drawConns(); drawNodes(); drawHead(); updateCa
 var CMP=null; // {file, data:{sheets:[...]}, single:bool, err:string}
 function cmpTrim(v){return String(v==null?'':v).trim();}
 function cmpClear(){
+  document.body.classList.remove('cmp-noout');
   document.querySelectorAll('[data-cmp]').forEach(e=>{e.removeAttribute('data-cmp'); if(e.classList.contains('mr')) e.removeAttribute('title');});
 }
 function cmpPanel(){
@@ -1460,8 +1464,9 @@ function cmpRun(){
   if(!CMP){const o=document.getElementById('cmp-panel'); if(o) o.remove(); return;}
   const p=cmpPanel();
   const out=CMP.out!==false;
+  document.body.classList.toggle('cmp-noout',!out);
   const head='<div class="cmp-h"><b>비교: '+esc(CMP.file)+' → 현재</b> <button id="cmp-exit" type="button">비교 끝내기</button></div>';
-  const bind=()=>{const b=document.getElementById('cmp-exit'); if(b) b.onclick=cmpExit; const o=document.getElementById('cmp-out'); if(o) o.onchange=()=>{ CMP.out=o.checked; };};
+  const bind=()=>{const b=document.getElementById('cmp-exit'); if(b) b.onclick=cmpExit; const o=document.getElementById('cmp-out'); if(o) o.onchange=()=>{ CMP.out=o.checked; document.body.classList.toggle('cmp-noout',!o.checked); };};
   CMP.rows=null;
   if(CMP.err){
     p.removeAttribute('data-join');
@@ -5154,6 +5159,23 @@ function exportPNG(){
     if(!ch.length) return;
     ctx.fillText(ch.join('')+'…',left,y);
   };
+  const fitText2=(parts,left,y,size,avail)=>{  // parts=[[글자,색],...] 이어서 한 줄, 넘치면 함께 줄이고 끝을 '…'로
+    parts=parts.filter(p=>p[0]); if(!parts.length) return;
+    const base=parseFloat(size)||9, mk=s=>s+'px '+font, all=parts.map(p=>p[0]).join('');
+    let fs=base; ctx.font=mk(fs);
+    if(ctx.measureText(all).width>avail){ const min=base*0.7; fs=min; for(let s=base*0.95;s>=min-1e-9;s-=base*0.05){ ctx.font=mk(Math.max(s,min)); if(ctx.measureText(all).width<=avail){ fs=Math.max(s,min); break; } } ctx.font=mk(fs); }
+    if(ctx.measureText(all).width>avail){  // 가장 작게 해도 넘치면 뒤에서부터 자른다
+      const ch=[]; parts.forEach(p=>Array.from(p[0]).forEach(c=>ch.push([c,p[1]])));
+      while(ch.length&&ctx.measureText(ch.map(c=>c[0]).join('')+'…').width>avail) ch.pop();
+      if(!ch.length) return;
+      const np=[]; ch.forEach(c=>{ const l=np[np.length-1]; if(l&&l[1]===c[1]) l[0]+=c[0]; else np.push([c[0],c[1]]); }); np[np.length-1][0]+='…'; parts=np;
+    }
+    let cx=left; parts.forEach(p=>{ ctx.fillStyle=p[1]; ctx.fillText(p[0],cx,y); cx+=ctx.measureText(p[0]).width; });
+  };
+  const _maCol=getComputedStyle(document.documentElement).getPropertyValue('--txt-ma').trim()||'#7788AA';
+  // 비교 모드 표시 (화면 .mr[data-cmp]와 같은 색), '그림·인쇄에 변경 내역 포함'을 끄면 그리지 않는다 (UIUX 점검 16)
+  const _CMPK={new:['신규','#2ea043','rgba(46,160,67,.18)'],moved:['이동','#388bfd','rgba(56,139,253,.18)'],changed:['변경','#d29922','rgba(227,160,8,.22)'],seat:['공석','#e08a00','rgba(255,179,71,.22)']};
+  const _cmpOn=!!(typeof CMP!=='undefined'&&CMP&&CMP.rows&&CMP.out!==false);
   if(_tz){
     ctx.save();
     ctx.beginPath();
@@ -5201,17 +5223,20 @@ function exportPNG(){
     ctx.textBaseline='middle';
     const enEl=el&&el.querySelector('.nen'), koEl=el&&el.querySelector('.nko');
     const ens=enEl?getComputedStyle(enEl):null, kos=koEl?getComputedStyle(koEl):null;
-    let enT=nd.en||''; if(ens&&ens.textTransform==='uppercase') enT=enT.toUpperCase();
+    const _koOnly=!nd.en&&!!nd.ko;  // 화면(nodeHTML)과 같은 규칙: 영문이 비면 한글이 제목 한 줄 (UIUX 점검 2, 10-23)
+    let enT=_koOnly?nd.ko:(nd.en||''); if(ens&&ens.textTransform==='uppercase') enT=enT.toUpperCase();
     ctx.fillStyle=(ens&&ens.color)||'#222';
-    fitText(enT,x+bw+10,y+CUR_HH*0.35,(ens&&ens.fontWeight)||'bold',(ens&&ens.fontSize)||'13px',x+CW-6-(x+bw+10));
-    ctx.fillStyle=(kos&&kos.color)||'#222';
-    fitText(nd.ko||'',x+bw+10,y+CUR_HH*0.72,(kos&&kos.fontWeight)||'normal',(kos&&kos.fontSize)||'11px',x+CW-6-(x+bw+10));
+    fitText(enT,x+bw+10,y+CUR_HH*(_koOnly?0.5:0.35),(ens&&ens.fontWeight)||'bold',(ens&&ens.fontSize)||'13px',x+CW-6-(x+bw+10));
+    if(!_koOnly){ ctx.fillStyle=(kos&&kos.color)||'#222';
+      fitText(nd.ko||'',x+bw+10,y+CUR_HH*0.72,(kos&&kos.fontWeight)||'normal',(kos&&kos.fontSize)||'11px',x+CW-6-(x+bw+10)); }
     ctx.restore();
     if(BB&&band&&(nd.m||[]).length){ ctx.fillStyle=band; ctx.fillRect(x,y+CUR_HH,bw,h-CUR_HH); }
     (nd.m||[]).forEach((m,k)=>{
       const ry=y+CUR_HH+Math.floor(k/MC)*CUR_MH;
       const mx=x+(BB?bw:0)+(k%MC)*colW, MW=colW;  // 화면과 같은 규칙: 본문 띠가 켜졌을 때만 띠 폭만큼 안쪽에서 시작
       if(k%2===1){ ctx.fillStyle=OPT.rowEven||'#FAFBFD'; ctx.fillRect(mx,ry,MW,CUR_MH); }  // 화면의 짝수 행 음영
+      const _rowEl=el&&el.querySelectorAll('.mr')[k], _ck=_cmpOn&&_rowEl?_CMPK[_rowEl.getAttribute('data-cmp')]:null;
+      if(_ck){ ctx.fillStyle=_ck[2]; ctx.fillRect(mx,ry,MW,CUR_MH); }
       ctx.fillStyle=OPT.rowBorder||'#F2F3F6'; ctx.fillRect(mx,ry,MW,1);
       let sc=statusColor(m.s);
       const vm=/^var\((--[^)]+)\)$/.exec(sc);
@@ -5224,11 +5249,12 @@ function exportPNG(){
       ctx.fillStyle=OPT.txtMn||'#222'; ctx.font='bold '+(OPT.fsMn||11)+'px '+font; const _nw=Math.min(ctx.measureText(_nm).width,_avail);
       fitText(_nm,mx+bw+8,ry+CUR_MH*0.33,'bold',(OPT.fsMn||11)+'px',_avail);
       if(m.r&&_nw+8<_avail){ ctx.fillStyle=OPT.txtMr2||'#999'; fitText(m.r,mx+bw+8+_nw+6,ry+CUR_MH*0.33,'',(OPT.fsMr2||9)+'px',_avail-_nw-6); }  // 직급은 이름 뒤 회색 (화면 .mr2)
-      ctx.fillStyle=OPT.txtMf||'#666';
-      fitText(_nmLine2(m),mx+bw+8,ry+CUR_MH*0.72,'',(OPT.fsMf||9)+'px',_avail);
+      fitText2([[_nmLine2(m),OPT.txtMf||'#666'],[m.a?' / '+m.a:'',_maCol]],mx+bw+8,ry+CUR_MH*0.72,(OPT.fsMf||9)+'px',_avail);  // 화면 .mf와 같은 글자 (UIUX 점검 1)
+      if(_ck){ ctx.font='9px '+font; const _lw=ctx.measureText(_ck[0]).width+6; ctx.fillStyle=_ck[1]; rr(mx+MW-2-_lw,ry+1,_lw,11,3); ctx.fill(); ctx.fillStyle='#fff'; ctx.textAlign='left'; ctx.fillText(_ck[0],mx+MW-2-_lw+3,ry+6.5); }
       ctx.restore();
     });
     ctx.restore();  // 카드 둥근 경로 끝
+    if(_cmpOn&&el&&el.getAttribute('data-cmp')==='new'){ ctx.save(); ctx.strokeStyle='#2ea043'; ctx.lineWidth=2; ctx.setLineDash([6,4]); ctx.strokeRect(x-3,y-3,CW+6,h+6); ctx.restore(); }  // 화면의 새 조직 점선
     if(OPT.showCnt!==false){
       const _cl=cntLabel(nd);
       if(_cl){
