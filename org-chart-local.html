@@ -46,7 +46,7 @@
   --row-even:   #FAFBFD;
   --row-border: #F2F3F6;
   /* 연결선 */
-  --conn-solid: #A0AABB;
+  --conn-solid: #7D879A;
   --conn-dash:  #FF8770;
   /* 그리드 */
   --grid-dot:   #B0B6C4;
@@ -55,11 +55,11 @@
   --stbar-bg:   #1A1A1A;
   /* 텍스트 */
   --txt-hdr-en: #FFFFFF;
-  --txt-hdr-ko: #888888;
+  --txt-hdr-ko: #F4F4F4;
   --txt-mn:     #222222;
   --txt-mf:     #666666;
-  --txt-mr2:    #999999;
-  --txt-ma:    #7788AA;
+  --txt-mr2:    #707070;
+  --txt-ma:    #5F6F91;
   /* 상태 */
   --st-active:  #40D2A7; --st-joining: #60DCF8;
   --st-leaving: #FF8770; --st-needed:  #FFB347; --st-hiring: #A78BFA;
@@ -78,7 +78,7 @@ body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);ov
 #topbar::-webkit-scrollbar{display:none;}
 #topbar>*{flex-shrink:0;}
 .tl{font-size:15px;font-weight:800;letter-spacing:2px;color:var(--mint);white-space:nowrap;}
-.tsub{font-size:12px;color:rgba(255,255,255,.4);flex:1;margin-left:8px;white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis;flex-shrink:1;}
+.tsub{font-size:12px;color:rgba(255,255,255,.62);flex:1;margin-left:8px;white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis;flex-shrink:1;}
 .tb{white-space:nowrap;}
 .tb{padding:6px 13px;border-radius:5px;border:none;cursor:pointer;font-size:12px;font-weight:600;transition:.15s;}
 .tb-g{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2);}
@@ -140,8 +140,8 @@ body.present #tb-more,body.present #tb-more-panel{display:none!important;}
   min-width:1800px;min-height:1020px;
 }
 .tfzone{position:absolute;z-index:0;box-sizing:border-box;pointer-events:none;background:rgba(255,193,7,.10);border:2px dashed #c9a227;border-radius:16px;}
-.tfzone-t{position:absolute;left:12px;top:6px;font:bold 12px/16px sans-serif;color:#8a6d00;white-space:nowrap;}
-.tfowner{position:absolute;z-index:0;box-sizing:border-box;height:16px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:11px/16px sans-serif;color:#8a6d00;pointer-events:none;}
+.tfzone-t{position:absolute;left:12px;top:6px;font:bold 12px/16px sans-serif;color:#6E5700;white-space:nowrap;}
+.tfowner{position:absolute;z-index:0;box-sizing:border-box;height:16px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:11px/16px sans-serif;color:#6E5700;pointer-events:none;}
 @media print{.tfzone,.tfowner{display:block!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
 /* dot grid — fixed overlay, dynamically positioned via JS */
 #grid-bg{
@@ -193,7 +193,7 @@ body:not(.printing) #svgl .cpath-dash{stroke-width:max(calc(var(--stroke-dash-w)
 .opt-head h2{font-size:15px;font-weight:700;color:var(--dark);}
 .opt-body{padding:6px 0 16px;}
 .opt-sec{padding:10px 22px 4px;}
-.opt-sec-title{font-size:10px;font-weight:700;color:#999;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;padding-bottom:4px;border-bottom:1px solid #F0F0F0;}
+.opt-sec-title{font-size:10px;font-weight:700;color:#6B6B6B;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;padding-bottom:4px;border-bottom:1px solid #F0F0F0;}
 .opt-sec-title[role=button]{cursor:pointer;user-select:none;}
 .opt-sec.collapsed>*:not(.opt-sec-title){display:none;}
 .opt-sec.collapsed>.opt-sec-title{margin-bottom:0;}
@@ -206,7 +206,7 @@ body:not(.printing) #svgl .cpath-dash{stroke-width:max(calc(var(--stroke-dash-w)
 .pre-at{font-size:10px;color:#666;width:62px;text-align:right;white-space:nowrap;}
 .pre-hint{font-size:11px;color:#666;line-height:1.5;margin-top:2px;}
 .opt-lbl{font-size:12px;color:#555;min-width:100px;}
-.opt-val{font-size:11px;color:#999;min-width:32px;text-align:right;}
+.opt-val{font-size:11px;color:#6B6B6B;min-width:32px;text-align:right;}
 .opt-slider{flex:1;accent-color:var(--mint);cursor:pointer;}
 .opt-color{width:32px;height:28px;border:1.5px solid #DDD;border-radius:5px;cursor:pointer;padding:2px;}
 .opt-color-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
@@ -337,6 +337,8 @@ body:not(.bodyband) .nb.mcol{padding-left:0;background:var(--card-bg);}
 .mn{font-size:var(--fs-mn);font-weight:600;color:var(--txt-mn);line-height:var(--lh-c);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex-shrink:1;}
 .mf{font-size:var(--fs-mf);color:var(--txt-mf);margin-top:1px;line-height:var(--lh-c);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .mr2{font-size:var(--fs-mr2);color:var(--txt-mr2);white-space:nowrap;flex-shrink:0;line-height:var(--lh-c);}
+.mn-row>.mn:empty,.mn-row>.mr2:empty{display:none;}
+.mst{font-size:var(--fs-mr2);line-height:1.2;color:#333;background:#fff;border:1px solid #9A9A9A;border-radius:3px;padding:0 3px;white-space:nowrap;flex-shrink:0;align-self:center;}
 .ma{font-size:var(--fs-ma);color:var(--txt-ma);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:var(--lh-c);margin-top:1px;}
 /* Member row drag-and-drop (move between teams) */
 .mr[draggable="true"]{cursor:grab;}
@@ -1188,7 +1190,7 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
           <span class="opt-lbl">부제 색상</span>
           <input type="color" class="opt-color" id="opt-logo-subcol"
             oninput="OPT.logoSubColor=this.value;applyLogo();document.getElementById('opt-logo-subcol-v').textContent=this.value.toUpperCase();saveOptLS()">
-          <span class="opt-val" id="opt-logo-subcol-v" style="font-family:monospace;letter-spacing:0.5px;">#808080</span>
+          <span class="opt-val" id="opt-logo-subcol-v" style="font-family:monospace;letter-spacing:0.5px;">#B4B4B4</span>
         </div>
         <div class="opt-sub" style="font-size:11px;font-weight:700;color:#777;margin:8px 0 2px;">글자</div>
         <div id="opt-txt-colors"></div>
@@ -1290,7 +1292,7 @@ const OPT = {
   uiMint:'#40D2A7', uiSky:'#60DCF8', uiCoral:'#FF8770', topbarBg:'#2C2C2C',
   statsBg:'#1C1C20', stbarBg:'#1A1A1A',
   // 카드 스타일
-  cardRadius:8, shadowA:0.11, bodyBand:false, gradColor:false, sbShow:true, sbPos:'tl', sbMode:'auto', sbScale:100, showCnt:true, cntPos:'tr', cntColor:'', optVer:3, chartTitle:'', asOf:'', headPos:'tl', cntCc:'sep', cntMode:'count', cntSize:9, cntDx:0, cntDy:0,
+  cardRadius:8, shadowA:0.11, bodyBand:false, gradColor:false, sbShow:true, sbPos:'tl', sbMode:'auto', sbScale:100, showCnt:true, cntPos:'tr', cntColor:'', optVer:4, chartTitle:'', asOf:'', headPos:'tl', cntCc:'sep', cntMode:'count', cntSize:9, cntDx:0, cntDy:0,
   // 헤더 배경색
   hdrTop:'#1A1A1A', hdrL1:'#2C2C2C', hdrL2:'#383838', hdrL3:'#424242',
   hdrL4:'#4A4A4A', hdrL5:'#525252', hdrTf:'#30304A', hdrSide:'#323232',
@@ -1300,12 +1302,12 @@ const OPT = {
   // 카드 본문
   canvasBg:'#ECEEF3', cardBg:'#FFFFFF', rowEven:'#FAFBFD', rowBorder:'#F2F3F6',
   // 연결선
-  connSolid:'#A0AABB', connDash:'#FF8770',
+  connSolid:'#7D879A', connDash:'#FF8770',
   // 그리드
   gridDot:'#B0B6C4',
   // 텍스트 색상
-  txtHdrEn:'#FFFFFF', txtHdrKo:'#888888',
-  txtMn:'#222222', txtMf:'#666666', txtMr2:'#999999', txtMa:'#7788AA',
+  txtHdrEn:'#FFFFFF', txtHdrKo:'#F4F4F4',
+  txtMn:'#222222', txtMf:'#666666', txtMr2:'#707070', txtMa:'#5F6F91',
   // 상태 (key, label, color 배열 — 순서·항목 편집 가능)
   statusItems:[
     {key:'active', label:'재직',    color:'#40D2A7'},
@@ -1319,7 +1321,7 @@ const OPT = {
   logoText: '',
   logoSub : '조직도',
   logoColor: '#40D2A7',
-  logoSubColor: '#808080',
+  logoSubColor: '#B4B4B4',
   // 드롭다운 카테고리
   jobCats:[],
   roleCats:[],
@@ -1907,6 +1909,7 @@ function bindNode(el,nd) {
   }
 }
 
+function _stMarkText(m){ const def=OPT.statusItems[0]?.key, k=m.s||def; if(k===def) return ''; const it=OPT.statusItems.find(x=>x.key===k); return it?String(it.label||''):''; }
 function statusColor(s){
   const item=OPT.statusItems.find(x=>x.key===s);
   return item ? `var(--st-${item.key})` : (OPT.statusItems[0]?`var(--st-${OPT.statusItems[0].key})`:'#999');
@@ -2071,7 +2074,7 @@ function nodeHTML(nd) {
       <div class="mi">
         <div class="mn-row">
           <div class="mn"${_nmSplit(m.n)?` title="${esc(m.n)}"`:''}>${esc(_nmSplit(m.n)?_nmSplit(m.n).a:(m.n||''))}</div>
-          <div class="mr2">${esc(m.r||'')}</div>
+          <div class="mr2">${esc(m.r||'')}</div>${_stMarkText(m)?`<span class="mst">${esc(_stMarkText(m))}</span>`:''}
         </div>
         <div class="mf">${esc(_nmLine2(m))}${m.a?`<span style="color:var(--txt-ma)">&nbsp;/&nbsp;${esc(m.a)}</span>`:''}</div>
       </div>
@@ -4557,8 +4560,8 @@ function openOptions(){
   const ls=document.getElementById('opt-logo-sub'); if(ls) ls.value = OPT.logoSub || '';
   const lc=document.getElementById('opt-logo-col'); if(lc){ lc.value = OPT.logoColor || '#40D2A7'; }
   const lcv=document.getElementById('opt-logo-col-v'); if(lcv) lcv.textContent = (OPT.logoColor||'#40D2A7').toUpperCase();
-  const lsc=document.getElementById('opt-logo-subcol'); if(lsc) lsc.value = OPT.logoSubColor || '#808080';
-  const lscv=document.getElementById('opt-logo-subcol-v'); if(lscv) lscv.textContent = (OPT.logoSubColor||'#808080').toUpperCase();
+  const lsc=document.getElementById('opt-logo-subcol'); if(lsc) lsc.value = OPT.logoSubColor || '#B4B4B4';
+  const lscv=document.getElementById('opt-logo-subcol-v'); if(lscv) lscv.textContent = (OPT.logoSubColor||'#B4B4B4').toUpperCase();
   applyOptSecs();
   renderPresets();
   document.getElementById('optov').classList.add('show');
@@ -4575,14 +4578,14 @@ function resetOptions(){
     strokeW:1.8,strokeDashW:1.5,
     uiMint:'#40D2A7',uiSky:'#60DCF8',uiCoral:'#FF8770',topbarBg:'#2C2C2C',
     statsBg:'#1C1C20',stbarBg:'#1A1A1A',
-    cardRadius:8,shadowA:0.11,bodyBand:false,gradColor:false,sbShow:true,sbPos:'tl',sbMode:'auto',sbScale:100,showCnt:true,cntPos:'tr',cntColor:'',optVer:3,chartTitle:'',asOf:'',headPos:'tl',cntCc:'sep',cntMode:'count',cntSize:9,cntDx:0,cntDy:0,
+    cardRadius:8,shadowA:0.11,bodyBand:false,gradColor:false,sbShow:true,sbPos:'tl',sbMode:'auto',sbScale:100,showCnt:true,cntPos:'tr',cntColor:'',optVer:4,chartTitle:'',asOf:'',headPos:'tl',cntCc:'sep',cntMode:'count',cntSize:9,cntDx:0,cntDy:0,
     canvasBg:'#ECEEF3',cardBg:'#FFFFFF',rowEven:'#FAFBFD',rowBorder:'#F2F3F6',
     hdrTop:'#1A1A1A',hdrL1:'#2C2C2C',hdrL2:'#383838',hdrL3:'#424242',
     hdrL4:'#4A4A4A',hdrL5:'#525252',hdrTf:'#30304A',hdrSide:'#323232',
     bandTop:'#40D2A7',bandL1:'#40D2A7',bandL2:'#60DCF8',bandL3:'#60DCF8',
     bandL4:'#A78BFA',bandL5:'#A78BFA',bandTf:'#FF8770',bandSide:'#FF8770',
-    connSolid:'#A0AABB',connDash:'#FF8770',gridDot:'#B0B6C4',
-    txtHdrEn:'#FFFFFF',txtHdrKo:'#888888',txtMn:'#222222',txtMf:'#666666',txtMr2:'#999999',txtMa:'#7788AA',
+    connSolid:'#7D879A',connDash:'#FF8770',gridDot:'#B0B6C4',
+    txtHdrEn:'#FFFFFF',txtHdrKo:'#F4F4F4',txtMn:'#222222',txtMf:'#666666',txtMr2:'#707070',txtMa:'#5F6F91',
     statusItems:[
       {key:'active', label:'재직',    color:'#40D2A7'},
       {key:'joining',label:'입사예정',color:'#60DCF8'},
@@ -5009,7 +5012,11 @@ function _applyOptObj(d){
   if(d.logoColor)      OPT.logoColor=d.logoColor;
   if(d.logoSubColor)   OPT.logoSubColor=d.logoSubColor;
   OPT.chartTitle=typeof d.chartTitle==='string'?d.chartTitle.slice(0,80):''; OPT.asOf=/^\d{4}-\d{2}-\d{2}$/.test(String(d.asOf||''))?d.asOf:''; OPT.headPos=['tl','tc','tr'].includes(d.headPos)?d.headPos:'tl'; _syncHeadInputs();
-  OPT.optVer=3;  // 옵션 판: 옛 파일의 빠진 필드는 위에서 정한 기본값으로 채웠다 (철님 10-20)
+  if(!(d.optVer>=4)){  // 옵션 판 4 (10-23): 예전 기본색을 그대로 쓰던 파일은 새 기본색으로. 철님이 고른 색은 그대로
+    const _old={connSolid:['#A0AABB','#7D879A'],txtHdrKo:['#888888','#F4F4F4'],txtMr2:['#999999','#707070'],txtMa:['#7788AA','#5F6F91'],logoSubColor:['#808080','#B4B4B4']};
+    Object.keys(_old).forEach(k=>{ if(String(OPT[k]||'').toUpperCase()===_old[k][0]){ OPT[k]=_old[k][1]; _applyOptCSS(k,_old[k][1]); } });
+  }
+  OPT.optVer=4;  // 옵션 판: 옛 파일의 빠진 필드는 위에서 정한 기본값으로 채웠다 (철님 10-20)
   if(typeof applyLogo==='function') applyLogo();
 }
 // 파일 객체 하나를 앱에 싣는 공통 경로 (철님 10-20): 파일 열기·가져오기·판정기가 같은 순서(자료 -> 옵션 -> 마무리)를 쓴다
@@ -5327,9 +5334,15 @@ function exportPNG(){
       ctx.beginPath(); ctx.rect(mx,ry,MW,CUR_MH); ctx.clip();
       ctx.textBaseline='middle';
       const _sp=_nmSplit(m.n), _nm=_sp?_sp.a:(m.n||''), _avail=mx+MW-6-(mx+bw+8);
-      ctx.fillStyle=OPT.txtMn||'#222'; ctx.font='bold '+(OPT.fsMn||11)+'px '+font; const _nw=Math.min(ctx.measureText(_nm).width,_avail);
-      fitText(_nm,mx+bw+8,ry+CUR_MH*0.33,'bold',(OPT.fsMn||11)+'px',_avail);
-      if(m.r&&_nw+8<_avail){ ctx.fillStyle=OPT.txtMr2||'#999'; fitText(m.r,mx+bw+8+_nw+6,ry+CUR_MH*0.33,'',(OPT.fsMr2||9)+'px',_avail-_nw-6); }  // 직급은 이름 뒤 회색 (화면 .mr2)
+      const _stT=_stMarkText(m), _sfs=(OPT.fsMr2||9); let _tw=0; if(_stT){ ctx.font=_sfs+'px '+font; _tw=Math.ceil(ctx.measureText(_stT).width)+8; }
+      const _av1=_avail-(_tw?_tw+6:0);  // 상태 글자 자리를 먼저 남긴다 (화면에서도 이름만 줄어든다)
+      ctx.fillStyle=OPT.txtMn||'#222'; ctx.font='bold '+(OPT.fsMn||11)+'px '+font; const _nw=Math.min(ctx.measureText(_nm).width,_av1);
+      fitText(_nm,mx+bw+8,ry+CUR_MH*0.33,'bold',(OPT.fsMn||11)+'px',_av1);
+      let _rw=0;
+      if(m.r&&_nw+8<_av1){ ctx.font=_sfs+'px '+font; _rw=Math.min(ctx.measureText(m.r).width,_av1-_nw-6)+6; ctx.fillStyle=OPT.txtMr2||'#707070'; fitText(m.r,mx+bw+8+_nw+6,ry+CUR_MH*0.33,'',_sfs+'px',_av1-_nw-6); }  // 직급은 이름 뒤 회색 (화면 .mr2)
+      if(_stT){ const _tx=mx+bw+8+((_nw>0||_rw>0)?_nw+_rw+6:0), _th=_sfs+4, _ty=ry+CUR_MH*0.33-_th/2;
+        ctx.fillStyle='#fff'; rr(_tx,_ty,_tw,_th,3); ctx.fill(); ctx.strokeStyle='#9A9A9A'; ctx.lineWidth=1; rr(_tx+0.5,_ty+0.5,_tw-1,_th-1,3); ctx.stroke();
+        ctx.fillStyle='#333'; ctx.font=_sfs+'px '+font; ctx.textAlign='left'; ctx.fillText(_stT,_tx+4,_ty+_th/2); }  // 화면 .mst
       fitText2([[_nmLine2(m),OPT.txtMf||'#666'],[m.a?' / '+m.a:'',_maCol]],mx+bw+8,ry+CUR_MH*0.72,(OPT.fsMf||9)+'px',_avail);  // 화면 .mf와 같은 글자 (UIUX 점검 1)
       if(_ck){ ctx.font='9px '+font; const _lw=ctx.measureText(_ck[0]).width+6; ctx.fillStyle=_ck[1]; rr(mx+MW-2-_lw,ry+1,_lw,11,3); ctx.fill(); ctx.fillStyle='#fff'; ctx.textAlign='left'; ctx.fillText(_ck[0],mx+MW-2-_lw+3,ry+6.5); }
       ctx.restore();
@@ -5850,7 +5863,7 @@ function _sflCatHtml(filtered,grpDef,key,cats,ct){
   cats.forEach(cat=>{ html+=row(esc(cat),base.filter(m=>m[key]===cat)); });
   const vals={}; base.filter(m=>m[key]&&!cats.includes(m[key])).forEach(m=>{ (vals[m[key]]=vals[m[key]]||[]).push(m); });
   Object.entries(vals).forEach(([v,list])=>{ html+=row('↳ '+esc(v),list,'opacity:.55',`<button class="sfl-ex-btn sfl-ex-in" title="분류에 추가" data-ct="${ct}" data-cv="${esc(v)}" onclick="addToCatBtn(this)">+</button>`); });
-  html+=row('미입력',base.filter(m=>!m[key]),'opacity:.35');
+  html+=row('미입력',base.filter(m=>!m[key]),'opacity:.62');
   const t=num(base);
   html+=`<div class="sfl-foot"><div class="sfl-total"><span class="sfl-total-lbl">${grpDef?esc(grpDef.name):'합계 (현원/정원)'}</span><span class="sfl-total-num">${t.t}</span></div></div>`;
   return html;
@@ -6226,7 +6239,7 @@ function applyLogo(){
   const lt=document.querySelector('#topbar .tl');
   if(lt){ lt.textContent=OPT.logoText||'조직도'; lt.style.color=OPT.logoColor||'#40D2A7'; }
   const ls=document.querySelector('#topbar .tsub');
-  if(ls){ ls.textContent=OPT.logoSub||''; ls.style.color=OPT.logoSubColor||'rgba(255,255,255,.4)'; }
+  if(ls){ ls.textContent=OPT.logoSub||''; ls.style.color=OPT.logoSubColor||'rgba(255,255,255,.62)'; }
   try{ document.title=(OPT.logoText||'조직도')+' — 조직도'; }catch(_){}
   try{ tbLayout(); }catch(_){}
 }
