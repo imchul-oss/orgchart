@@ -619,6 +619,16 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
 #print-stats{display:none;}
 #chart-head{position:absolute;display:none;height:36px;line-height:36px;font-size:20px;font-weight:700;color:#222;white-space:nowrap;overflow:hidden;pointer-events:none;}  /* 조직도 이름 · 기준일 (철님 10-20) - 차트 좌표의 윗 띠, 인쇄·PNG와 같은 자리 */
 #print-head{display:none;}
+#print-pages{display:none;}
+#prov{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;z-index:3000;}
+#prov.show{display:flex;}
+.prmodal{background:#fff;border-radius:12px;padding:18px 22px 16px;width:360px;max-width:calc(100vw - 32px);box-shadow:0 8px 40px rgba(0,0,0,.3);}
+.prmodal h3{font-size:15px;font-weight:700;color:#222;margin:0 0 12px;}
+.pr-row{display:flex;align-items:center;gap:8px;padding:9px 10px;border:1px solid #DADADA;border-radius:8px;margin-bottom:6px;cursor:pointer;font-size:13px;color:#222;}
+.pr-row:has(input:checked){border-color:#3A9E85;background:#F2FBF8;}
+.pr-e{margin-left:auto;font-size:12px;color:#555;white-space:nowrap;}
+.pr-note{font-size:11px;color:#666;margin:8px 0 14px;line-height:1.5;}
+.pr-foot{display:flex;justify-content:flex-end;gap:8px;}
 @media print{
   #print-head{display:block;position:fixed;font-weight:700;color:#222;white-space:nowrap;overflow:hidden;z-index:50;line-height:1;}
   #print-stats{display:block;position:fixed;left:20px;top:20px;width:150px;box-sizing:border-box;background:#fff;border:1px solid #d0d0d0;font-size:11px;color:#333;z-index:50;}
@@ -891,6 +901,16 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
     <div class="opt-foot">
       <button class="bca" onclick="closeData()">닫기</button>
     </div>
+  </div>
+</div>
+
+<!-- 인쇄 용지 고르기 (철님 10-23) -->
+<div id="prov" onclick="if(event.target===this)closePrintDlg()">
+  <div class="prmodal" role="dialog" aria-modal="true" aria-labelledby="pr-ttl">
+    <h3 id="pr-ttl">인쇄</h3>
+    <div id="pr-list"></div>
+    <div class="pr-note">가장자리 여백은 약 9mm입니다. 여러 장으로 나누면 카드가 쪽 경계에 걸려 잘리지 않게 카드 단위로 나눕니다.</div>
+    <div class="pr-foot"><button class="bca" onclick="closePrintDlg()">취소</button><button class="bsv" onclick="doPrint()">인쇄</button></div>
   </div>
 </div>
 
@@ -4759,7 +4779,8 @@ async function pwSubmit(){
 let _saveTimer=null, _saving=false;
 // ═══ 되돌리기 / 다시 하기 (history)
 let _hUndo=[], _hRedo=[], _hLast=null, _hAdminBase=false;
-function _hState(){ _syncSheet(); return {s:JSON.stringify(_cleanSheets()), o:JSON.stringify(OPT), cur:CUR_SHEET}; }
+function _optStr(){ return JSON.stringify(OPT,(k,v)=>k==='printPaper'?undefined:v); }  // 인쇄 용지 선택은 되돌리기 걸음이 아니다
+function _hState(){ _syncSheet(); return {s:JSON.stringify(_cleanSheets()), o:_optStr(), cur:CUR_SHEET}; }
 function _hDragging(){
   return !!(S.drag||S.wdrag||S.pan||_mrDrag||(typeof anchorDrag!=='undefined'&&anchorDrag));
 }
@@ -4799,7 +4820,7 @@ function _hCheckpoint(force){
 let _hBusy=false;
 function _hRestore(st){
   _hBusy=true;
-  try{ if(st.o&&st.o!==JSON.stringify(OPT)){
+  try{ if(st.o&&st.o!==_optStr()){
     _applyOptObj(JSON.parse(st.o)); applyAllStatusCSS(); applyAllFontHeights(); saveOptLS();
     const b=document.getElementById('btn-data'); if(b) b.textContent='◈ '+OPT.dataLabel;
     if(document.getElementById('optov').classList.contains('show')) openOptions();
@@ -4969,6 +4990,7 @@ function presetLoad(i){
 }
 function _applyOptObj(d){
   OPT.presets=_preNorm(d.presets);
+  if(typeof d.printPaper==='string') OPT.printPaper=PRINT_PAPERS[d.printPaper]?d.printPaper:'a4';
   const numKeys=['fsEn','fsKo','fsMn','fsMf','fsMr2','fsMa','lhH','lhC','hdrH','rowH','nw','bandW','rowGap','colGap','padX','padY','strokeW','strokeDashW','cardRadius','shadowA','wrapN'];
   numKeys.forEach(k=>{if(d[k]!=null){OPT[k]=+d[k];_applyOptCSS(k,+d[k]);}});
   OPT.orient=(d.orient==='right'||d.orient==='left')?d.orient:'down';
@@ -5397,23 +5419,87 @@ function exportPNG(){
 
 // ═══ Print / PDF
 let _prep=null;
+// 용지: 96dpi 픽셀. 안쪽 여백 36px = 약 9.5mm (프린터가 못 찍는 가장자리보다 넓게, UIUX 점검 19)
+var PRINT_PAPERS={a4:{W:1123,H:794,name:'A4',label:'A4 가로 한 장'},a3:{W:1587,H:1123,name:'A3',label:'A3 가로 한 장'},a4split:{W:1123,H:794,name:'A4',label:'A4 가로 여러 장',split:true}};
+var PRINT_PAD=36, SPLIT_SCALE=0.85;  // 나눔 배율 0.85: 이름 11px이면 약 7pt
+function _printMode(){ return PRINT_PAPERS[OPT.printPaper]?OPT.printPaper:'a4'; }
+function _printGeo(){
+  const {x0,y0,x1,y1}=_chartBounds();
+  const pl=_statsBoxPlan({x0,y0,x1,y1});
+  const hd=_headInfo(), ty0=hd?y0-hd.band:y0;
+  return {x0,y0,x1,y1,pl,hd,ty0,bx0:x0-(pl?pl.ext.left:0),bx1:x1+(pl?pl.ext.right:0),by1:y1+(pl?pl.ext.bottom:0)};
+}
+function _printStatsEl(pl){
+  const sd=pl.sd;
+  const r=it=>it.t==='row'?`<div class="ps-row"><i style="background:${it.col||'transparent'}"></i><span style="padding-left:${it.ind}px${it.dim?';opacity:.6':''}">${esc(it.name)}</span>${it.sub?`<em style="font-style:normal;font-size:9px;color:#8a94a6;margin-right:6px;white-space:nowrap">${esc(it.sub)}</em>`:''}<b>${esc(String(it.cnt))}</b></div>`:it.t==='total'?`<div class="ps-tot"><span>${esc(it.name)}</span><b>${esc(String(it.cnt))}</b></div>`:`<div class="ps-ex">${esc(it.name)}</div>`;
+  const bx=document.createElement('div'); bx.id='print-stats'; bx.style.width=(sd.w||_SB_W)+'px';
+  bx.innerHTML=`<div class="ps-hd">${esc(sd.title)}</div>${sd.items.map(r).join('')}`;
+  bx.style.transformOrigin='0 0';
+  return bx;
+}
+// 나눔 계획: 카드(와 현황표)를 통째로 쪽에 넣는다. 위에서 아래로 띠를 잡고, 띠 안에서 왼쪽부터 쪽을 채운다
+function _splitPlan(g,P){
+  const H_=collHidden(), items=S.nodes.filter(n=>!H_.has(n.id)).map(n=>({id:n.id,x:n.x,y:n.y,w:cardW(n),h:nh(n)}));
+  let sbx=null;
+  if(g.pl){ const e=_printStatsEl(g.pl); e.style.cssText+=';position:absolute;left:-9999px;top:0;display:block;visibility:hidden;'; document.body.appendChild(e);
+    const hh=e.offsetHeight||e.scrollHeight||120, ww=(g.pl.sd.w||_SB_W); e.remove();
+    sbx={sb:1,x:g.pl.x,y:g.pl.y-g.y0+g.ty0,w:ww*g.pl.s,h:hh*g.pl.s}; items.push(sbx); }
+  const mw=Math.max(...items.map(i=>i.w)), mh=Math.max(...items.map(i=>i.h));
+  const s=Math.min(SPLIT_SCALE,(P.W-2*PRINT_PAD)/mw,(P.H-2*PRINT_PAD)/mh);
+  const cw=(P.W-2*PRINT_PAD)/s, ch=(P.H-2*PRINT_PAD)/s, left=items.slice(), pages=[];
+  let first=true;
+  while(left.length){
+    let ys=Math.min(...left.map(i=>i.y)); if(first&&g.hd) ys=Math.min(ys,g.ty0); first=false;
+    let strip=left.filter(i=>i.y+i.h<=ys+ch+0.01); if(!strip.length) strip=[left.reduce((a,b)=>a.y<=b.y?a:b)];
+    strip.forEach(i=>left.splice(left.indexOf(i),1));
+    while(strip.length){
+      const xs=Math.min(...strip.map(i=>i.x));
+      let pg=strip.filter(i=>i.x+i.w<=xs+cw+0.01); if(!pg.length) pg=[strip.reduce((a,b)=>a.x<=b.x?a:b)];
+      pg.forEach(i=>strip.splice(strip.indexOf(i),1));
+      pages.push({x0:xs,y0:ys,items:pg});
+    }
+  }
+  return {s,pages};
+}
+// 쪽 설정별 이름 글자 크기(pt)와 쪽 수 (고르기 창과 판정이 같은 값을 읽는다)
+function printEstimate(mode){
+  const P=PRINT_PAPERS[mode]||PRINT_PAPERS.a4, g=_printGeo();
+  if(P.split){ const sp=_splitPlan(g,P); return {mode,pages:sp.pages.length,s:sp.s,pt:+(sp.s*(OPT.fsMn||11)*0.75).toFixed(1)}; }
+  const s=Math.min((P.W-2*PRINT_PAD)/(g.bx1-g.bx0),(P.H-2*PRINT_PAD)/(g.by1-g.ty0),1);
+  return {mode,pages:1,s,pt:+(s*(OPT.fsMn||11)*0.75).toFixed(1)};
+}
+function _printPageCss(P,split){
+  let el=document.getElementById('print-page-css'); if(!el){ el=document.createElement('style'); el.id='print-page-css'; document.head.appendChild(el); }
+  el.textContent=split
+    ?`@media print{@page{size:${P.name} landscape;margin:0} html,body{width:${P.W}px!important;height:auto!important;overflow:visible!important;} #wrap{display:none!important;} #print-pages{display:block!important;} .ppage{position:relative;width:${P.W}px;height:${P.H}px;overflow:hidden;background:#fff;break-after:page;page-break-after:always;} .ppage:last-child{break-after:auto;page-break-after:auto;} .ppage>.pcv{position:absolute!important;left:0;top:0;transform-origin:0 0;} .ppage #print-head,.ppage #print-stats{position:absolute!important;}}`
+    :`@media print{@page{size:${P.name} landscape;margin:0} html,body{width:${P.W}px!important;height:${P.H}px!important;} #wrap{width:${P.W}px!important;height:${P.H}px!important;}}`;
+}
 function preparePrint(){
   if(_prep||!S.nodes.length) return;
   const w=document.getElementById('wrap'), cvs=document.getElementById('canvas');
   _prep={scale:S.scale,sl:w.scrollLeft,st:w.scrollTop,tf:cvs.style.transform};
-  const {x0,y0,x1,y1}=_chartBounds();
-  const _pl=_statsBoxPlan({x0,y0,x1,y1}), _sd=_pl?_pl.sd:null;
-  const _bx0=x0-(_pl?_pl.ext.left:0), _bx1=x1+(_pl?_pl.ext.right:0), _by1=y1+(_pl?_pl.ext.bottom:0);  // 차트 밖 자리일 때만 여백
-  const _hd=_headInfo(), _ty0=_hd?y0-_hd.band:y0;  // 조직도 이름 · 기준일 띠
-  const sc=Math.min((1123-40)/(_bx1-_bx0),(794-40)/(_by1-_ty0),1);
-  cvs.style.transform=`translate(${20-_bx0*sc}px,${20-_ty0*sc}px) scale(${sc})`;
-  if(_hd){ const hd=document.createElement('div'); hd.id='print-head'; hd.textContent=_hd.text; hd.style.left=(20+(x0-_bx0)*sc)+'px'; hd.style.top=(20+(_hd.h/2-10)*sc)+'px'; hd.style.width=((x1-x0)*sc)+'px'; hd.style.fontSize=(20*sc)+'px'; hd.style.textAlign=_hd.align; document.body.appendChild(hd); }
-  if(_pl){
-    const r=it=>it.t==='row'?`<div class="ps-row"><i style="background:${it.col||'transparent'}"></i><span style="padding-left:${it.ind}px${it.dim?';opacity:.6':''}">${esc(it.name)}</span>${it.sub?`<em style="font-style:normal;font-size:9px;color:#8a94a6;margin-right:6px;white-space:nowrap">${esc(it.sub)}</em>`:''}<b>${esc(String(it.cnt))}</b></div>`:it.t==='total'?`<div class="ps-tot"><span>${esc(it.name)}</span><b>${esc(String(it.cnt))}</b></div>`:`<div class="ps-ex">${esc(it.name)}</div>`;
-    const bx=document.createElement('div'); bx.id='print-stats'; bx.style.width=(_sd.w||_SB_W)+'px';
-    bx.innerHTML=`<div class="ps-hd">${esc(_sd.title)}</div>${_sd.items.map(r).join('')}`;
-    bx.style.left=(20+(_pl.x-_bx0)*sc)+'px'; bx.style.top=(20+(_pl.y-y0)*sc)+'px'; bx.style.transform=`scale(${sc*_pl.s})`; bx.style.transformOrigin='0 0';  // 차트와 같은 배율, 계획한 자리
-    document.body.appendChild(bx);
+  const mode=_printMode(), P=PRINT_PAPERS[mode], g=_printGeo(), PAD=PRINT_PAD;
+  _printPageCss(P,!!P.split);
+  if(P.split){
+    const sp=_splitPlan(g,P), s=sp.s, box=document.createElement('div'); box.id='print-pages';
+    sp.pages.forEach((pg,pi)=>{
+      const d=document.createElement('div'); d.className='ppage';
+      const c=cvs.cloneNode(true); c.classList.add('pcv'); c.style.transform=`translate(${PAD-pg.x0*s}px,${PAD-pg.y0*s}px) scale(${s})`;
+      const keep=new Set(pg.items.filter(i=>i.id!=null).map(i=>'n'+i.id));
+      c.querySelectorAll('.nd').forEach(e=>{ if(!keep.has(e.id)) e.style.visibility='hidden'; });
+      c.querySelectorAll('#chart-head').forEach(e=>e.remove());
+      d.appendChild(c);
+      if(pi===0&&g.hd){ const hd=document.createElement('div'); hd.id='print-head'; hd.textContent=g.hd.text; hd.style.left=Math.max(PAD,PAD+(g.x0-pg.x0)*s)+'px'; hd.style.top=(PAD+(g.ty0-pg.y0+g.hd.h/2-10)*s)+'px'; hd.style.width=(P.W-2*PAD)+'px'; hd.style.fontSize=(20*s)+'px'; hd.style.textAlign='left'; d.appendChild(hd); }
+      const sb=pg.items.find(i=>i.sb);
+      if(sb){ const bx=_printStatsEl(g.pl); bx.style.left=(PAD+(sb.x-pg.x0)*s)+'px'; bx.style.top=(PAD+(sb.y-pg.y0)*s)+'px'; bx.style.transform=`scale(${s*g.pl.s})`; d.appendChild(bx); }
+      box.appendChild(d);
+    });
+    document.body.appendChild(box);
+  } else {
+    const sc=Math.min((P.W-2*PAD)/(g.bx1-g.bx0),(P.H-2*PAD)/(g.by1-g.ty0),1);
+    cvs.style.transform=`translate(${PAD-g.bx0*sc}px,${PAD-g.ty0*sc}px) scale(${sc})`;
+    if(g.hd){ const hd=document.createElement('div'); hd.id='print-head'; hd.textContent=g.hd.text; hd.style.left=(PAD+(g.x0-g.bx0)*sc)+'px'; hd.style.top=(PAD+(g.hd.h/2-10)*sc)+'px'; hd.style.width=((g.x1-g.x0)*sc)+'px'; hd.style.fontSize=(20*sc)+'px'; hd.style.textAlign=g.hd.align; document.body.appendChild(hd); }
+    if(g.pl){ const bx=_printStatsEl(g.pl); bx.style.left=(PAD+(g.pl.x-g.bx0)*sc)+'px'; bx.style.top=(PAD+(g.pl.y-g.y0)*sc)+'px'; bx.style.transform=`scale(${sc*g.pl.s})`; document.body.appendChild(bx); }  // 차트와 같은 배율, 계획한 자리
   }
   document.body.classList.add('printing');
   w.scrollLeft=0; w.scrollTop=0;
@@ -5423,11 +5509,24 @@ function restorePrint(){
   const p=_prep; _prep=null;
   const w=document.getElementById('wrap'), cvs=document.getElementById('canvas');
   document.body.classList.remove('printing');
-  { const b=document.getElementById('print-stats'); if(b) b.remove(); const h=document.getElementById('print-head'); if(h) h.remove(); }
+  { const b=document.getElementById('print-stats'); if(b) b.remove(); const h=document.getElementById('print-head'); if(h) h.remove(); const pp=document.getElementById('print-pages'); if(pp) pp.remove(); const pc=document.getElementById('print-page-css'); if(pc) pc.remove(); }
   S.scale=p.scale; cvs.style.transform=p.tf;
   w.scrollLeft=p.sl; w.scrollTop=p.st;
 }
-function printChart(){ preparePrint(); window.print(); }
+function printChart(){ openPrintDlg(); }
+function openPrintDlg(){
+  if(!S.nodes.length) return;
+  const cur=_printMode();
+  document.getElementById('pr-list').innerHTML=Object.keys(PRINT_PAPERS).map(k=>{ const e=printEstimate(k), P=PRINT_PAPERS[k];
+    return `<label class="pr-row"><input type="radio" name="prpaper" value="${k}"${k===cur?' checked':''}><span class="pr-t">${P.label}</span><span class="pr-e">이름 ${e.pt}pt${P.split?' · '+e.pages+'쪽':''}</span></label>`; }).join('');
+  document.getElementById('prov').classList.add('show');
+  const c=document.querySelector('#pr-list input:checked'); if(c) c.focus();
+}
+function closePrintDlg(){ document.getElementById('prov').classList.remove('show'); }
+function doPrint(){
+  const c=document.querySelector('#pr-list input:checked'); OPT.printPaper=c&&PRINT_PAPERS[c.value]?c.value:'a4'; saveOptLS();
+  closePrintDlg(); restorePrint(); preparePrint(); window.print();
+}
 window.addEventListener('afterprint',restorePrint);
 window.addEventListener('beforeprint',()=>{ if(!_prep) preparePrint(); });
 
@@ -6106,6 +6205,7 @@ document.addEventListener('keydown',e=>{
       } else toggleConnect();
       return;
     }
+    if(document.getElementById('prov').classList.contains('show')){ closePrintDlg(); return; }
     if(document.getElementById('pwov').classList.contains('show')){ closePwModal(); return; }
     if(document.getElementById('cloudov').classList.contains('show')){ closeFileModal(); return; }
     if(document.getElementById('dataov').classList.contains('show')){ closeData(); return; }
