@@ -437,7 +437,7 @@ body:not(.bodyband) .nb.mcol{padding-left:0;background:var(--card-bg);}
   position:fixed;top:60px;left:20px;z-index:400;
   background:var(--stats-bg);backdrop-filter:blur(8px);
   border:1px solid rgba(255,255,255,.1);border-radius:10px;
-  min-width:224px;padding:10px 14px 10px;
+  min-width:244px;padding:10px 14px 10px;
   box-shadow:0 6px 24px rgba(0,0,0,.35);
   cursor:move;user-select:none;color:#fff;font-size:12px;
 }
@@ -458,6 +458,10 @@ body:not(.bodyband) .nb.mcol{padding-left:0;background:var(--card-bg);}
 .sfl-row{display:flex;align-items:center;gap:7px;padding:3px 0;}
 .sfl-foot{position:sticky;bottom:0;background:var(--stats-bg);padding-bottom:1px;}  /* 목록을 내려도 합계는 늘 보인다 (철님 10-23) */
 .sfl-row.sfl-short .sfl-num{color:#FFB347;}  /* 정원보다 현원이 적은 칸 */
+.sfl-gap{font-size:10px;font-weight:700;color:#FFB347;white-space:nowrap;flex-shrink:0;}
+.sfl-num{white-space:nowrap;flex-shrink:0;}
+.sfl-qtog{display:block;width:100%;text-align:left;background:none;border:0;padding:2px 0;color:inherit;font:inherit;font-size:10px;cursor:pointer;}
+.sfl-qtog:hover{opacity:.9;}
 /* 조회 탭 (철님 10-23) */
 .sfl-qchips{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px;}
 .sfl-qchip{display:inline-flex;align-items:center;gap:2px;padding:2px 3px 2px 7px;border-radius:10px;background:rgba(255,255,255,.14);font-size:10px;}
@@ -5994,6 +5998,7 @@ function _qVals(recs,k){  // 값 순서: 카테고리 순서, 그 밖의 값, �
 }
 function _qFrac(list){ const a=list.filter(x=>x.cur).length,b=list.filter(x=>x.tot).length; return {t:a+'/'+b,short:b>a}; }
 function _qAdd(v){ if(v==='__'||!_qK) return; if(!_qConds.some(c=>c.k===_qK&&c.v===v)) _qConds.push({k:_qK,v}); updateStatsPanel(); }
+let _qListOpen=false;
 function _qDel(i){ _qConds.splice(i,1); updateStatsPanel(); }
 function _qClear(){ _qConds=[]; updateStatsPanel(); }
 function _qHtml(){
@@ -6011,12 +6016,12 @@ function _qHtml(){
   html+=`<div class="sfl-qby">나눠 보기<select id="sfl-q-by" class="sfl-grp-sel" aria-label="나눠 보기 항목" onchange="_qBy=this.value;updateStatsPanel()"><option value="">없음</option>${_Q_FIELDS.map(([k,l])=>`<option value="${k}"${k===_qBy?' selected':''}>${l}</option>`).join('')}</select></div>`;
   if(_qBy){
     _qVals(hit,_qBy).forEach(v=>{ const list=hit.filter(x=>_qVal(x,_qBy)===v), f=_qFrac(list);
-      html+=`<div class="sfl-row${f.short?' sfl-short':''}"><span class="sfl-lbl sfl-ell"${v===''?' style="opacity:.35"':''}>${esc(_qValLbl(_qBy,v))}</span><span class="sfl-num">${f.t}</span></div>`; });
+      html+=`<div class="sfl-row${f.short?' sfl-short':''}"><span class="sfl-lbl sfl-ell"${v===''?' style="opacity:.62"':''}>${esc(_qValLbl(_qBy,v))}</span><span class="sfl-num">${f.t}</span></div>`; });
   }
   if(_qConds.length){
     const defKey=OPT.statusItems[0]?.key||'active';
-    html+=`<div class="sfl-qlist" data-noprint><div class="sfl-sec-lbl">명단 ${hit.length}</div>`;
-    hit.forEach(x=>{ const nm=String(x.m.n||'').trim(), st=(x.m.s||defKey)!==defKey?_qValLbl('st',x.m.s):'';
+    html+=`<div class="sfl-qlist" data-noprint><button type="button" class="sfl-sec-lbl sfl-qtog" aria-expanded="${_qListOpen?'true':'false'}" onclick="_qListOpen=!_qListOpen;updateStatsPanel()">명단 ${hit.length}명 ${_qListOpen?'접기 ▾':'보기 ▸'}</button>`;
+    if(_qListOpen) hit.forEach(x=>{ const nm=String(x.m.n||'').trim(), st=(x.m.s||defKey)!==defKey?_qValLbl('st',x.m.s):'';
       const sub=[x.m.r,x.team,st].filter(Boolean).join(' · ');
       html+=`<div class="sfl-row"><span class="sfl-lbl sfl-ell"${nm?'':' style="opacity:.55"'}>${nm?esc(nm):'(채용 자리)'}</span><span class="sfl-qsub">${esc(sub)}</span></div>`; });
     html+=`</div>`;
@@ -6026,6 +6031,18 @@ function _qHtml(){
   return html;
 }
 // 패널 본문 html (철님 10-20): 패널과 인쇄·PNG 표가 같은 html에서 나온다 - 탭·범위·필터 그대로
+// 모자란 줄(정원 > 현원)의 숫자 앞에 '-N'. 화면 패널에만 붙인다 (PNG·인쇄 현황표는 a/b 그대로)
+function _sflGaps(root){
+  root.querySelectorAll('.sfl-row.sfl-short').forEach(r=>{ const n=r.querySelector('.sfl-num'); if(!n||r.querySelector('.sfl-gap')) return;
+    const m=/^(\d+)\/(\d+)/.exec(n.textContent.trim()); if(!m||+m[2]<=+m[1]) return;
+    const g=document.createElement('span'); g.className='sfl-gap'; g.textContent='-'+(m[2]-m[1]); g.title=`정원보다 ${m[2]-m[1]}명 모자람`; g.setAttribute('aria-label',`${m[2]-m[1]}명 모자람`); n.before(g); });
+  // '분류에 추가(+)' 단추가 있는 줄과 없는 줄의 숫자 오른쪽 끝을 맞춘다 (UIUX ORGV r1 A8)
+  const b=root.querySelector('.sfl-ex-in'); if(!b) return;
+  const rb=b.closest('.sfl-row'), nb=rb&&rb.querySelector('.sfl-num'); if(!nb) return;
+  const w=rb.getBoundingClientRect().right-(parseFloat(getComputedStyle(rb).paddingRight)||0)-nb.getBoundingClientRect().right;  // 단추 줄에서 숫자 끝이 안쪽으로 들어간 거리
+  if(!(w>0)) return;
+  root.querySelectorAll('.sfl-row,.sfl-total').forEach(r=>{ if(r.querySelector('.sfl-num,.sfl-total-num')&&!r.querySelector('.sfl-ex-in')) r.style.paddingRight=((parseFloat(getComputedStyle(r).paddingRight)||0)+w)+'px'; });
+}
 function _statPanelHtml(){
   const grpSel=document.getElementById('statsfl-grp');
   const defKey=OPT.statusItems[0]?.key||'active';
@@ -6093,7 +6110,7 @@ function updateStatsPanel(){
     grpSel.innerHTML=`<option value="">전체</option>`+
       OPT.statsGroups.map((g,i)=>`<option value="${i}"${String(i)===prev?' selected':''}>${esc(g.name)}</option>`).join('');
   }
-  body.innerHTML=_statPanelHtml();
+  body.innerHTML=_statPanelHtml(); _sflGaps(body);
   _sflFit();
   const ttl=document.getElementById('statsfl-title');
   const flEl=document.getElementById('statsfl');
