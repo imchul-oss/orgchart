@@ -887,21 +887,6 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
         <div class="sg-list" id="sg-list"></div>
         <button class="sg-add" onclick="addStatsGroup()">＋ 그룹 추가</button>
       </div>
-      <!-- 색상 — 헤더 배경 -->
-      <div class="dat-sec">
-        <div class="dat-sec-title">카드 머리글 배경색</div>
-        <div id="dat-hdr-colors"></div>
-      </div>
-      <!-- 색상 — 타입 띠 -->
-      <div class="dat-sec">
-        <div class="dat-sec-title">타입 기본 띠색</div>
-        <div id="dat-band-colors"></div>
-      </div>
-      <!-- 색상 — 카드 본문 -->
-      <div class="dat-sec">
-        <div class="dat-sec-title">카드 본문 색상</div>
-        <div id="dat-ui-colors"></div>
-      </div>
     </div>
     <div class="opt-foot">
       <button class="bca" onclick="closeData()">닫기</button>
@@ -1025,6 +1010,15 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
             oninput="OPT.shadowA=+this.value;document.documentElement.style.setProperty('--shadow-a',this.value);document.getElementById('opt-sha-v').textContent=Math.round(this.value*100)+'%';saveOptLS()">
           <span class="opt-val" id="opt-sha-v">11%</span>
         </div>
+      </div>
+      <div class="opt-sec" data-sec="cardcol">
+        <div class="opt-sec-title" role="button" tabindex="0" aria-expanded="true"><span class="opt-arr">▾</span> 카드 색</div>
+        <div class="opt-sub" style="font-size:11px;font-weight:700;color:#6B6B6B;margin:4px 0 2px;">머리글 배경</div>
+        <div id="opt-hdr-colors"></div>
+        <div class="opt-sub" style="font-size:11px;font-weight:700;color:#6B6B6B;margin:8px 0 2px;">계층 띠</div>
+        <div id="opt-band-colors"></div>
+        <div class="opt-sub" style="font-size:11px;font-weight:700;color:#6B6B6B;margin:8px 0 2px;">카드 본문</div>
+        <div id="opt-cardbody-colors"></div>
       </div>
       <div class="opt-sec" data-sec="count">
         <div class="opt-sec-title" role="button" tabindex="0" aria-expanded="true"><span class="opt-arr">▾</span> 인원 수</div>
@@ -1220,7 +1214,6 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
         <div class="opt-sub" style="font-size:11px;font-weight:700;color:#6B6B6B;margin:8px 0 2px;">글자</div>
         <div id="opt-txt-colors"></div>
         <div id="opt-ui-colors"></div>
-        <p style="font-size:11px;color:#6B6B6B;">카드 머리글·띠 색상은 <b>◈ 데이터</b> 패널에 있습니다.</p>
       </div>
     </div>
     <div class="opt-foot">
@@ -4317,39 +4310,6 @@ function openData(){
   renderStatusCatList();
   // 현황 그룹
   renderSgList();
-  document.getElementById('dat-hdr-colors').innerHTML=_datColorRows([
-    {lbl:'TOP',  key:'hdrTop',  cssVar:'--hdr-top',  val:OPT.hdrTop},
-    {lbl:'L1',   key:'hdrL1',   cssVar:'--hdr-l1',   val:OPT.hdrL1},
-    {lbl:'L2',   key:'hdrL2',   cssVar:'--hdr-l2',   val:OPT.hdrL2},
-    {lbl:'L3',   key:'hdrL3',   cssVar:'--hdr-l3',   val:OPT.hdrL3},
-    {lbl:'L4',   key:'hdrL4',   cssVar:'--hdr-l4',   val:OPT.hdrL4},
-    {lbl:'L5',   key:'hdrL5',   cssVar:'--hdr-l5',   val:OPT.hdrL5},
-    {lbl:'TF',   key:'hdrTf',   cssVar:'--hdr-tf',   val:OPT.hdrTf},
-    {lbl:'Side', key:'hdrSide', cssVar:'--hdr-side',  val:OPT.hdrSide},
-  ]);
-  document.getElementById('dat-band-colors').innerHTML=_datColorRows([
-    {lbl:'TOP',  key:'bandTop',  cssVar:'--band-top',  val:OPT.bandTop},
-    {lbl:'L1',   key:'bandL1',   cssVar:'--band-l1',   val:OPT.bandL1},
-    {lbl:'L2',   key:'bandL2',   cssVar:'--band-l2',   val:OPT.bandL2},
-    {lbl:'L3',   key:'bandL3',   cssVar:'--band-l3',   val:OPT.bandL3},
-    {lbl:'L4',   key:'bandL4',   cssVar:'--band-l4',   val:OPT.bandL4},
-    {lbl:'L5',   key:'bandL5',   cssVar:'--band-l5',   val:OPT.bandL5},
-    {lbl:'TF',   key:'bandTf',   cssVar:'--band-tf',   val:OPT.bandTf},
-    {lbl:'Side', key:'bandSide', cssVar:'--band-side',  val:OPT.bandSide},
-  ]);
-  document.getElementById('dat-ui-colors').innerHTML=_datColorRows([
-    {lbl:'카드 배경',   key:'cardBg',    cssVar:'--card-bg',    val:OPT.cardBg},
-    {lbl:'짝수행 배경', key:'rowEven',   cssVar:'--row-even',   val:OPT.rowEven},
-    {lbl:'행 구분선',   key:'rowBorder', cssVar:'--row-border', val:OPT.rowBorder},
-  ]);
-  const _dtc=document.getElementById('dat-txt-colors'); if(_dtc) _dtc.innerHTML=_datColorRows([
-    {lbl:'헤더 영문',  key:'txtHdrEn', cssVar:'--txt-hdr-en', val:OPT.txtHdrEn},
-    {lbl:'헤더 한글',  key:'txtHdrKo', cssVar:'--txt-hdr-ko', val:OPT.txtHdrKo},
-    {lbl:'멤버 이름',  key:'txtMn',    cssVar:'--txt-mn',     val:OPT.txtMn},
-    {lbl:'직무',       key:'txtMf',    cssVar:'--txt-mf',     val:OPT.txtMf},
-    {lbl:'직책',       key:'txtMr2',   cssVar:'--txt-mr2',    val:OPT.txtMr2},
-    {lbl:'분야',       key:'txtMa',    cssVar:'--txt-ma',     val:OPT.txtMa},
-  ]);
   document.getElementById('dataov').classList.add('show');
 }
 function closeData(){ document.getElementById('dataov').classList.remove('show'); saveOptLS(); }
@@ -4487,7 +4447,7 @@ function _optColorRows(rows){ // [{lbl, key, cssVar, val}]
       ${mkHexInp(r.val,`applyColor('${r.key}','${r.cssVar}',this.value);this.closest('.opt-color-row').querySelector('.opt-color-dot').style.background=this.value`)}
     </div>`).join('');
 }
-var OPTSEC_DEF={preset:1,layout:1,card:1,count:1,font:0,line:0,logo:0};
+var OPTSEC_DEF={preset:1,layout:1,card:1,cardcol:0,count:1,font:0,line:0,logo:0};
 var _optSecMem=null; // 세션 내 섹션 상태 - localStorage가 막힌 환경에서도 접기/펼치기가 동작하도록 메모리에 든다
 function _optSecLoad(){
   if(_optSecMem) return _optSecMem;
@@ -4561,6 +4521,16 @@ function openOptions(){
     {lbl:'실선 색상', key:'connSolid', cssVar:'--conn-solid', val:OPT.connSolid},
     {lbl:'점선 색상', key:'connDash',  cssVar:'--conn-dash',  val:OPT.connDash},
   ]);
+  // 카드 색 (머리글 배경, 계층 띠, 본문)
+  {const lv=[['TOP','Top'],['L1','L1'],['L2','L2'],['L3','L3'],['L4','L4'],['L5','L5'],['TF','Tf'],['Side','Side']];
+   const v=k=>k.replace(/([A-Z])/g,'-$1').toLowerCase();
+   document.getElementById('opt-hdr-colors').innerHTML=_optColorRows(lv.map(([l,k])=>({lbl:l, key:'hdr'+k, cssVar:'--hdr'+v(k), val:OPT['hdr'+k]})));
+   document.getElementById('opt-band-colors').innerHTML=_optColorRows(lv.map(([l,k])=>({lbl:l, key:'band'+k, cssVar:'--band'+v(k), val:OPT['band'+k]})));
+   document.getElementById('opt-cardbody-colors').innerHTML=_optColorRows([
+    {lbl:'카드 배경',   key:'cardBg',    cssVar:'--card-bg',    val:OPT.cardBg},
+    {lbl:'짝수행 배경', key:'rowEven',   cssVar:'--row-even',   val:OPT.rowEven},
+    {lbl:'행 구분선',   key:'rowBorder', cssVar:'--row-border', val:OPT.rowBorder},
+   ]);}
   // 글자 색상
   {const tcEl=document.getElementById('opt-txt-colors'); if(tcEl) tcEl.innerHTML=_optColorRows([
     {lbl:'머리글 제목', key:'txtHdrEn', cssVar:'--txt-hdr-en', val:OPT.txtHdrEn},
