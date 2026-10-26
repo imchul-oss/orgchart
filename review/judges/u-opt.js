@@ -3,7 +3,7 @@ async page => {
   page.on('pageerror', e => out.errors.push(String(e)));
   const fail = m => { if (out.fails.length < 60) out.fails.push(m); };
   await page.setViewportSize({ width: 1400, height: 950 });
-  const SECS = { preset: ['opt-presets'], layout: ['opt-orient', 'opt-rg', 'opt-wrap', 'opt-cg', 'opt-px', 'opt-py'], card: ['opt-hdrh', 'opt-rowh', 'opt-nw', 'opt-bw', 'opt-cr', 'opt-sha'],
+  const SECS = { preset: ['opt-presets'], layout: ['opt-orient', 'opt-rg', 'opt-wrap', 'opt-cg', 'opt-px', 'opt-py'], card: ['opt-hdrh', 'opt-rowh', 'opt-nw', 'opt-bw', 'opt-cr', 'opt-sha'], cardcol: ['opt-hdr-colors', 'opt-band-colors', 'opt-cardbody-colors'],
     count: ['opt-showcnt', 'opt-cntpos', 'opt-cntcol', 'opt-cntcol-auto', 'opt-cntcc', 'opt-cntsz', 'opt-cntdx', 'opt-cntdy'],
     font: ['opt-fsen', 'opt-fsko', 'opt-fsmn', 'opt-fsmf', 'opt-fsmr', 'opt-fsma', 'opt-lhh', 'opt-lhc'],
     line: ['opt-sw', 'opt-dw', 'opt-line-colors', 'opt-canvas-colors'], title: ['opt-title', 'opt-asof', 'opt-headpos'], logo: ['opt-logo-txt', 'opt-logo-sub', 'opt-logo-col', 'opt-logo-subcol', 'opt-ui-colors'] };

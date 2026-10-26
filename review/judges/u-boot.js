@@ -6,7 +6,7 @@ async page => {
     const p = await page.context().newPage();
     const errs = []; p.on('pageerror', e => errs.push(String(e)));
     if (init) await p.addInitScript(init);
-    await p.addInitScript(() => { try { localStorage.clear(); } catch (e) {} });
+    await p.addInitScript(d => { try { localStorage.clear(); const ns = (location.pathname.split('/').pop() || '').replace(/[^a-zA-Z0-9._-]/g, '_') || 'default'; localStorage.setItem('ssb-org-chart__' + ns + '-v1', d); } catch (e) {} }, JSON.stringify(__DOC__)); /* kit: seed dummy data */
     const t0 = Date.now(); await p.goto(URL, { waitUntil: 'domcontentloaded' });
     let first = -1;
     for (let i = 0; i < 60; i++) { const n = await p.evaluate(() => document.querySelectorAll('.nd').length); if (n > 0) { first = Date.now() - t0; break; } await p.waitForTimeout(100); }

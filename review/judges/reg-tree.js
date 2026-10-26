@@ -108,7 +108,8 @@ async page => {
     else {
       await page.waitForTimeout(400);
       if (!await vis('#treeview')) fail('G: list closed after choosing a card');  // 2026-10-26 tree1: owner wants the list to stay open
-      const g = await page.evaluate(id => { const el = document.getElementById('n' + id); const w0 = document.getElementById('wrap').getBoundingClientRect(), tv = document.getElementById('treeview'), tvr = tv && tv.classList.contains('tv-open') ? tv.getBoundingClientRect().right : w0.left; const w = { left: Math.max(w0.left, tvr), top: w0.top, right: w0.right, bottom: w0.bottom }; if (!el) return null;  // tree1: the chart area is the part the open list does not cover const r = el.getBoundingClientRect(); const shown = getComputedStyle(el).display !== 'none' && r.width > 0;
+      const g = await page.evaluate(id => { const el = document.getElementById('n' + id); const w0 = document.getElementById('wrap').getBoundingClientRect(), tv = document.getElementById('treeview'), tvr = tv && tv.classList.contains('tv-open') ? tv.getBoundingClientRect().right : w0.left; const w = { left: Math.max(w0.left, tvr), top: w0.top, right: w0.right, bottom: w0.bottom }; if (!el) return null;  // tree1: the chart area is the part the open list does not cover
+       const r = el.getBoundingClientRect(); const shown = getComputedStyle(el).display !== 'none' && r.width > 0;
         const wr = document.getElementById('wrap'); return { shown, cx: (r.left + r.right) / 2, cy: (r.top + r.bottom) / 2, top: r.top, h: r.height, cl: r.left, cr: r.right, xlim: wr.scrollLeft <= 0 || wr.scrollLeft >= wr.scrollWidth - wr.clientWidth - 1, ylim: wr.scrollTop <= 0 || wr.scrollTop >= wr.scrollHeight - wr.clientHeight - 1, w: [w.left, w.top, w.right, w.bottom] }; }, tgt);
       if (!g || !g.shown) fail('G: chosen card not shown (collapsed subtree not revealed)');
       else { const [l, t, rr, b] = g.w; const mx = (rr - l) * 0.2, my = (b - t) * 0.2;

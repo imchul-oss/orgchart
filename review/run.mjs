@@ -27,6 +27,7 @@ const data = {}; for (const f of fs.readdirSync(path.join(HERE, 'data'))) if (f.
 const pw = await import(process.env.PW_MODULE ? url.pathToFileURL(process.env.PW_MODULE).href : 'playwright');
 const chromium = pw.chromium || (pw.default && pw.default.chromium);
 const browser = await chromium.launch(process.env.PW_CHANNEL ? { channel: process.env.PW_CHANNEL } : {});
+fs.mkdirSync(path.join(HERE, 'baseline'), { recursive: true }); fs.mkdirSync(path.join(HERE, 'out'), { recursive: true });
 const results = [];
 async function runOne(u) {
   const meta = units[u]; if (!meta) return { u, bad: true, line: u + ': unknown judge' };

@@ -193,6 +193,14 @@
   "ref": "__CAND__",
   "vp": null
  },
+ "n-robust": {
+  "data": {
+   "__OWNER20__": "own20"
+  },
+  "kind": "verdict",
+  "ref": "__CAND__",
+  "vp": null
+ },
  "n-safe": {
   "data": {
    "__OWNER20__": "own20"
@@ -491,7 +499,9 @@
   "vp": null
  },
  "u-boot": {
-  "data": {},
+  "data": {
+   "__DOC__": "dfinal"
+  },
   "kind": "verdict",
   "ref": "r28-orgchart-boot-base-html.html",
   "vp": null
