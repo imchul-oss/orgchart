@@ -1,0 +1,303 @@
+{
+ "p_printVsTab": {
+  "sheet0": {
+   "summary": {
+    "statsRows": 6,
+    "est": [
+     [
+      "a4",
+      1,
+      0.0083,
+      0.1
+     ],
+     [
+      "a3",
+      1,
+      0.012,
+      0.1
+     ],
+     [
+      "a4split",
+      343,
+      0.8395,
+      6.9
+     ]
+    ],
+    "png": [
+     253032,
+     9040,
+     null
+    ],
+    "dlg": "A4 가로 한 장 이름 0.1pt A3 가로 한 장 이름 0.1pt A4 가로 여러 장 이름 6.9pt · 343쪽"
+   },
+   "team": {
+    "statsRows": 987,
+    "est": [
+     [
+      "a4",
+      1,
+      0.0083,
+      0.1
+     ],
+     [
+      "a3",
+      1,
+      0.012,
+      0.1
+     ],
+     [
+      "a4split",
+      5,
+      0.0365,
+      0.3
+     ]
+    ],
+    "png": [
+     253542,
+     35824,
+     null
+    ],
+    "dlg": "A4 가로 한 장 이름 0.1pt A3 가로 한 장 이름 0.1pt A4 가로 여러 장 이름 0.3pt · 5쪽"
+   },
+   "query": {
+    "statsRows": 948,
+    "est": [
+     [
+      "a4",
+      1,
+      0.0083,
+      0.1
+     ],
+     [
+      "a3",
+      1,
+      0.012,
+      0.1
+     ],
+     [
+      "a4split",
+      5,
+      0.0379,
+      0.3
+     ]
+    ],
+    "png": [
+     253468,
+     34420,
+     null
+    ],
+    "dlg": "A4 가로 한 장 이름 0.1pt A3 가로 한 장 이름 0.1pt A4 가로 여러 장 이름 0.3pt · 5쪽"
+   }
+  },
+  "sheet6": {
+   "summary": {
+    "statsRows": 6,
+    "est": [
+     [
+      "a4",
+      1,
+      0.7986,
+      6.6
+     ],
+     [
+      "a3",
+      1,
+      1,
+      8.3
+     ],
+     [
+      "a4split",
+      2,
+      0.85,
+      7
+     ]
+    ],
+    "png": [
+     2792,
+     1680,
+     207844
+    ],
+    "dlg": "A4 가로 한 장 이름 6.6pt A3 가로 한 장 이름 8.3pt A4 가로 여러 장 이름 7pt · 2쪽"
+   },
+   "team": {
+    "statsRows": 8,
+    "est": [
+     [
+      "a4",
+      1,
+      0.7986,
+      6.6
+     ],
+     [
+      "a3",
+      1,
+      1,
+      8.3
+     ],
+     [
+      "a4split",
+      2,
+      0.85,
+      7
+     ]
+    ],
+    "png": [
+     2792,
+     1680,
+     216456
+    ],
+    "dlg": "A4 가로 한 장 이름 6.6pt A3 가로 한 장 이름 8.3pt A4 가로 여러 장 이름 7pt · 2쪽"
+   },
+   "query": {
+    "statsRows": 6,
+    "est": [
+     [
+      "a4",
+      1,
+      0.7986,
+      6.6
+     ],
+     [
+      "a3",
+      1,
+      1,
+      8.3
+     ],
+     [
+      "a4split",
+      2,
+      0.85,
+      7
+     ]
+    ],
+    "png": [
+     2792,
+     1680,
+     211719
+    ],
+    "dlg": "A4 가로 한 장 이름 6.6pt A3 가로 한 장 이름 8.3pt A4 가로 여러 장 이름 7pt · 2쪽"
+   }
+  }
+ },
+ "q_jsonRoundTrip": {
+  "alert": "가져오기 완료: 시트 18개, 현재 시트 987개 조직",
+  "waitMs": 100,
+  "sheetsDiffering": 2,
+  "diffs": [
+   {
+    "sheet": 0,
+    "name": "대형 조직 (987개)",
+    "lenBefore": 457295,
+    "lenAfter": 457276,
+    "at": 457275,
+    "before": "},{\"id\":\"e01973\",\"f\":\"x01042\",\"t\":\"x01972\",\"d\":0}],\"busY\":{},\"posOrient\":\"down\"}",
+    "after": "},{\"id\":\"e01973\",\"f\":\"x01042\",\"t\":\"x01972\",\"d\":0}],\"busY\":{}}"
+   },
+   {
+    "sheet": 6,
+    "name": "작은 시트 01 이름이",
+    "lenBefore": 1542,
+    "lenAfter": 1523,
+    "at": 1522,
+    "before": "},{\"id\":\"e02313\",\"f\":\"x02302\",\"t\":\"x02312\",\"d\":0}],\"busY\":{},\"posOrient\":\"down\"}",
+    "after": "},{\"id\":\"e02313\",\"f\":\"x02302\",\"t\":\"x02312\",\"d\":0}],\"busY\":{}}"
+   }
+  ],
+  "fieldDiffs": {
+   "connsBefore": 986,
+   "connsAfter": 986,
+   "topKeysBefore": [
+    "name",
+    "nodes",
+    "conns",
+    "busY",
+    "posOrient"
+   ],
+   "topKeysAfter": [
+    "name",
+    "nodes",
+    "conns",
+    "busY"
+   ]
+  },
+  "hasPositionsSheet2": false
+ },
+ "r_readOnly": {
+  "pencilsInDom": 8,
+  "pencilsVisible": 0,
+  "editorOpened": false,
+  "cardMovedByDrag": false,
+  "sheetRenamedByDblclick": false,
+  "csvImportRefused": true,
+  "draggableAttr": null,
+  "mrDraggable": "false"
+ },
+ "s_cardOverflow": [
+  {
+   "id": "x01974",
+   "en": "글자 시험",
+   "ko": "글자 시험 부제",
+   "members": 2,
+   "rows": 2,
+   "cardH": 160,
+   "domScrollH": 212,
+   "clientH": 160,
+   "overflowCss": "visible",
+   "rowsOutsideCard": 0
+  }
+ ],
+ "s_longNames": [
+  {
+   "text": "아주 긴 조직 이름 아주 긴 조직 이",
+   "ellipsis": "ellipsis",
+   "title": null,
+   "hasTip": false
+  },
+  {
+   "text": "AAAAAAAAAAAAAAAAAAAA",
+   "ellipsis": "ellipsis",
+   "title": null,
+   "hasTip": false
+  },
+  {
+   "text": "<b>굵게</b> & \"따옴표\" '홑",
+   "ellipsis": "ellipsis",
+   "title": null,
+   "hasTip": false
+  }
+ ],
+ "s_longTitles": [],
+ "t_compareBad": {
+  "notjson": {
+   "waitMs": 100,
+   "err": "비교 파일을 읽지 못했습니다: 올바른 조직도 데이터(JSON)가 아닙니다.",
+   "rows": null,
+   "panel": "비교 비교 끝내기 비교 파일을 읽지 못했습니다: 올바른 조직도 데이터(JSON)가 아닙니다."
+  },
+  "otherjson": {
+   "waitMs": 100,
+   "err": "비교 파일을 읽지 못했습니다: 올바른 조직도 데이터(JSON)가 아닙니다.",
+   "rows": null,
+   "panel": "비교 비교 끝내기 비교 파일을 읽지 못했습니다: 올바른 조직도 데이터(JSON)가 아닙니다."
+  },
+  "emptysheets": {
+   "waitMs": 100,
+   "err": "비교 파일을 읽지 못했습니다: 올바른 조직도 데이터(JSON)가 아닙니다.",
+   "rows": null,
+   "panel": "비교 비교 끝내기 비교 파일을 읽지 못했습니다: 올바른 조직도 데이터(JSON)가 아닙니다."
+  },
+  "v1nodes": {
+   "waitMs": 100,
+   "rows": 7475,
+   "panel": "비교: v1nodes.json → 현재 비교 끝내기 입사 6178 겸직 191 조직 신설 987 조직 폐지 1 공석 직위 118 그림·인쇄에 변경 내역 포함 입사 6178 국이누 대표 조직 파트장 백더우 대표 조직 "
+  }
+ },
+ "u_dataWindow": {
+  "shown": true,
+  "controls": 348,
+  "statusRows": 0,
+  "modalScrolls": true,
+  "modalH": 907
+ },
+ "errors": []
+}
