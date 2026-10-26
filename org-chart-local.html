@@ -5409,7 +5409,7 @@ function exportPNG(){
   const date=dt.getFullYear()+'-'+pad(dt.getMonth()+1)+'-'+pad(dt.getDate());
   const sn=(SHEETS[CUR_SHEET]&&SHEETS[CUR_SHEET].name)||'';
   const name='조직도-'+sn+'-'+date+'.png';
-  if(K<2) alert(`조직도가 커서 PNG 해상도를 낮췄습니다 (배율 ${K.toFixed(2)}, 보통 2).\n글자가 작으면 시트를 나누거나 접은 뒤 다시 내보내 주십시오.`);
+  if(K<1) alert(`조직도가 커서 PNG 해상도를 낮췄습니다 (배율 ${K.toFixed(2)}, 보통 2).\n글자가 작으면 시트를 나누거나 접은 뒤 다시 내보내 주십시오.`);
   cv.toBlob(b=>{
     if(!b){ alert('PNG 파일을 만들지 못했습니다. 조직도가 너무 큽니다. 시트를 나누거나 하위 조직을 접은 뒤 다시 내보내 주십시오.'); return; }
     const a=document.createElement('a');
