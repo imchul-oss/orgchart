@@ -1,0 +1,601 @@
+{
+ "a_tabClick": {
+  "ms": 215,
+  "thrownToClick": null,
+  "CUR_SHEET": 2,
+  "activeTab": "대형 조직 (987개)✕",
+  "S_nodes": 59,
+  "cardsInDom": 0,
+  "visibleCards": 0,
+  "lintBtn": "✓ 배치 이상 없음",
+  "posOfFirst": [
+   [
+    0,
+    0
+   ],
+   [
+    0,
+    0
+   ],
+   [
+    0,
+    0
+   ]
+  ],
+  "alerts": [],
+  "headerCount": ""
+ },
+ "a2_recover": {
+  "autoLayoutErr": "TypeError: Cannot read properties of undefined (reading 'includes')",
+  "renderErr": null,
+  "cardsAfterRender": 59,
+  "backToSheet0Err": null,
+  "CUR_SHEET": 0,
+  "S_nodes": 987
+ },
+ "b_validLinks": {
+  "connsBefore": 61,
+  "connsAfter": 57,
+  "err": null,
+  "ms": 297,
+  "lint": {
+   "overlap": 0,
+   "broken": 0,
+   "cross": 4
+  },
+  "cards": 59,
+  "dom": 59,
+  "bigCardH": 1560,
+  "bigCardDomH": 1560,
+  "bigCols": 4,
+  "negCoords": 0,
+  "chainDepthPx": 4220,
+  "orphansPlaced": [
+   [
+    5400,
+    2060
+   ],
+   [
+    5660,
+    2060
+   ],
+   [
+    5940,
+    2060
+   ],
+   [
+    6220,
+    2060
+   ]
+  ],
+  "cardsOverflowing": 28,
+  "tfZone": null,
+  "canvas": [
+   6528,
+   4770
+  ],
+  "cyclePair": "a<->b kept"
+ },
+ "b_edit120": {
+  "openMs": 76,
+  "rows": 120,
+  "mbodyScrolls": false,
+  "modalH": 0,
+  "addRowMs": 1,
+  "saveMs": 97,
+  "membersAfter": 120
+ },
+ "b_print": [
+  [
+   "a4",
+   1,
+   0.156,
+   1.3
+  ],
+  [
+   "a3",
+   1,
+   0.227,
+   1.9
+  ],
+  [
+   "a4split",
+   8,
+   0.463,
+   3.8
+  ]
+ ],
+ "b_stats": {
+  "summary": {
+   "rows": 6,
+   "bad": false,
+   "total": "221",
+   "labels": [
+    "재직",
+    "예정",
+    "휴직",
+    "채용",
+    "퇴사예정",
+    "미분류"
+   ]
+  },
+  "job": {
+   "rows": 58,
+   "bad": false,
+   "total": "221/221",
+   "labels": [
+    "직무01",
+    "직무02",
+    "직무03",
+    "직무04",
+    "직무05",
+    "직무06",
+    "직무07",
+    "직무08"
+   ]
+  },
+  "role": {
+   "rows": 15,
+   "bad": false,
+   "total": "221/221",
+   "labels": [
+    "뗘쪄",
+    "세쥬",
+    "저줴",
+    "킈쮀",
+    "치쁴",
+    "똬쭈",
+    "이사",
+    "상무"
+   ]
+  },
+  "area": {
+   "rows": 21,
+   "bad": false,
+   "total": "221/221",
+   "labels": [
+    "근무지01",
+    "근무지02",
+    "근무지03",
+    "근무지04",
+    "근무지05",
+    "근무지06",
+    "근무지07",
+    "근무지08"
+   ]
+  },
+  "team": {
+   "rows": 59,
+   "bad": false,
+   "total": "221",
+   "labels": [
+    "구성 시험",
+    "120명 조직",
+    "TF 2",
+    "TF 3",
+    "TF 9",
+    "사이드 0",
+    "사이드 2",
+    "사이드 4"
+   ]
+  },
+  "query": {
+   "rows": 43,
+   "bad": false,
+   "total": "221/221",
+   "labels": [
+    "구성 시험",
+    "120명 조직",
+    "옆 카드 부모",
+    "옆 카드 1",
+    "옆 카드 2",
+    "옆 카드 3",
+    "옆 카드 4",
+    "옆 카드 5"
+   ]
+  }
+ },
+ "b_tree": {
+  "rows": 59,
+  "heads": [
+   "구성 시험텍스트✕",
+   "기타"
+  ],
+  "textLines": 62
+ },
+ "b_csv": {
+  "csvBytes": 11337,
+  "waitMs": 50,
+  "alert": "가져오기 완료: 59개 조직, 57개 연결",
+  "before": [
+   59,
+   244
+  ],
+  "after": [
+   59,
+   244
+  ],
+  "cc": [
+   23,
+   23
+  ],
+  "unknownStatus": [
+   11,
+   11
+  ],
+  "folded": 0,
+  "colsKept": 4
+ },
+ "c_csvNewline": {
+  "csvBytes": 7966,
+  "lines": 151,
+  "rowsWithNewlineText": [
+   [
+    5,
+    "x01979,<b>굵게</b> & \"따옴표\" '홑' `역`,줄"
+   ],
+   [
+    6,
+    "바꿈\t탭,l1,624,300,,,,,,,,,,"
+   ],
+   [
+    9,
+    "x01985,줄"
+   ],
+   [
+    10,
+    "바꿈\t탭,😀 이모지 조직 🚀,l1,1440,300,,,,,,,,,,"
+   ],
+   [
+    31,
+    "x01975,<img src=x onerror=\"window.__xss=1\">,줄"
+   ],
+   [
+    32,
+    "바꿈\t탭,<script>window.__xss,,active,"
+   ],
+   [
+    36,
+    "x01977,<img src=x onerror=\"window.__xss=1\">,줄"
+   ],
+   [
+    37,
+    "바꿈\t탭,<script>window.__xss,,active,"
+   ],
+   [
+    38,
+    "x01977,<script>window.__xss=2</script>,   ,줄"
+   ],
+   [
+    39,
+    "바꿈\t탭,,active,"
+   ],
+   [
+    42,
+    "x01979,<img src=x onerror=\"window.__xss=1\">,줄"
+   ],
+   [
+    43,
+    "바꿈\t탭,<script>window.__xss,,active,"
+   ],
+   [
+    44,
+    "x01979,<script>window.__xss=2</script>,   ,줄"
+   ],
+   [
+    45,
+    "바꿈\t탭,,active,"
+   ],
+   [
+    46,
+    "x01979,줄"
+   ],
+   [
+    47,
+    "바꿈\t탭,,   ,,active,"
+   ],
+   [
+    49,
+    "x01981,<img src=x onerror=\"window.__xss=1\">,줄"
+   ],
+   [
+    50,
+    "바꿈\t탭,<script>window.__xss,,active,"
+   ],
+   [
+    51,
+    "x01981,<script>window.__xss=2</script>,   ,줄"
+   ],
+   [
+    52,
+    "바꿈\t탭,,active,"
+   ],
+   [
+    53,
+    "x01981,줄"
+   ],
+   [
+    54,
+    "바꿈\t탭,,   ,,active,"
+   ],
+   [
+    57,
+    "x01983,<script>window.__xss=2</script>,   ,줄"
+   ],
+   [
+    58,
+    "바꿈\t탭,,active,"
+   ],
+   [
+    59,
+    "x01983,줄"
+   ],
+   [
+    60,
+    "바꿈\t탭,,   ,,active,"
+   ],
+   [
+    64,
+    "x01985,줄"
+   ],
+   [
+    65,
+    "바꿈\t탭,,   ,,active,"
+   ]
+  ],
+  "alert": "CSV 파싱 오류: 유효하지 않은 id: \"바꿈\t탭\" (영문·숫자·._- 만 허용)",
+  "nodesBefore": 19,
+  "nodesAfter": 19,
+  "nodesWithNewlineOrTab": 6,
+  "quotedNewlineInCsv": true
+ },
+ "c_jsonTitles": {
+  "same": true
+ },
+ "d_query": {
+  "recs": 6305,
+  "st": [
+   "active",
+   "join",
+   "leave",
+   "resign",
+   "hire",
+   "vacant",
+   "zz-unknown"
+  ],
+  "r": [
+   "뗘쪄",
+   "세쥬",
+   "저줴",
+   "킈쮀",
+   "치쁴",
+   "똬쭈",
+   "이사",
+   "상무",
+   "전무",
+   "대표",
+   "뤼투",
+   "파트장",
+   "책임",
+   "선임",
+   "수석"
+  ],
+  "f": 61,
+  "team": 948,
+  "a": 21,
+  "sample": {
+   "m": {
+    "n": "송추히",
+    "r": "세쥬",
+    "f": "직무02",
+    "s": "leave"
+   },
+   "team": "대표 조직",
+   "cur": true,
+   "tot": true
+  }
+ },
+ "e_fit": {
+  "fitScale": 0.0133,
+  "afterPlus": 0.15,
+  "afterMinus": 0.15,
+  "label": "15%",
+  "fontPxAtFit": 0.15
+ },
+ "f_printDlg": {
+  "text": "A4 가로 한 장 이름 0.1pt A3 가로 한 장 이름 0.1pt A4 가로 여러 장 이름 0.3pt · 5쪽",
+  "checked": "a4"
+ },
+ "g_activeTab": {
+  "CUR_SHEET": 17,
+  "activeText": "작은 시트 12 이름이 조금 긴 시트✕",
+  "inView": false,
+  "barScrollLeft": 0,
+  "barScrollW": 2965,
+  "barW": 1920,
+  "tabLeft": 2741
+ },
+ "h_printVsZoom": {
+  "sheet0": {
+   "at100": [
+    [
+     "a4",
+     1,
+     0.0083,
+     0.1
+    ],
+    [
+     "a3",
+     1,
+     0.012,
+     0.1
+    ],
+    [
+     "a4split",
+     5,
+     0.0379,
+     0.3
+    ]
+   ],
+   "at15": [
+    [
+     "a4",
+     1,
+     0.0083,
+     0.1
+    ],
+    [
+     "a3",
+     1,
+     0.012,
+     0.1
+    ],
+    [
+     "a4split",
+     5,
+     0.0379,
+     0.3
+    ]
+   ],
+   "atFit": [
+    [
+     "a4",
+     1,
+     0.0083,
+     0.1
+    ],
+    [
+     "a3",
+     1,
+     0.012,
+     0.1
+    ],
+    [
+     "a4split",
+     5,
+     0.0379,
+     0.3
+    ]
+   ],
+   "fitScale": 0.0133,
+   "at200": [
+    [
+     "a4",
+     1,
+     0.0083,
+     0.1
+    ],
+    [
+     "a3",
+     1,
+     0.012,
+     0.1
+    ],
+    [
+     "a4split",
+     5,
+     0.0379,
+     0.3
+    ]
+   ]
+  },
+  "sheet6": {
+   "at100": [
+    [
+     "a4",
+     1,
+     0.7986,
+     6.6
+    ],
+    [
+     "a3",
+     1,
+     1,
+     8.3
+    ],
+    [
+     "a4split",
+     2,
+     0.85,
+     7
+    ]
+   ],
+   "at15": [
+    [
+     "a4",
+     1,
+     0.7986,
+     6.6
+    ],
+    [
+     "a3",
+     1,
+     1,
+     8.3
+    ],
+    [
+     "a4split",
+     2,
+     0.85,
+     7
+    ]
+   ],
+   "atFit": [
+    [
+     "a4",
+     1,
+     0.7986,
+     6.6
+    ],
+    [
+     "a3",
+     1,
+     1,
+     8.3
+    ],
+    [
+     "a4split",
+     2,
+     0.85,
+     7
+    ]
+   ],
+   "fitScale": 0.9317,
+   "at200": [
+    [
+     "a4",
+     1,
+     0.7986,
+     6.6
+    ],
+    [
+     "a3",
+     1,
+     1,
+     8.3
+    ],
+    [
+     "a4split",
+     2,
+     0.85,
+     7
+    ]
+   ]
+  }
+ },
+ "i_preparePrint": {
+  "at100": {
+   "prepareMs": 1190,
+   "pages": 5,
+   "scale": 1
+  },
+  "atFit": {
+   "prepareMs": 821,
+   "pages": 5,
+   "scale": 0.0133
+  }
+ },
+ "errors": [
+  "pageerror TypeError: Cannot read properties of undefined (reading 'includes')"
+ ]
+}
