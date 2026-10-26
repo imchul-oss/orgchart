@@ -1,0 +1,113 @@
+[
+ {
+  "bytes": 617529,
+  "cards": 987,
+  "members": 6496,
+  "allCards": 1238,
+  "loadMs": 8920,
+  "autoLayoutMs": 1540,
+  "renderMs": 1485,
+  "canvas": [
+   126596,
+   4580
+  ],
+  "lint": {
+   "overlap": 0,
+   "broken": 0
+  },
+  "fitScale": 0.0133,
+  "fitMs": 9,
+  "oneEditMs": 1478,
+  "undoMs": 1376,
+  "localSaveMs": 9,
+  "localStored": {
+   "chars": 530858,
+   "intact": true
+  },
+  "exportJsonMs": 13,
+  "exportChars": 1473628,
+  "treeMs": 59,
+  "treeRows": 987,
+  "teamTabMs": 37,
+  "searchMs": 28,
+  "searchCount": "1/63",
+  "printSplitPages": 5,
+  "mem": 73,
+  "data": "extreme.json",
+  "errors": []
+ },
+ {
+  "bytes": 1001092,
+  "cards": 1701,
+  "members": 11154,
+  "allCards": 1960,
+  "loadMs": 16600,
+  "autoLayoutMs": 3105,
+  "renderMs": 2905,
+  "canvas": [
+   215540,
+   4970
+  ],
+  "lint": {
+   "overlap": 0,
+   "broken": 0
+  },
+  "fitScale": 0.0078,
+  "fitMs": 19,
+  "oneEditMs": 2668,
+  "undoMs": 2168,
+  "localSaveMs": 11,
+  "localStored": {
+   "chars": 862385,
+   "intact": true
+  },
+  "exportJsonMs": 15,
+  "exportChars": 2395716,
+  "treeMs": 93,
+  "treeRows": 1701,
+  "teamTabMs": 171,
+  "searchMs": 39,
+  "searchCount": "1/105",
+  "printSplitPages": 5,
+  "mem": 756,
+  "data": "extreme2.json",
+  "errors": []
+ },
+ {
+  "bytes": 1673673,
+  "cards": 3008,
+  "members": 19400,
+  "allCards": 3235,
+  "loadMs": 58869,
+  "autoLayoutMs": 6505,
+  "renderMs": 6252,
+  "canvas": [
+   380644,
+   5030
+  ],
+  "lint": {
+   "overlap": 0,
+   "broken": 0
+  },
+  "fitScale": 0.0044,
+  "fitMs": 68,
+  "oneEditMs": 8258,
+  "undoMs": 4370,
+  "localSaveMs": 19,
+  "localStored": {
+   "chars": 1444349,
+   "intact": true
+  },
+  "exportJsonMs": 24,
+  "exportChars": 4010370,
+  "treeMs": 135,
+  "treeRows": 3008,
+  "teamTabMs": 178,
+  "searchMs": 64,
+  "searchCount": "1/212",
+  "printSplitPages": 5,
+  "mem": 51,
+  "data": "extreme4.json",
+  "errors": []
+ }
+]
