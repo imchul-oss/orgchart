@@ -507,6 +507,7 @@ body:not(.bodyband) .nb.mcol{padding-left:0;background:var(--card-bg);}
 .sfl-total-lbl{font-size:10px;opacity:.5;}
 .sfl-total-num{font-size:14px;font-weight:800;}
 .sfl-inc{display:inline-flex;align-items:center;gap:2px;font-size:10px;color:#9aa3b2;margin-left:4px;white-space:nowrap;cursor:pointer;}
+.sfl-inc+.sfl-num{margin-left:4px;}
 .sfl-inc input{margin:0;width:12px;height:12px;}
 .sfl-row.sfl-off .sfl-lbl,.sfl-row.sfl-off .sfl-num{opacity:.55;}
 .sfl-ex-btn{background:none;border:1px solid rgba(255,255,255,.15);border-radius:3px;cursor:pointer;color:rgba(255,255,255,.3);font-size:10px;font-weight:700;padding:0px 4px;line-height:16px;margin-left:2px;transition:.12s;}
@@ -1216,10 +1217,10 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
             oninput="OPT.logoSubColor=this.value;applyLogo();document.getElementById('opt-logo-subcol-v').textContent=this.value.toUpperCase();saveOptLS()">
           <span class="opt-val" id="opt-logo-subcol-v" style="font-family:monospace;letter-spacing:0.5px;">#B4B4B4</span>
         </div>
-        <div class="opt-sub" style="font-size:11px;font-weight:700;color:#777;margin:8px 0 2px;">글자</div>
+        <div class="opt-sub" style="font-size:11px;font-weight:700;color:#6B6B6B;margin:8px 0 2px;">글자</div>
         <div id="opt-txt-colors"></div>
         <div id="opt-ui-colors"></div>
-        <p style="font-size:11px;color:#999;">카드 머리글·띠 색상은 <b>◈ 데이터</b> 패널에 있습니다.</p>
+        <p style="font-size:11px;color:#6B6B6B;">카드 머리글·띠 색상은 <b>◈ 데이터</b> 패널에 있습니다.</p>
       </div>
     </div>
     <div class="opt-foot">
@@ -4423,7 +4424,7 @@ function renderSgList(){
   el.innerHTML=OPT.statsGroups.map((g,i)=>`
     <div class="sg-row" draggable="true" ondragstart="if(event.target.tagName==='INPUT')event.preventDefault();else dgStart('sg',${i},event)" ondragover="dgOver(event)" ondragleave="dgLeave(event)" ondrop="dgDrop('sg',${i},event)">
       <span class="drag-hnd">≡</span>
-      <input class="sg-name" value="${esc(g.name)}" oninput="OPT.statsGroups[${i}].name=this.value;updateSt();saveOptLS()">
+      <input class="sg-name" value="${esc(g.name)}" aria-label="현황 그룹 ${i+1} 이름" oninput="OPT.statsGroups[${i}].name=this.value;updateSt();saveOptLS()">
       <div class="sg-checks">${OPT.statusItems.map(x=>`
         <label class="sg-check">
           <input type="checkbox" ${g.statuses.includes(x.key)?'checked':''}
@@ -4439,7 +4440,7 @@ function renderSgList(){
           <span style="opacity:.7">정원</span>
         </label>
       </div>
-      <button class="sg-del" onclick="removeSg(${i})">✕</button>
+      <button class="sg-del" aria-label="현황 그룹 ${i+1} 지우기" title="그룹 지우기" onclick="removeSg(${i})">✕</button>
     </div>`).join('');
 }
 function sgToggle(gi,key,on){
@@ -6061,12 +6062,12 @@ function _statPanelHtml(){
     const all=_sflScope==='all';
     html+=`<div class="sfl-scopes"><button class="sfl-scope${all?'':' on'}" data-scope="cur" onclick="_sflSetScope('cur')">현재 시트</button><button class="sfl-scope${all?' on':''}" data-scope="all" onclick="_sflSetScope('all')">전체 시트</button></div>`;
     const sd=_statSummaryData(_sflScope)||{rows:[],total:0,tot:0};
-    const box=(r,w,on)=>r.gi>=0?`<label class="sfl-inc" title="${w==='cur'?'현원에 포함':'정원에 포함'}"><input type="checkbox" data-inc="${w}"${on?' checked':''} onchange="sgSetInc(${r.gi},'${w}',this.checked)">${w==='cur'?'현원':'정원'}</label>`:'';
+    const box=(r,w,on)=>r.gi>=0?`<label class="sfl-inc" title="${w==='cur'?'현원에 포함':'정원에 포함'}"><input type="checkbox" data-inc="${w}"${on?' checked':''} aria-label="${esc(r.name)} ${w==='cur'?'현원에 포함':'정원에 포함'}" onchange="sgSetInc(${r.gi},'${w}',this.checked)">${w==='cur'?'현원':'정원'}</label>`:'';
     sd.rows.forEach(r=>{ html+=`<div class="sfl-row${r.inCur?'':' sfl-off'}">
         <div class="sfl-dot" style="background:${r.col}"></div>
         <span class="sfl-lbl"${r.gi<0?' style="opacity:.6"':''}>${esc(r.name)}</span>
-        <span class="sfl-num">${r.cnt}</span>
         ${box(r,'cur',r.inCur)}${box(r,'tot',r.inTot)}
+        <span class="sfl-num">${r.cnt}</span>
       </div>`; });
     html+=`<div class="sfl-foot"><div class="sfl-total"><span class="sfl-total-lbl">현원</span><span class="sfl-total-num">${sd.total}</span></div>`;
     html+=`<div class="sfl-total"><span class="sfl-total-lbl">정원</span><span class="sfl-total-num">${sd.tot}</span></div></div>`;
