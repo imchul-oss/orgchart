@@ -607,6 +607,7 @@ body.present #srch-box,body.present #srch-btn{display:none!important;}
 #treeview{position:fixed;top:50px;left:0;bottom:56px;width:360px;max-width:calc(100vw - 32px);z-index:1200;background:#fff;color:#222;box-shadow:2px 0 14px rgba(0,0,0,.3);display:none;flex-direction:column;font-size:13px;}
 #topbar.tb-hidden ~ #treeview,#treeview.tv-notb{top:0;}
 #treeview.tv-open{display:flex!important;}
+body.tv-side #wrap,body.tv-side #grid-bg{left:var(--tv-w,360px);}
 .tv-head{flex:none;display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid #eee;font-weight:700;}
 .tv-close{border:0;background:none;cursor:pointer;font-size:15px;color:#555;}
 .tv-hbtns{display:flex;align-items:center;gap:6px;}
@@ -1267,7 +1268,7 @@ let FILE_HANDLE=null, FILE_CONNECTED=false, FILE_NAME='', FILE_MTIME=0;
 // 파일 고르기 창: 같은 id로 열어 브라우저가 마지막 폴더를 기억하게 하고, 이번에 연결했던 파일이 있으면 그 폴더에서 연다.
 // 회사 뷰어는 IndexedDB가 열리지 않아 연결(파일 핸들)을 다음 방문까지 못 들고 가므로, 마지막 파일 이름만 localStorage에 남긴다 (철님 10-26)
 const FP_ID='orgchart-data', LAST_FILE_LS='orgchart-last-file';
-let _fpLast=null, _idbFail='';
+let _fpLast=null, _idbFail='', _idbNoRec=false;  // _idbFail: IndexedDB 오류, _idbNoRec: 저장소는 되는데 연결 기록이 없음
 function _lastFile(){ try{ return localStorage.getItem(LAST_FILE_LS)||''; }catch(_){ return ''; } }
 async function _picker(fn,o){
   const base=Object.assign({id:FP_ID},o), start=FILE_HANDLE||_fpLast;
@@ -4637,7 +4638,7 @@ function openFileModal(){
   const st=document.getElementById('cm-status');
   if(st) st.innerHTML=FILE_CONNECTED
     ?`<span style="color:#40D2A7">● 연결됨: ${esc(FILE_NAME)}</span>`
-    :(FSA_OK?'<span style="color:#6B6B6B">○ 미연결 (브라우저 저장소만 사용 중)</span>'+(_idbFail&&_lastFile()?`<br><span style="color:#8A5A00">이 뷰어는 파일 연결을 기억하지 못합니다(브라우저 저장소 오류). 지난번 파일: <b>${esc(_lastFile())}</b> - '파일 고르기'로 다시 연결해 주십시오.</span>`:'')
+    :(FSA_OK?'<span style="color:#6B6B6B">○ 미연결 (브라우저 저장소만 사용 중)</span>'+(_lastFile()&&(_idbFail||_idbNoRec)?`<br><span style="color:#8A5A00">${_idbFail?'이 뷰어는 파일 연결을 기억하지 못합니다(브라우저 저장소 오류).':'이 브라우저에 파일 연결 기록이 없습니다.'} 지난번 파일: <b>${esc(_lastFile())}</b> - '파일 선택'으로 다시 연결해 주십시오.</span>`:'')
             :'<span style="color:#CC3333">이 브라우저는 파일 연결을 지원하지 않습니다. 아래 단추로 JSON 파일을 내려받고 불러올 수 있습니다.</span>');
   document.querySelectorAll('#cloudmodal .cm-fsa').forEach(b=>{ b.style.display=FSA_OK?'':'none'; });
   document.querySelectorAll('#cloudmodal .cm-nofsa').forEach(b=>{ b.style.display=FSA_OK?'none':''; });
@@ -4654,7 +4655,7 @@ async function _connectHandle(h,{load=true}={}){
   try{
     if(load) await loadFromFile();
     else { const f=await h.getFile(); FILE_NAME=f.name; FILE_MTIME=f.lastModified; }
-    try{ await _idb.set('handle',h); _idbFail=''; }catch(ie){ _idbFail=String(ie&&ie.message||ie); }
+    try{ await _idb.set('handle',h); _idbFail=''; _idbNoRec=false; }catch(ie){ _idbFail=String(ie&&ie.message||ie); }
     _fpLast=h; try{ localStorage.setItem(LAST_FILE_LS,FILE_NAME||h.name||''); }catch(_){}
   }catch(e){
     FILE_HANDLE=prev.h; FILE_CONNECTED=prev.c; FILE_NAME=prev.n; FILE_MTIME=prev.m;
@@ -4688,6 +4689,8 @@ async function createNewFile(){
 }
 async function disconnectFile(){
   FILE_HANDLE=null; FILE_CONNECTED=false; FILE_NAME=''; FILE_MTIME=0;
+  _fpLast=null; try{ localStorage.removeItem(LAST_FILE_LS); }catch(_){}  // 스스로 끊은 연결은 다음에 다시 권하지 않는다
+  { const fb=document.getElementById('file-banner'); if(fb) fb.classList.remove('show'); }  // 다시 연결하라는 띠도 바로 내린다 (UIUX ORGROB r2 N1)
   try{ await _idb.del('handle'); }catch(_){}
   _updateFileBtn();
   const st=document.getElementById('cm-status');
@@ -6411,7 +6414,7 @@ function applyLogo(){
   _updateFileBtn();
   applyLogo();
   if(FSA_OK&&!FILE_HANDLE&&!FILE_CONNECTED&&_lastFile()){
-    if(!_idbFail) _idbFail='연결 기록 없음';
+    if(!_idbFail) _idbNoRec=true;
     _showBanner(_lastFile()); document.getElementById('file-banner-txt').textContent=`📄 지난번 파일 '${_lastFile()}' 다시 연결`;
   }
 })();
@@ -6549,7 +6552,19 @@ var TV={open:false,fold:new Set(),mem:new Set(),sel:null,text:false};
 function tvPos(){
   var tv=document.getElementById('treeview'), tb=document.getElementById('topbar');
   if(tv&&tb) tv.classList.toggle('tv-notb',tb.classList.contains('tb-hidden'));
+  tvSide();
 }
+// 목록 옆으로 그림 영역을 옮긴다. 옮긴 만큼 가로 스크롤을 더해 카드가 제자리에 머물게 한다 (UIUX ORGROB r1 B1)
+function tvSide(){
+  var tv=document.getElementById('treeview'), w=document.getElementById('wrap'); if(!tv||!w) return;
+  var tw=TV.open?Math.round(tv.getBoundingClientRect().width):0, on=TV.open&&tw>0&&window.innerWidth-tw>=480;
+  var cur=document.body.classList.contains('tv-side')?(parseFloat(document.body.style.getPropertyValue('--tv-w'))||0):0, nxt=on?tw:0;
+  if(cur===nxt) return;
+  document.body.style.setProperty('--tv-w',nxt+'px'); document.body.classList.toggle('tv-side',on);
+  w.scrollLeft=Math.max(0,w.scrollLeft+(nxt-cur));
+  if(typeof updateGrid==='function') updateGrid();
+}
+window.addEventListener('resize',function(){ if(TV.open) tvSide(); });
 function tvOrder(){
   // returns [{kind:'row',id,depth}|{kind:'head',text}] following autoLayout's tree rules
   var nodes=S.nodes, conns=S.conns, po=(SHEETS[CUR_SHEET]&&SHEETS[CUR_SHEET].posOrient)||'down';
@@ -6712,11 +6727,12 @@ function tvRefresh(reset){
 function tvOpen(){
   TV.open=true; TV.fold.clear(); TV.mem.clear(); TV.sel=null; tvTextShow(false);
   document.getElementById('treeview').classList.add('tv-open');
-  tvBuild();
+  tvBuild(); tvSide();
 }
 function tvClose(){
   TV.open=false;
   var tv=document.getElementById('treeview'); if(tv) tv.classList.remove('tv-open');
+  tvSide();
 }
 function tvGo(id){
   var nd=S.nodes.find(function(n){return n.id===id;}); if(!nd) return;
@@ -6753,10 +6769,12 @@ document.getElementById('treeview').addEventListener('click',function(e){
   } else if(t.classList.contains('tv-title')){ tvGo(id); }
 });
 document.querySelector('#treeview .tv-txtmem').addEventListener('change',function(){ if(TV.text) tvTextShow(true); });
+function tvDlgOpen(){ return ['pwov','cloudov','dataov','optov','ov','prov'].some(function(i){var o=document.getElementById(i);return o&&o.classList.contains('show');}); }
+document.addEventListener('keydown',function(e){ if(e.key==='Escape') TV.escDlg=tvDlgOpen(); },true);
 document.addEventListener('keydown',function(e){
   if(e.key!=='Escape'||!TV.open) return;
-  var dlg=['pwov','cloudov','dataov','optov','ov'].some(function(i){var o=document.getElementById(i);return o&&o.classList.contains('show');});
-  if(!dlg) tvClose();
+  if(!TV.escDlg&&!tvDlgOpen()) tvClose();
+  TV.escDlg=false;
 });
 (function(){
   var _r=render;
