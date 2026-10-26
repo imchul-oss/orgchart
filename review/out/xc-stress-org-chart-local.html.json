@@ -1,0 +1,855 @@
+{
+ "page": "org-chart-local.html",
+ "steps": {
+  "L1 loadObject": {
+   "ms": 8088,
+   "dom": 987,
+   "mem": 10,
+   "sheetTabs": 18
+  },
+  "L2 sheet bar": {
+   "ms": 2755,
+   "scrollW": 2965,
+   "clientW": 1920,
+   "overflow": true,
+   "lastTabVisibleAfterSwitch": false,
+   "lastTabLeft": 2741,
+   "barRight": 1920,
+   "tabFontPx": ""
+  },
+  "B1 autoLayout 대형": {
+   "ms": 3619,
+   "autoLayoutMs": 1831,
+   "renderMs": 1693,
+   "n": 987,
+   "dom": 987,
+   "lint": {
+    "overlap": 0,
+    "broken": 0,
+    "cross": 0
+   },
+   "lintText": "✓ 배치 이상 없음",
+   "canvasW": 126596,
+   "canvasH": 4580,
+   "mem": 10
+  },
+  "B2 layoutLint 대형": {
+   "ms": 86,
+   "overlap": 0,
+   "broken": 0,
+   "cross": 0
+  },
+  "B3 fitScreen 대형": {
+   "ms": 215,
+   "scale": 0.013
+  },
+  "B4 zoom x10 대형": {
+   "ms": 3803,
+   "maxMs": 452,
+   "scale": 0.15
+  },
+  "B5 render x5 대형": {
+   "ms": 6645,
+   "ms_each": [
+    1325,
+    1180,
+    1681,
+    1431,
+    1028
+   ]
+  },
+  "B6 scroll frame 대형": {
+   "ms": 621,
+   "frameMs": [
+    281,
+    94,
+    9,
+    26,
+    6,
+    29
+   ]
+  },
+  "C1 stats cur summary": {
+   "ms": 12,
+   "switchMs": 6,
+   "rows": 6,
+   "bad": false,
+   "panelH": 301,
+   "panelBottom": 361,
+   "viewportH": 1080,
+   "labelsClipped": 0,
+   "totalText": "6305"
+  },
+  "C1 stats cur job": {
+   "ms": 27,
+   "switchMs": 22,
+   "rows": 61,
+   "bad": false,
+   "panelH": 956,
+   "panelBottom": 1016,
+   "viewportH": 1080,
+   "labelsClipped": 0,
+   "totalText": "6305/6305"
+  },
+  "C1 stats cur role": {
+   "ms": 32,
+   "switchMs": 12,
+   "rows": 15,
+   "bad": false,
+   "panelH": 471,
+   "panelBottom": 531,
+   "viewportH": 1080,
+   "labelsClipped": 0,
+   "totalText": "6305/6305"
+  },
+  "C1 stats cur area": {
+   "ms": 20,
+   "switchMs": 11,
+   "rows": 21,
+   "bad": false,
+   "panelH": 603,
+   "panelBottom": 663,
+   "viewportH": 1080,
+   "labelsClipped": 0,
+   "totalText": "6305/6305"
+  },
+  "C1 stats cur sheet": {
+   "ms": 21,
+   "switchMs": 11,
+   "rows": 18,
+   "bad": false,
+   "panelH": 523,
+   "panelBottom": 583,
+   "viewportH": 1080,
+   "labelsClipped": 0,
+   "totalText": "7027"
+  },
+  "C1 stats cur team": {
+   "ms": 66,
+   "switchMs": 56,
+   "rows": 987,
+   "bad": false,
+   "panelH": 956,
+   "panelBottom": 1016,
+   "viewportH": 1080,
+   "labelsClipped": 0,
+   "totalText": "6305"
+  },
+  "C1 stats cur query": {
+   "ms": 153,
+   "switchMs": 102,
+   "rows": 948,
+   "bad": false,
+   "panelH": 956,
+   "panelBottom": 1016,
+   "viewportH": 1080,
+   "labelsClipped": 0,
+   "totalText": "6305/6305"
+  },
+  "C1 stats all summary": {
+   "ms": 124,
+   "switchMs": 10,
+   "rows": 6,
+   "bad": false,
+   "panelH": 301,
+   "panelBottom": 361,
+   "viewportH": 1080,
+   "labelsClipped": 0,
+   "totalText": "7027"
+  },
+  "C1 stats all job": {
+   "ms": 29,
+   "switchMs": 22,
+   "rows": 61,
+   "bad": false,
+   "panelH": 956,
+   "panelBottom": 1016,
+   "viewportH": 1080,
+   "labelsClipped": 0,
+   "totalText": "6305/6305"
+  },
+  "C1 stats all role": {
+   "ms": 33,
+   "switchMs": 10,
+   "rows": 15,
+   "bad": false,
+   "panelH": 471,
+   "panelBottom": 531,
+   "viewportH": 1080,
+   "labelsClipped": 0,
+   "totalText": "6305/6305"
+  },
+  "C1 stats all area": {
+   "ms": 22,
+   "switchMs": 13,
+   "rows": 21,
+   "bad": false,
+   "panelH": 603,
+   "panelBottom": 663,
+   "viewportH": 1080,
+   "labelsClipped": 0,
+   "totalText": "6305/6305"
+  },
+  "C1 stats all sheet": {
+   "ms": 18,
+   "switchMs": 8,
+   "rows": 18,
+   "bad": false,
+   "panelH": 523,
+   "panelBottom": 583,
+   "viewportH": 1080,
+   "labelsClipped": 0,
+   "totalText": "7027"
+  },
+  "C1 stats all team": {
+   "ms": 84,
+   "switchMs": 73,
+   "rows": 1065,
+   "bad": false,
+   "panelH": 956,
+   "panelBottom": 1016,
+   "viewportH": 1080,
+   "labelsClipped": 0,
+   "totalText": "7027"
+  },
+  "C1 stats all query": {
+   "ms": 184,
+   "switchMs": 99,
+   "rows": 1032,
+   "bad": false,
+   "panelH": 956,
+   "panelBottom": 1016,
+   "viewportH": 1080,
+   "labelsClipped": 0,
+   "totalText": "7027/7027"
+  },
+  "C2 query 2 conds + list": {
+   "ms": 439,
+   "conds": [
+    "active",
+    "킈쮀"
+   ],
+   "addMs": [
+    42,
+    22
+   ],
+   "listMs": 20,
+   "listLabel": "명단 72명 접기 ▾",
+   "listRows": 72,
+   "panelH": 956,
+   "panelScrollH": 954,
+   "mem": 10
+  },
+  "C3 team tab 987 orgs fold": {
+   "ms": 149,
+   "rows": 987,
+   "foldToggles": 522,
+   "jumpMs": 6,
+   "panelScrollH": 954,
+   "panelClientH": 954
+  },
+  "C4 stats collapse/expand": {
+   "ms": 75,
+   "ms2": 75,
+   "scope": "cur"
+  },
+  "D1 tvOpen 대형": {
+   "ms": 205,
+   "openMs": 203,
+   "rows": 987,
+   "clipped": 0,
+   "tvW": 360
+  },
+  "D2 tvText 대형": {
+   "ms": 20,
+   "orgOnlyMs": 8,
+   "orgLines": 988,
+   "withMemMs": 11,
+   "withMemLines": 7484,
+   "chars": 244516,
+   "hasTab": false,
+   "hasLtGt": false
+  },
+  "D3 text view show (UI)": {
+   "ms": 25,
+   "showMs": 13,
+   "taLen": 244516,
+   "visible": true
+  },
+  "D4 tv member expand all 대형": {
+   "ms": 500,
+   "buildMs": 343,
+   "memberRows": 6497,
+   "domNodes": 28346
+  },
+  "D5 tvGo deep card": {
+   "ms": 6,
+   "listStillOpen": true,
+   "cardOnScreen": true,
+   "cardUnderList": false,
+   "selRows": 1
+  },
+  "E1 search 김 대형": {
+   "ms": 279,
+   "inputMs": 20,
+   "count": "1/63",
+   "step5Ms": 62,
+   "hitCards": 63
+  },
+  "E2 search odd strings": {
+   "ms": 274,
+   "<img": "0건",
+   "${alert(1)}": "0건",
+   "John Smith-": "1/63",
+   "응우옌": "1/119",
+   "NaN": "0건",
+   "   ": "",
+   "김김김김김김김김김김김김": "0건",
+   "ZZZ-none": "0건"
+  },
+  "F1 fold root 대형": {
+   "ms": 776,
+   "hidden": 986,
+   "visibleCards": 1,
+   "lintOverlap": 0,
+   "fitScale": 1.23,
+   "pngCalled": true
+  },
+  "F2 fold all L1 then expand all": {
+   "ms": 1854,
+   "foldMs": 834,
+   "folded": 5,
+   "hidden": 981,
+   "expandAllMs": 1016,
+   "hiddenAfter": 0
+  },
+  "G1 가로 right": {
+   "ms": 108,
+   "n": 37,
+   "posOrient": "down",
+   "lint": {
+    "overlap": 0,
+    "broken": 0,
+    "cross": 0
+   },
+   "minX": 80,
+   "minY": 60
+  },
+  "G1 오른쪽에서 left": {
+   "ms": 94,
+   "n": 48,
+   "posOrient": "down",
+   "lint": {
+    "overlap": 0,
+    "broken": 0,
+    "cross": 0
+   },
+   "minX": 80,
+   "minY": 60
+  },
+  "G2 대형 to right and back": {
+   "ms": 11423,
+   "rightMs": 2949,
+   "rightLint": {
+    "overlap": 0,
+    "broken": 0
+   },
+   "rightCanvas": [
+    1888,
+    221811
+   ],
+   "leftMs": 3377,
+   "leftLint": {
+    "overlap": 0,
+    "broken": 0
+   },
+   "posOrientBack": "down"
+  },
+  "H1 print estimate sheet 0": {
+   "ms": 2299,
+   "estimateMs": 18,
+   "dlgMs": 20,
+   "estAt100": [
+    {
+     "m": "a4",
+     "pages": 1,
+     "s": 0.008,
+     "pt": 0.1
+    },
+    {
+     "m": "a3",
+     "pages": 1,
+     "s": 0.012,
+     "pt": 0.1
+    },
+    {
+     "m": "a4split",
+     "pages": 343,
+     "s": 0.84,
+     "pt": 6.9
+    }
+   ],
+   "estAtFit": [
+    {
+     "m": "a4",
+     "pages": 1,
+     "s": 0.008,
+     "pt": 0.1
+    },
+    {
+     "m": "a3",
+     "pages": 1,
+     "s": 0.012,
+     "pt": 0.1
+    },
+    {
+     "m": "a4split",
+     "pages": 343,
+     "s": 0.84,
+     "pt": 6.9
+    }
+   ],
+   "fitScale": 0.013,
+   "dlgText": "A4 가로 한 장 이름 0.1pt A3 가로 한 장 이름 0.1pt A4 가로 여러 장 이름 6.9pt · 343쪽",
+   "warnings": []
+  },
+  "H1 print estimate sheet 1": {
+   "ms": 212,
+   "estimateMs": 2,
+   "dlgMs": 3,
+   "estAt100": [
+    {
+     "m": "a4",
+     "pages": 1,
+     "s": 0.217,
+     "pt": 1.8
+    },
+    {
+     "m": "a3",
+     "pages": 1,
+     "s": 0.312,
+     "pt": 2.6
+    },
+    {
+     "m": "a4split",
+     "pages": 5,
+     "s": 0.85,
+     "pt": 7
+    }
+   ],
+   "estAtFit": [
+    {
+     "m": "a4",
+     "pages": 1,
+     "s": 0.217,
+     "pt": 1.8
+    },
+    {
+     "m": "a3",
+     "pages": 1,
+     "s": 0.312,
+     "pt": 2.6
+    },
+    {
+     "m": "a4split",
+     "pages": 5,
+     "s": 0.85,
+     "pt": 7
+    }
+   ],
+   "fitScale": 0.337,
+   "dlgText": "A4 가로 한 장 이름 1.8pt A3 가로 한 장 이름 2.6pt A4 가로 여러 장 이름 7pt · 5쪽",
+   "warnings": []
+  },
+  "H1 print estimate sheet 2": {
+   "ms": 6,
+   "err": "TypeError: Cannot read properties of undefined (reading 'includes')\n    at file:///home/user/orgchart/org-chart-local.html:3736:19\n    at Array.forEach (<anonymous>)\n    at _autoLayoutCore (file:///home/user/orgchart/org-chart-local.html:3734:11)\n    at autoLayout (file:///home/user/orgchart/org-chart-local.html:3693:29)\n    at switchSheet (file:///home/user/orgchart/org-chart-local.html:1402:47)\n"
+  },
+  "H2 preparePrint/restore 대형": {
+   "ms": 52664,
+   "prepareMs": 46508,
+   "pageEls": 0,
+   "restoreMs": 1716,
+   "domAfter": 987
+  },
+  "I1 exportPNG sheet 0": {
+   "ms": 4309,
+   "drawMs": 400,
+   "canvas": [
+    253032,
+    9040
+   ],
+   "blobBytes": null,
+   "encodeMs": 1010,
+   "blank": true,
+   "userMessage": [],
+   "overLimit": true
+  },
+  "I1 exportPNG sheet 1": {
+   "ms": 1955,
+   "drawMs": 238,
+   "canvas": [
+    9864,
+    1260
+   ],
+   "blobBytes": 856362,
+   "encodeMs": 234,
+   "blank": false,
+   "userMessage": [],
+   "overLimit": false
+  },
+  "I1 exportPNG sheet 2": {
+   "ms": 7,
+   "err": "TypeError: Cannot read properties of undefined (reading 'includes')\n    at file:///home/user/orgchart/org-chart-local.html:3736:19\n    at Array.forEach (<anonymous>)\n    at _autoLayoutCore (file:///home/user/orgchart/org-chart-local.html:3734:11)\n    at autoLayout (file:///home/user/orgchart/org-chart-local.html:3693:29)\n    at switchSheet (file:///home/user/orgchart/org-chart-local.html:1402:47)\n"
+  },
+  "I1 exportPNG sheet 3": {
+   "ms": 2585,
+   "drawMs": 947,
+   "canvas": [
+    12040,
+    3340
+   ],
+   "blobBytes": 1492605,
+   "encodeMs": 354,
+   "blank": false,
+   "userMessage": [],
+   "overLimit": false
+  },
+  "I1 exportPNG sheet 4": {
+   "ms": 2752,
+   "drawMs": 1115,
+   "canvas": [
+    15304,
+    3560
+   ],
+   "blobBytes": 1865014,
+   "encodeMs": 1292,
+   "blank": false,
+   "userMessage": [],
+   "overLimit": false
+  },
+  "J1 compare with perturbed copy 대형": {
+   "ms": 1013,
+   "rows": 441,
+   "marks": 302,
+   "panelH": 648,
+   "panelScrolls": true,
+   "headText": "비교: prev.json → 현재 비교 끝내기",
+   "mem": 10
+  },
+  "J2 compare switch sheet + exit": {
+   "ms": 3264,
+   "switchMs": 167,
+   "panelOnOtherSheet": "비교: prev.json → 현재\n비교 끝내기\n달라진 것이 없습니다\n 그림·인쇄에 변경 내역 포함",
+   "exitMs": 2,
+   "marksLeft": 0,
+   "panelGone": true
+  },
+  "J3 compare with bad file": {
+   "ms": 611,
+   "err": null,
+   "shown": null
+  },
+  "K1 CSV round trip sheet 0": {
+   "ms": 4133,
+   "exportMs": 6,
+   "csvBytes": 262622,
+   "csvLines": 8477,
+   "importMs": 2755,
+   "before": [
+    987,
+    6496
+   ],
+   "after": [
+    987,
+    6496
+   ],
+   "textSame": false,
+   "diffAt": 41,
+   "diffSample": [
+    "\",[[\"송추히\",\"세쥬\",\"직무02\",\"leave\",null,null],[\"국이누\",\"파트장\",\"직무48\",\"resign\",",
+    "\",[[\"송추히\",\"세쥬\",\"직무02\",\"leave\",\"\",null],[\"국이누\",\"파트장\",\"직무48\",\"resign\",\"\""
+   ],
+   "alert": "가져오기 완료: 987개 조직, 986개 연결"
+  },
+  "K1 CSV round trip sheet 2": {
+   "ms": 108,
+   "err": "TypeError: Cannot read properties of undefined (reading 'includes')\n    at file:///home/user/orgchart/org-chart-local.html:3736:19\n    at Array.forEach (<anonymous>)\n    at _autoLayoutCore (file:///home/user/orgchart/org-chart-local.html:3734:11)\n    at autoLayout (file:///home/user/orgchart/org-chart-local.html:3693:29)\n    at switchSheet (file:///home/user/orgchart/org-chart-local.html:1402:47)\n"
+  },
+  "K1 CSV round trip sheet 1": {
+   "ms": 144,
+   "exportMs": 0,
+   "csvBytes": 7966,
+   "csvLines": 151,
+   "importMs": 51,
+   "before": [
+    19,
+    92
+   ],
+   "after": [
+    19,
+    92
+   ],
+   "textSame": true,
+   "diffAt": -1,
+   "diffSample": null,
+   "alert": "CSV 파싱 오류: 유효하지 않은 id: \"바꿈\t탭\" (영문·숫자·._- 만 허용)"
+  },
+  "L1 JSON export + import all sheets": {
+   "ms": 7641,
+   "exportMs": 12,
+   "jsonBytes": 1568417,
+   "importMs": 4744,
+   "sheets": 18,
+   "same": false,
+   "alert": "가져오기 완료: 시트 18개, 현재 시트 987개 조직",
+   "mem": 10
+  },
+  "L2 localStorage backup": {
+   "ms": 19,
+   "storedChars": 563331,
+   "intact": true
+  },
+  "M1 history memory 대형": {
+   "ms": 82787,
+   "edits20Ms": 30092,
+   "undoEntries": 21,
+   "historyChars": 11327440,
+   "historyMB": 21.6,
+   "undo1Ms": 1080,
+   "undo19Ms": 25007,
+   "redo20Ms": 24838,
+   "mem": 10
+  },
+  "N1 password register + unlock": {
+   "ms": 8411,
+   "firstMode": "register",
+   "registerMs": 2317,
+   "unlockedAfterRegister": true,
+   "secondMode": "unlock",
+   "wrongPwMs": 481,
+   "wrongMsg": "비밀번호가 올바르지 않습니다.",
+   "stillLocked": true,
+   "unlockedWithRight": true
+  },
+  "N2 read-only guards": {
+   "ms": 3970,
+   "bodyRo": true,
+   "hiddenButtons": [
+    [
+     "btn-add",
+     "missing"
+    ],
+    [
+     "btn-opt",
+     "missing"
+    ],
+    [
+     "btn-data",
+     true
+    ],
+    [
+     "btn-save",
+     true
+    ],
+    [
+     "btn-undo",
+     true
+    ],
+    [
+     "btn-redo",
+     true
+    ]
+   ],
+   "editOpenedInRO": false,
+   "importChangedSheets": false,
+   "editPencilsVisible": 987,
+   "treeActionButtons": 0,
+   "sheetDeleteAddButtons": 0,
+   "historyEntriesInRO": 0
+  },
+  "O1 openEdit 120 members": {
+   "ms": 75,
+   "err": "TypeError: Cannot read properties of undefined (reading 'includes')\n    at file:///home/user/orgchart/org-chart-local.html:3736:19\n    at Array.forEach (<anonymous>)\n    at _autoLayoutCore (file:///home/user/orgchart/org-chart-local.html:3734:11)\n    at autoLayout (file:///home/user/orgchart/org-chart-local.html:3693:29)\n    at switchSheet (file:///home/user/orgchart/org-chart-local.html:1402:47)\n"
+  },
+  "O2 구성 layout / chain / orphans": {
+   "ms": 0,
+   "err": "TypeError: Cannot read properties of undefined (reading 'includes')\n    at file:///home/user/orgchart/org-chart-local.html:3736:19\n    at Array.forEach (<anonymous>)\n    at _autoLayoutCore (file:///home/user/orgchart/org-chart-local.html:3734:11)\n    at autoLayout (file:///home/user/orgchart/org-chart-local.html:3693:29)\n    at eval (eval at evaluate (:311:30), <anonymous>:74:89)\n    at step (eval"
+  },
+  "P1 switch all 18 sheets": {
+   "ms": 2934,
+   "err": "TypeError: Cannot read properties of undefined (reading 'includes')\n    at file:///home/user/orgchart/org-chart-local.html:3736:19\n    at Array.forEach (<anonymous>)\n    at _autoLayoutCore (file:///home/user/orgchart/org-chart-local.html:3734:11)\n    at autoLayout (file:///home/user/orgchart/org-chart-local.html:3693:29)\n    at switchSheet (file:///home/user/orgchart/org-chart-local.html:1402:47)\n"
+  },
+  "Q1 present enter/exit 대형": {
+   "ms": 2941,
+   "enterMs": 46,
+   "presentClass": true,
+   "topbarDisplayInPresent": "none",
+   "exitMs": 54,
+   "scaleRestored": true,
+   "scrollRestored": true
+  },
+  "R1 options extremes 대형": {
+   "ms": 11227,
+   "bigGapFontMs": 4156,
+   "lint": {
+    "overlap": 0,
+    "broken": 0
+   },
+   "canvas": [
+    198980,
+    5880
+   ],
+   "cardW400Ms": 3349,
+   "lintAfterW400": {
+    "overlap": 0,
+    "broken": 0
+   },
+   "canvasW400": [
+    278960,
+    5880
+   ],
+   "NW": 220
+  },
+  "R2 preset save/load": {
+   "ms": 3357,
+   "saveMs": 274,
+   "loadMs": 3074,
+   "slots": 3,
+   "restored": true
+  },
+  "S1 data window 16 statuses 50 jobs": {
+   "ms": 21,
+   "openMs": 3,
+   "overlayId": "data-title-inp",
+   "controls": 0,
+   "scrolls": false,
+   "statusItems": 16,
+   "jobCats": 50
+  },
+  "S2 unknown status on cards": {
+   "ms": 1413,
+   "unknownSample": [
+    {
+     "markText": "",
+     "mstShown": false,
+     "rowText": "김사은\n          킈쮀\n        \n        직무32 /",
+     "title": null
+    },
+    {
+     "markText": "",
+     "mstShown": false,
+     "rowText": "용가러\n          이사\n        \n        직무20 /",
+     "title": null
+    },
+    {
+     "markText": "",
+     "mstShown": false,
+     "rowText": "남후호\n          대표\n        \n        직무20 /",
+     "title": null
+    }
+   ],
+   "summaryRows": [
+    "재직",
+    "예정",
+    "휴직",
+    "채용",
+    "퇴사예정",
+    "미분류"
+   ],
+   "rowsN": 6,
+   "hasUnknownRow": true
+  },
+  "T1 글자 overflow": {
+   "ms": 231,
+   "cards": 19,
+   "cardsOverflowing": 1,
+   "overflowSample": [
+    {
+     "id": "nx01974",
+     "sw": 220,
+     "cw": 220,
+     "sh": 211,
+     "ch": 160,
+     "title": "글자 시험\n      글자 시험 부제"
+    }
+   ],
+   "textElsClipped": 52,
+   "clippedSample": [
+    {
+     "cls": "mn",
+     "text": "아주 긴 조직 이름 아주 긴 조직 이름 아주 ",
+     "sw": 227,
+     "cw": 55
+    },
+    {
+     "cls": "mn",
+     "text": "AAAAAAAAAAAAAAAAAAAAAAAAA",
+     "sw": 228,
+     "cw": 65
+    },
+    {
+     "cls": "mn",
+     "text": "<b>굵게</b> & \"따옴표\" '홑' `역`",
+     "sw": 118,
+     "cw": 90
+    },
+    {
+     "cls": "mn",
+     "text": "<img src=x onerror=\"windo",
+     "sw": 149,
+     "cw": 89
+    }
+   ],
+   "lint": {
+    "overlap": 0,
+    "broken": 0
+   },
+   "maxCardH": 310,
+   "titlesSample": [
+    "글자 시험\n      글자 시험 부제\n      \n  ",
+    "아주 긴 조직 이름 아주 긴 조직 이름 아주 긴 조직 ",
+    "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "<b>굵게</b> & \"따옴표\" '홑' `역`\n    ",
+    "<img src=x onerror=\"window.__x",
+    "<script>window.__xss=2</script"
+   ]
+  },
+  "T2 글자 tree/stats text": {
+   "ms": 86,
+   "treeRows": 19,
+   "treeClipped": 0,
+   "scriptTagsInUI": 0,
+   "teamLabels": 19,
+   "teamLabelsClipped": 0
+  }
+ },
+ "data": {
+  "sheets": 18,
+  "cards": 1238,
+  "members": 7254,
+  "bytes": 617529
+ },
+ "mem0": 10,
+ "memEnd": 10,
+ "alerts": [
+  "가져오기 완료: 시트 18개, 현재 시트 987개 조직"
+ ],
+ "blobs": 5,
+ "dls": [
+  [
+   "org-chart.csv",
+   262622
+  ],
+  [
+   "org-chart.csv",
+   7966
+  ],
+  [
+   "org-data.json",
+   1568417
+  ]
+ ],
+ "errors": [],
+ "wallMs": 251712
+}
