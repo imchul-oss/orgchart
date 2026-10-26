@@ -1,0 +1,12 @@
+{
+ "errors": [],
+ "fails": [],
+ "info": {
+  "V": {
+   "cards": 34,
+   "minText": "4.76",
+   "minPill": "1.81"
+  }
+ },
+ "RESULT": "GREEN"
+}

@@ -1,0 +1,19 @@
+{
+ "errors": [],
+ "fails": [],
+ "info": {
+  "T_emoji": {
+   "n": 186,
+   "lone": 0,
+   "empty": 0,
+   "cut": 150
+  },
+  "T_narrow": {
+   "n": 36,
+   "lone": 0,
+   "empty": 0,
+   "cut": 0
+  }
+ },
+ "RESULT": "GREEN"
+}

@@ -1,0 +1,31 @@
+{
+ "errors": [],
+ "fails": [],
+ "info": {
+  "ko": {
+   "n": 1,
+   "col": [
+    "#ffffff"
+   ],
+   "want": "#ffffff",
+   "y": [
+    178
+   ],
+   "wantY": 178,
+   "sub": []
+  },
+  "cmp": {
+   "dom": 3,
+   "on": 3,
+   "outFlag": false,
+   "off": 0
+  },
+  "print": {
+   "content": "none",
+   "disp": "none",
+   "bg": "rgb(255, 255, 255)"
+  },
+  "miss": []
+ },
+ "RESULT": "GREEN"
+}

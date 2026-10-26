@@ -1,0 +1,85 @@
+{
+ "errors": [],
+ "fails": [],
+ "info": {
+  "O-down": {
+   "list0": [
+    "t_01",
+    "t_02",
+    "t_03",
+    "t_04",
+    "prodhq",
+    "foodhq"
+   ],
+   "list1": [
+    "t_02",
+    "t_01",
+    "t_03",
+    "t_04",
+    "prodhq",
+    "foodhq"
+   ],
+   "after": [
+    "t_02",
+    "t_01",
+    "t_03",
+    "t_04",
+    "prodhq",
+    "foodhq"
+   ]
+  },
+  "O-right": {
+   "list0": [
+    "t_01",
+    "t_02",
+    "t_03",
+    "t_04",
+    "prodhq",
+    "foodhq"
+   ],
+   "list1": [
+    "t_02",
+    "t_01",
+    "t_03",
+    "t_04",
+    "prodhq",
+    "foodhq"
+   ],
+   "after": [
+    "t_02",
+    "t_01",
+    "t_03",
+    "t_04",
+    "prodhq",
+    "foodhq"
+   ]
+  },
+  "O-left": {
+   "list0": [
+    "t_01",
+    "t_02",
+    "t_03",
+    "t_04",
+    "prodhq",
+    "foodhq"
+   ],
+   "list1": [
+    "t_02",
+    "t_01",
+    "t_03",
+    "t_04",
+    "prodhq",
+    "foodhq"
+   ],
+   "after": [
+    "t_02",
+    "t_01",
+    "t_03",
+    "t_04",
+    "prodhq",
+    "foodhq"
+   ]
+  }
+ },
+ "RESULT": "GREEN"
+}

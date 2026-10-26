@@ -1,0 +1,17 @@
+{
+ "errors": [],
+ "fails": [],
+ "info": {
+  "1024 ro": "all in bar",
+  "1024 admin": "all in bar",
+  "1280 ro": "all in bar",
+  "1280 admin": "all in bar",
+  "1366 ro": "all in bar",
+  "1366 admin": "all in bar",
+  "1600 ro": "all in bar",
+  "1600 admin": "all in bar",
+  "1920 ro": "all in bar",
+  "1920 admin": "all in bar"
+ },
+ "RESULT": "GREEN"
+}

@@ -1,0 +1,98 @@
+{
+ "errors": [],
+ "fails": [
+  "C1 colour rows left in the data window 19",
+  "C1 colour pickers left in the data window {\"hdrTop\":1,\"hdrL1\":1,\"hdrL2\":1,\"hdrL3\":1,\"hdrL4\":1,\"hdrL5\":1,\"hdrTf\":1,\"hdrSide\":1,\"bandTop\":1,\"bandL1\":1,\"bandL2\":1,\"bandL3\":1,\"bandL4\":1,\"bandL5\":1,\"bandTf\":1,\"bandSide\":1,\"cardBg\":1,\"rowEven\":1,\"rowBorder\":1}",
+  "C2 options pickers per key [[\"hdrTop\",0],[\"hdrL1\",0],[\"hdrL2\",0],[\"hdrL3\",0],[\"hdrL4\",0],[\"hdrL5\",0],[\"hdrTf\",0],[\"hdrSide\",0],[\"bandTop\",0],[\"bandL1\",0],[\"bandL2\",0],[\"bandL3\",0],[\"bandL4\",0],[\"bandL5\",0],[\"bandTf\",0],[\"bandSide\",0],[\"cardBg\",0],[\"rowEven\",0],[\"rowBorder\",0]]",
+  "C2 section {\"secs\":0,\"t\":null,\"keys\":0}",
+  "C2 section does not fold undefined",
+  "C2 old hint to the data window still shown",
+  "C3 setup: pickers not found [false,false]",
+  "C3 change not applied {\"opt\":[\"#2C2C2C\",\"#FFFFFF\"],\"css\":[\"#2C2C2C\",\"#FFFFFF\"]}",
+  "C3 no card header shows the new L1 colour",
+  "C3 options input after undo null"
+ ],
+ "info": {
+  "dataRows": 19,
+  "dataKeys": {
+   "hdrTop": 1,
+   "hdrL1": 1,
+   "hdrL2": 1,
+   "hdrL3": 1,
+   "hdrL4": 1,
+   "hdrL5": 1,
+   "hdrTf": 1,
+   "hdrSide": 1,
+   "bandTop": 1,
+   "bandL1": 1,
+   "bandL2": 1,
+   "bandL3": 1,
+   "bandL4": 1,
+   "bandL5": 1,
+   "bandTf": 1,
+   "bandSide": 1,
+   "cardBg": 1,
+   "rowEven": 1,
+   "rowBorder": 1
+  },
+  "dataHas": {
+   "status": true,
+   "sg": true,
+   "job": true
+  },
+  "optKeys": {
+   "connSolid": 1,
+   "connDash": 1,
+   "canvasBg": 1,
+   "gridDot": 1,
+   "txtHdrEn": 1,
+   "txtHdrKo": 1,
+   "txtMn": 1,
+   "txtMf": 1,
+   "txtMr2": 1,
+   "txtMa": 1,
+   "uiMint": 1,
+   "uiSky": 1,
+   "uiCoral": 1,
+   "topbarBg": 1,
+   "statsBg": 1,
+   "stbarBg": 1
+  },
+  "secTitle": null,
+  "secKeys": [],
+  "secs": 0,
+  "hint": true,
+  "hk": "hdrL1",
+  "old": {
+   "hdrL1": "#2C2C2C",
+   "cardBg": "#FFFFFF"
+  },
+  "set": [
+   false,
+   false
+  ],
+  "after": {
+   "opt": [
+    "#2C2C2C",
+    "#FFFFFF"
+   ],
+   "css": [
+    "#2C2C2C",
+    "#FFFFFF"
+   ]
+  },
+  "hdrHit": false,
+  "undo": {
+   "opt": [
+    "#2C2C2C",
+    "#FFFFFF"
+   ],
+   "css": [
+    "#2C2C2C",
+    "#FFFFFF"
+   ]
+  },
+  "undoInput": null
+ },
+ "RESULT": "RED 10"
+}

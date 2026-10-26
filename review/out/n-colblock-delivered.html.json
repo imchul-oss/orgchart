@@ -1,0 +1,31 @@
+{
+ "errors": [],
+ "fails": [],
+ "info": {
+  "c1": {
+   "gcY": 1960,
+   "colBottom": 1870,
+   "over": [],
+   "badge": "✓ 배치 이상 없음",
+   "colYs": [
+    460,
+    640,
+    980,
+    1320,
+    1660
+   ]
+  },
+  "moved": [],
+  "c2": {
+   "gcY": 1560,
+   "wrapBottom": 1470,
+   "rows": 3,
+   "over": [],
+   "badge": "✓ 배치 이상 없음"
+  },
+  "minX": 80,
+  "padX": 80,
+  "rowGap": 80
+ },
+ "RESULT": "GREEN"
+}

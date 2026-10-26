@@ -1,0 +1,11 @@
+{
+ "errors": [],
+ "fails": [],
+ "info": {
+  "contrast": {
+   "cards": 25,
+   "min": "12.64"
+  }
+ },
+ "RESULT": "GREEN"
+}

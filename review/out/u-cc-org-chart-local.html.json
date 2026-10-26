@@ -1,0 +1,78 @@
+{
+ "errors": [],
+ "fails": [],
+ "info": {
+  "T": {
+   "len": 4
+  },
+  "K1": {
+   "sep": "3명 +1겸",
+   "tv_sep": "3명 +1겸",
+   "inc": "4명",
+   "tv_inc": "4명",
+   "exc": "3명",
+   "tv_exc": "3명",
+   "tags": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "mr2in": true,
+   "only_sep": "0명 +1겸",
+   "only_exc": "(none)",
+   "ex_sep": "(none)"
+  },
+  "K5": {
+   "n": 4,
+   "st": [
+    false,
+    true,
+    false,
+    false
+   ],
+   "k1": false,
+   "v2": true,
+   "newChecked": false
+  },
+  "K7": {
+   "hdr": "node_id,name,func,role,area,status,concurrent",
+   "back": true
+  },
+  "K8": {
+   "vals": "sep,inc,exc",
+   "opt": "inc",
+   "pill": "4명",
+   "bad": "sep",
+   "cl1": [
+    24,
+    -99,
+    0
+   ],
+   "cl2": [
+    9,
+    70,
+    -40
+   ]
+  },
+  "K9": {
+   "ctl": [
+    true,
+    true,
+    true
+   ],
+   "opt": [
+    12,
+    10,
+    5
+   ]
+  },
+  "K10": {
+   "gx": 154,
+   "gy": -60.5,
+   "wantDx": 154,
+   "wantDy": -61
+  }
+ },
+ "RESULT": "GREEN"
+}

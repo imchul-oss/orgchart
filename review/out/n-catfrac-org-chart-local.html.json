@@ -1,0 +1,185 @@
+{
+ "errors": [],
+ "fails": [],
+ "info": {
+  "job": {
+   "rows": [
+    {
+     "name": "비쟈씌",
+     "num": "2/2",
+     "short": false
+    },
+    {
+     "name": "붸노",
+     "num": "1/1",
+     "short": false
+    },
+    {
+     "name": "뤼투",
+     "num": "5/5",
+     "short": false
+    },
+    {
+     "name": "뫄랴띠프",
+     "num": "1/2",
+     "short": true
+    },
+    {
+     "name": "노쌔쩌턔",
+     "num": "0/1",
+     "short": true
+    },
+    {
+     "name": "뀨르볘도",
+     "num": "2/2",
+     "short": false
+    },
+    {
+     "name": "짜뗴푸교",
+     "num": "4/5",
+     "short": true
+    },
+    {
+     "name": "톄뚀뺴퐈",
+     "num": "3/4",
+     "short": true
+    },
+    {
+     "name": "버먜먀혜",
+     "num": "1/1",
+     "short": false
+    },
+    {
+     "name": "놔꾜늬혜",
+     "num": "1/1",
+     "short": false
+    },
+    {
+     "name": "뗘벼꺄쨰",
+     "num": "1/1",
+     "short": false
+    },
+    {
+     "name": "이쑈쭤헤",
+     "num": "4/4",
+     "short": false
+    },
+    {
+     "name": "호싀페쮜",
+     "num": "4/5",
+     "short": true
+    },
+    {
+     "name": "라워소아",
+     "num": "1/1",
+     "short": false
+    },
+    {
+     "name": "쏘츼네",
+     "num": "2/2",
+     "short": false
+    },
+    {
+     "name": "뎌뮈",
+     "num": "1/1",
+     "short": false
+    },
+    {
+     "name": "져체궤",
+     "num": "1/1",
+     "short": false
+    },
+    {
+     "name": "회퉤뾔쿠",
+     "num": "1/1",
+     "short": false
+    },
+    {
+     "name": "CS",
+     "num": "3/3",
+     "short": false
+    },
+    {
+     "name": "기타",
+     "num": "1/1",
+     "short": false
+    },
+    {
+     "name": "쐐케뀨 뎌뮈",
+     "num": "2/4",
+     "short": true
+    },
+    {
+     "name": "댜찌께짜 뎌뮈",
+     "num": "2/2",
+     "short": false
+    },
+    {
+     "name": "흐줘썌퀘 쏘츼네",
+     "num": "3/3",
+     "short": false
+    },
+    {
+     "name": "쾨띄쾨 져체궤",
+     "num": "2/2",
+     "short": false
+    },
+    {
+     "name": "케 져체궤",
+     "num": "1/1",
+     "short": false
+    },
+    {
+     "name": "뎌뮈 뉴꾜",
+     "num": "3/3",
+     "short": false
+    },
+    {
+     "name": "뷰뛔쫘",
+     "num": "1/1",
+     "short": false
+    },
+    {
+     "name": "꾸챠럐뵤",
+     "num": "3/3",
+     "short": false
+    },
+    {
+     "name": "쏘끄",
+     "num": "1/1",
+     "short": false
+    },
+    {
+     "name": "미입력",
+     "num": "1/1",
+     "short": false
+    }
+   ],
+   "tots": [
+    [
+     "합계 (현원/정원)",
+     "58/65"
+    ]
+   ]
+  },
+  "live": {
+   "foot": true,
+   "pos": "sticky",
+   "scroll": true,
+   "top": true,
+   "inFoot": 1,
+   "bottom": true,
+   "hit": true,
+   "pad": 3,
+   "sumFoot": 2
+  },
+  "tbl": [
+   [
+    "total",
+    "합계 (현원/정원)",
+    "58/65"
+   ]
+  ]
+ },
+ "RESULT": "GREEN"
+}

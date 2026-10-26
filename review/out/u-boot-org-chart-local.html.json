@@ -1,0 +1,28 @@
+{
+ "errors": [],
+ "fails": [
+  "I1: no card drawn within 6 s",
+  "I2: first card at -1 ms, want <= 1000",
+  "I3: first card at -1 ms, want <= 1000"
+ ],
+ "info": {
+  "I1_first_ms": -1,
+  "I2_first_ms": -1,
+  "I3_first_ms": -1,
+  "I4_first_ms": -1,
+  "I4": {
+   "ms": [
+    2,
+    1,
+    1,
+    1
+   ],
+   "got": 5,
+   "after": true
+  },
+  "I5_first_ms": -1,
+  "I6_first_ms": 168,
+  "E_first_ms": -1
+ },
+ "RESULT": "RED 3"
+}

@@ -1,0 +1,44 @@
+{
+ "errors": [],
+ "fails": [],
+ "info": {
+  "ro": 0,
+  "e2": {
+   "show": true,
+   "eid": "nd227",
+   "want": "nd227",
+   "onTop": true,
+   "listOpen": true
+  },
+  "e3": {
+   "added": 1,
+   "eid": "nd231",
+   "linked": true,
+   "show": true,
+   "listOpen": true,
+   "placed": true
+  },
+  "e4": {
+   "p": "fp",
+   "k0": [
+    "prodhq",
+    "foodhq"
+   ],
+   "upDisabled": true,
+   "k1": [
+    "foodhq",
+    "prodhq"
+   ],
+   "list": [
+    7,
+    1
+   ],
+   "k2": [
+    "prodhq",
+    "foodhq"
+   ]
+  },
+  "txt0": "궈춰쌔햐\n셔테아 (1/1명)\n  내퇴둬꼬 (1/1명)\n    효트듀 (2/3명 +1겸)\n      풰캬/쒜떠취(쪠즤) 하위 조직\n      키솨퀘/켜댸(쪠즤) 하위 조직\n    롸브셔(2톄취) (6/6명)\n      1체하(쪠즤)\n      2체하(쪠즤)\n      3체하(쪠즤)\n      4체하(쪠즤)\n      5체하(쪠즤)\n    쵀똬퇴 (4/4명 +1겸)\n      쟤과(쪠즤)\n    뾔해니 (4/4명 +1겸)\n    매뤠써 (2/3명)\n  호뻬요콰 (1/1명)\n    캐뗴틔햬즈 (4/5명)\n    꿰주붜 (1/1명 +1겸)"
+ },
+ "RESULT": "GREEN"
+}

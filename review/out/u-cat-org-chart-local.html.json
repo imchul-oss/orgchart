@@ -1,0 +1,33 @@
+{
+ "errors": [],
+ "fails": [],
+ "info": {
+  "r": {
+   "sel": {
+    "f": {
+     "v": "ZZ직무",
+     "txt": "ZZ직무 (목록 밖)"
+    },
+    "r": {
+     "v": "ZZ직책",
+     "txt": "ZZ직책 (목록 밖)"
+    },
+    "a": {
+     "v": "ZZ분야",
+     "txt": "ZZ분야 (목록 밖)"
+    },
+    "s": {
+     "v": "zzstatus",
+     "txt": "zzstatus (목록 밖)"
+    }
+   },
+   "cleared": "",
+   "listed": "킈쮀",
+   "cc": {
+    "f": "뤼투",
+    "cc": true
+   }
+  }
+ },
+ "RESULT": "GREEN"
+}

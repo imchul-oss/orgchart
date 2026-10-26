@@ -1,0 +1,18 @@
+{
+ "errors": [],
+ "fails": [],
+ "info": {
+  "L0down": 3,
+  "X": {
+   "cols": 3,
+   "drawn": 9,
+   "m": 9
+  },
+  "L0right": 3,
+  "L0left": 3,
+  "L1down": 3,
+  "L1right": 3,
+  "L1left": 3
+ },
+ "RESULT": "GREEN"
+}

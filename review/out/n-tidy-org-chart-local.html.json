@@ -1,0 +1,97 @@
+{
+ "errors": [],
+ "fails": [],
+ "info": {
+  "final-def/0": {
+   "cg": 44,
+   "n": 17,
+   "width": 3764,
+   "today": 3968,
+   "gapSet": [
+    44
+   ],
+   "wrapPairs": 0
+  },
+  "final-def/1": {
+   "cg": 44,
+   "n": 14,
+   "width": 2676,
+   "today": 2748,
+   "gapSet": [
+    44
+   ],
+   "wrapPairs": 0
+  },
+  "final-own/0": {
+   "cg": 30,
+   "n": 17,
+   "width": 2630,
+   "today": 2760,
+   "gapSet": [
+    30
+   ],
+   "wrapPairs": 0
+  },
+  "final-own/1": {
+   "cg": 30,
+   "n": 14,
+   "width": 1870,
+   "today": 1960,
+   "gapSet": [
+    30
+   ],
+   "wrapPairs": 0
+  },
+  "owner-own/0": {
+   "cg": 30,
+   "n": 17,
+   "width": 1870,
+   "today": 1960,
+   "gapSet": [
+    30
+   ],
+   "wrapPairs": 0
+  },
+  "owner-own/1": {
+   "cg": 30,
+   "n": 14,
+   "width": 2758,
+   "today": 2840,
+   "gapSet": [
+    30
+   ],
+   "wrapPairs": 0
+  },
+  "owner-def/0": {
+   "cg": 44,
+   "n": 17,
+   "width": 2676,
+   "today": 2768,
+   "gapSet": [
+    44
+   ],
+   "wrapPairs": 0
+  },
+  "owner-def/1": {
+   "cg": 44,
+   "n": 14,
+   "width": 3972,
+   "today": 4088,
+   "gapSet": [
+    44
+   ],
+   "wrapPairs": 0
+  },
+  "wrap": {
+   "sizes": [
+    3,
+    2
+   ],
+   "gs": [
+    44
+   ],
+   "badge": "✓ 배치 이상 없음"
+  }
+ },
+ "RESULT": "GREEN"
+}

@@ -1,0 +1,199 @@
+{
+ "errors": [],
+ "fails": [],
+ "info": {
+  "u1c": {
+   "v0": 11,
+   "v1": 17,
+   "stack": [
+    11
+   ],
+   "after": 11
+  },
+  "u1n": {
+   "v0": "#7D879A",
+   "changed": "#aa2200",
+   "dis": false,
+   "after": "#7D879A"
+  },
+  "u1b": {
+   "u1b": {
+    "f0": 16,
+    "f1": 22,
+    "f2": 16,
+    "back": true,
+    "cons": true
+   },
+   "u1d": {
+    "f0": 11,
+    "f1": 20,
+    "f2": 11,
+    "back": true
+   }
+  },
+  "m3": {
+   "esc": {
+    "clean": {
+     "open": false,
+     "asked": 0,
+     "q": "",
+     "en": "자비세에뺘",
+     "inp": "자비세에뺘"
+    },
+    "back": {
+     "open": false,
+     "asked": 0,
+     "q": "",
+     "en": "자비세에뺘",
+     "inp": "자비세에뺘"
+    },
+    "no": {
+     "open": true,
+     "asked": 1,
+     "q": "저장하지 않은 변경이 있습니다.\n저장하지 않고 닫을까요?",
+     "en": "자비세에뺘",
+     "inp": "자비세에뺘 고침"
+    },
+    "yes": {
+     "open": false,
+     "asked": 1,
+     "q": "저장하지 않은 변경이 있습니다.\n저장하지 않고 닫을까요?",
+     "en": "자비세에뺘",
+     "inp": "자비세에뺘 고침"
+    },
+    "en0": "자비세에뺘"
+   },
+   "x": {
+    "clean": {
+     "open": false,
+     "asked": 0,
+     "q": "",
+     "en": "자비세에뺘",
+     "inp": "자비세에뺘"
+    },
+    "back": {
+     "open": false,
+     "asked": 0,
+     "q": "",
+     "en": "자비세에뺘",
+     "inp": "자비세에뺘"
+    },
+    "no": {
+     "open": true,
+     "asked": 1,
+     "q": "저장하지 않은 변경이 있습니다.\n저장하지 않고 닫을까요?",
+     "en": "자비세에뺘",
+     "inp": "자비세에뺘 고침"
+    },
+    "yes": {
+     "open": false,
+     "asked": 1,
+     "q": "저장하지 않은 변경이 있습니다.\n저장하지 않고 닫을까요?",
+     "en": "자비세에뺘",
+     "inp": "자비세에뺘 고침"
+    },
+    "en0": "자비세에뺘"
+   },
+   "cancel": {
+    "clean": {
+     "open": false,
+     "asked": 0,
+     "q": "",
+     "en": "자비세에뺘",
+     "inp": "자비세에뺘"
+    },
+    "back": {
+     "open": false,
+     "asked": 0,
+     "q": "",
+     "en": "자비세에뺘",
+     "inp": "자비세에뺘"
+    },
+    "no": {
+     "open": true,
+     "asked": 1,
+     "q": "저장하지 않은 변경이 있습니다.\n저장하지 않고 닫을까요?",
+     "en": "자비세에뺘",
+     "inp": "자비세에뺘 고침"
+    },
+    "yes": {
+     "open": false,
+     "asked": 1,
+     "q": "저장하지 않은 변경이 있습니다.\n저장하지 않고 닫을까요?",
+     "en": "자비세에뺘",
+     "inp": "자비세에뺘 고침"
+    },
+    "en0": "자비세에뺘"
+   }
+  },
+  "u1": {
+   "colGap": {
+    "v0": 40,
+    "v1": 120,
+    "v2": 40,
+    "v3": 120,
+    "ui2": 40,
+    "en": true,
+    "moved": true,
+    "back": true,
+    "fwd": true
+   },
+   "fsMn": {
+    "v0": 11,
+    "v1": 16,
+    "v2": 11,
+    "v3": 16,
+    "ui2": 11,
+    "en": true,
+    "moved": false,
+    "back": true,
+    "fwd": true
+   },
+   "connSolid": {
+    "v0": "#7D879A",
+    "v1": "#123456",
+    "v2": "#7D879A",
+    "v3": "#123456",
+    "ui2": null,
+    "en": true,
+    "moved": false,
+    "back": true,
+    "fwd": true
+   }
+  },
+  "m7": {
+   "roleNo": {
+    "asked": 1,
+    "q": "'킈쮀' 분류를 지울까요?\n이 분류를 쓰는 15명의 값은 그대로 남고, 고르는 목록에서만 빠집니다.\n지운 뒤에는 되돌리기(↶)로 살릴 수 있습니다.",
+    "kept": true
+   },
+   "roleYes": {
+    "asked": 1,
+    "gone": true
+   },
+   "roleUndo": true,
+   "stNo": {
+    "asked": 1,
+    "q": "'휴직' 상태를 지울까요?\n이 상태인 6명은 현황 그룹에서 빠져 인원 수와 출력 현황표가 바뀝니다.\n지운 뒤에는 되돌리기(↶)로 살릴 수 있습니다.",
+    "sl": "휴직",
+    "kept": true
+   },
+   "stYes": {
+    "gone": true
+   },
+   "stUndo": {
+    "item": true,
+    "grp": true
+   },
+   "sgNo": {
+    "asked": 1,
+    "kept": true,
+    "q": "'재직' 현황 그룹을 지울까요?\n이 그룹에 든 190명이 현황 합계와 출력 현황표에서 빠집니다.\n지운 뒤에는 되돌리기(↶)로 살릴 수 있습니다."
+   },
+   "sgYes": true,
+   "sgUndo": true
+  },
+  "phantom": true
+ },
+ "RESULT": "GREEN"
+}

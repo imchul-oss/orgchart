@@ -1,0 +1,40 @@
+{
+ "errors": [],
+ "fails": [],
+ "info": {
+  "s0": {
+   "cb": true,
+   "checked": false,
+   "sec": "logo",
+   "opt": false,
+   "t06": {
+    "hdr": "rgb(29, 78, 216)",
+    "band": "#1d4ed8",
+    "pill": "rgba(0, 0, 0, 0.55)"
+   }
+  },
+  "s1": {
+   "opt": true,
+   "fp": "rgb(23, 54, 93)",
+   "prodhq": "rgb(20, 55, 151)",
+   "t06": {
+    "hdr": "rgb(48, 79, 163)",
+    "band": "rgb(48, 79, 163)",
+    "pill": "rgba(0, 0, 0, 0.55)"
+   },
+   "t01": "rgb(71, 85, 105)"
+  },
+  "g5": {
+   "a": [
+    true,
+    true,
+    "rgb(48, 79, 163)"
+   ],
+   "b": [
+    false,
+    false
+   ]
+  }
+ },
+ "RESULT": "GREEN"
+}

@@ -1,0 +1,110 @@
+{
+ "errors": [],
+ "fails": [],
+ "info": {
+  "dataRows": 0,
+  "dataKeys": {},
+  "dataHas": {
+   "status": true,
+   "sg": true,
+   "job": true
+  },
+  "optKeys": {
+   "hdrTop": 1,
+   "hdrL1": 1,
+   "hdrL2": 1,
+   "hdrL3": 1,
+   "hdrL4": 1,
+   "hdrL5": 1,
+   "hdrTf": 1,
+   "hdrSide": 1,
+   "bandTop": 1,
+   "bandL1": 1,
+   "bandL2": 1,
+   "bandL3": 1,
+   "bandL4": 1,
+   "bandL5": 1,
+   "bandTf": 1,
+   "bandSide": 1,
+   "cardBg": 1,
+   "rowEven": 1,
+   "rowBorder": 1,
+   "connSolid": 1,
+   "connDash": 1,
+   "canvasBg": 1,
+   "gridDot": 1,
+   "txtHdrEn": 1,
+   "txtHdrKo": 1,
+   "txtMn": 1,
+   "txtMf": 1,
+   "txtMr2": 1,
+   "txtMa": 1,
+   "uiMint": 1,
+   "uiSky": 1,
+   "uiCoral": 1,
+   "topbarBg": 1,
+   "statsBg": 1,
+   "stbarBg": 1
+  },
+  "secTitle": "카드 색",
+  "secKeys": [
+   "hdrTop",
+   "hdrL1",
+   "hdrL2",
+   "hdrL3",
+   "hdrL4",
+   "hdrL5",
+   "hdrTf",
+   "hdrSide",
+   "bandTop",
+   "bandL1",
+   "bandL2",
+   "bandL3",
+   "bandL4",
+   "bandL5",
+   "bandTf",
+   "bandSide",
+   "cardBg",
+   "rowEven",
+   "rowBorder"
+  ],
+  "secs": 1,
+  "fold": [
+   "false",
+   "true"
+  ],
+  "hint": false,
+  "hk": "hdrL1",
+  "old": {
+   "hdrL1": "#2C2C2C",
+   "cardBg": "#FFFFFF"
+  },
+  "set": [
+   true,
+   true
+  ],
+  "after": {
+   "opt": [
+    "#123456",
+    "#fefcf0"
+   ],
+   "css": [
+    "#123456",
+    "#fefcf0"
+   ]
+  },
+  "hdrHit": true,
+  "undo": {
+   "opt": [
+    "#2C2C2C",
+    "#FFFFFF"
+   ],
+   "css": [
+    "#2C2C2C",
+    "#FFFFFF"
+   ]
+  },
+  "undoInput": "#2c2c2c"
+ },
+ "RESULT": "GREEN"
+}

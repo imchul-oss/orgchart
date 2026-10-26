@@ -1,0 +1,60 @@
+{
+ "errors": [],
+ "fails": [],
+ "info": {
+  "r1": {
+   "has": true,
+   "vals": [
+    "depth",
+    "local"
+   ],
+   "val": "depth",
+   "sec": "layout",
+   "opt": "depth"
+  },
+  "final/0": {
+   "fails": 0,
+   "ov": 0,
+   "badge": "✓ 배치 이상 없음"
+  },
+  "final/1": {
+   "fails": 0,
+   "ov": 0,
+   "badge": "✓ 배치 이상 없음"
+  },
+  "owner/1": {
+   "fails": 0,
+   "ov": 0,
+   "badge": "✓ 배치 이상 없음"
+  },
+  "r4": {
+   "kidsY": [
+    540,
+    540
+   ],
+   "gBottom": 450,
+   "lBottom": 990
+  },
+  "r6": {
+   "a": [
+    "local",
+    "local",
+    true
+   ],
+   "b": [
+    "depth",
+    "depth"
+   ],
+   "c": "depth"
+  },
+  "r7": {
+   "ys": [
+    380,
+    680
+   ],
+   "pBottom": 292,
+   "badge": "✓ 배치 이상 없음"
+  }
+ },
+ "RESULT": "GREEN"
+}

@@ -1,0 +1,15 @@
+{
+ "errors": [],
+ "fails": [],
+ "info": {
+  "v": [
+   "1600x900 sheet 0 collapsed=false",
+   "1600x900 sheet 1 collapsed=false",
+   "1280x720 sheet 0 collapsed=false",
+   "1280x720 sheet 1 collapsed=false",
+   "1920x1080 sheet 0 collapsed=false",
+   "1920x1080 sheet 1 collapsed=false"
+  ]
+ },
+ "RESULT": "GREEN"
+}

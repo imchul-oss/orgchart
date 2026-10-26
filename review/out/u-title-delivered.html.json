@@ -1,0 +1,39 @@
+{
+ "errors": [],
+ "fails": [],
+ "info": {
+  "ko": {
+   "en": "효트듀Z",
+   "ko": null,
+   "hasKo": false
+  },
+  "both": {
+   "en": "ZZEN",
+   "ko": "ZZKO",
+   "hasKo": true
+  },
+  "others": [],
+  "style": {
+   "ko": [
+    "rgb(255, 255, 255)",
+    "12px",
+    "700"
+   ],
+   "ref": [
+    "rgb(255, 255, 255)",
+    "12px",
+    "700"
+   ]
+  },
+  "tree": {
+   "zz_ko": "효트듀Z",
+   "zz_both": "ZZEN",
+   "t_02": "쭤듀꿔뭬캐"
+  },
+  "src": {
+   "tf": false,
+   "tv": false
+  }
+ },
+ "RESULT": "GREEN"
+}

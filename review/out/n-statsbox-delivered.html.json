@@ -1,0 +1,131 @@
+{
+ "errors": [],
+ "fails": [],
+ "info": {
+  "o1": {
+   "show": [
+    true,
+    "count"
+   ],
+   "pos": [
+    "tl",
+    "tl,tr,bl,br",
+    "count"
+   ],
+   "mode": [
+    "auto",
+    "auto,outside,inside",
+    "count"
+   ],
+   "scale": [
+    100,
+    60,
+    160,
+    "count"
+   ],
+   "opt": [
+    true,
+    "tl",
+    "auto",
+    100
+   ]
+  },
+  "final/0": {
+   "size": [
+    7688,
+    2180
+   ],
+   "w": 7688,
+   "box": {
+    "x": 80,
+    "y": 60,
+    "w": 150,
+    "h": 180,
+    "s": 1,
+    "ext": {
+     "left": 0,
+     "right": 0,
+     "top": 0,
+     "bottom": 0
+    },
+    "inside": true,
+    "titleOk": true
+   },
+   "ov": []
+  },
+  "owner/1": {
+   "size": [
+    5676,
+    3580
+   ],
+   "w": 5676,
+   "box": {
+    "x": 20,
+    "y": 20,
+    "w": 150,
+    "h": 180,
+    "s": 1,
+    "ext": {
+     "left": 0,
+     "right": 0,
+     "top": 0,
+     "bottom": 0
+    },
+    "inside": true,
+    "titleOk": true
+   },
+   "ov": []
+  },
+  "p4": {
+   "box": {
+    "x": -160,
+    "y": 1550,
+    "w": 150,
+    "h": 180,
+    "s": 1,
+    "ext": {
+     "left": 180,
+     "right": 0,
+     "top": 0,
+     "bottom": 0
+    },
+    "inside": false,
+    "titleOk": true
+   },
+   "ov": [],
+   "size": [
+    6036,
+    3580
+   ]
+  },
+  "p6": {
+   "off": {
+    "t": "translate(28.0076px, 28.0076px) scale(0.39962)",
+    "br": null,
+    "hit": null
+   },
+   "on": {
+    "t": "translate(28.0076px, 28.0076px) scale(0.39962)",
+    "br": [
+     36,
+     36,
+     59.942962646484375,
+     75.1285171508789
+    ],
+    "hit": 0
+   },
+   "outs": {
+    "t": "translate(95.8434px, 28.5196px) scale(0.374021)",
+    "br": [
+     36,
+     36,
+     56.10320281982422,
+     70.3160171508789
+    ],
+    "hit": 0
+   },
+   "gone": true
+  }
+ },
+ "RESULT": "GREEN"
+}

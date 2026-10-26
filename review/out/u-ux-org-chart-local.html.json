@@ -1,0 +1,37 @@
+{
+ "errors": [],
+ "fails": [],
+ "info": {
+  "f1": {
+   "t": "📄 파일 연결",
+   "rgb": [
+    170,
+    170,
+    170
+   ],
+   "conn": false
+  },
+  "f2": {
+   "t": "📄 sunsubon-org-2026-10-final-very-long-name.json",
+   "conn": true,
+   "w": 240,
+   "back": "📄 파일 연결"
+  },
+  "f4": {
+   "fsa": true,
+   "imp": false,
+   "exp": false,
+   "pick": true
+  },
+  "f3": {
+   "fsa": false,
+   "imp": true,
+   "exp": true,
+   "expCalled": 1,
+   "inpClicked": 1,
+   "pickOff": true,
+   "newOff": true
+  }
+ },
+ "RESULT": "GREEN"
+}

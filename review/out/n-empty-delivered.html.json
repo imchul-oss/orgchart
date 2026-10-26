@@ -1,0 +1,41 @@
+{
+ "errors": [],
+ "fails": [],
+ "info": {
+  "e1": {
+   "members": 0,
+   "h": 70.0000061870814,
+   "nbVisible": true,
+   "nh": 70,
+   "HH": 60,
+   "MH": 50,
+   "lH": 610,
+   "lRows": 11,
+   "edit": true,
+   "plus": {
+    "h": 34,
+    "content": "\"＋\""
+   }
+  },
+  "png": {
+   "cardH": 70,
+   "body": false
+  },
+  "e3": {
+   "ys": [
+    380
+   ],
+   "want": 380
+  },
+  "e5": {
+   "nbDisp": "block",
+   "h": 70,
+   "nh": 70,
+   "printing": true,
+   "plusDisp": "none",
+   "after": 70,
+   "printingAfter": false
+  }
+ },
+ "RESULT": "GREEN"
+}

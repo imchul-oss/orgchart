@@ -1,0 +1,411 @@
+{
+ "errors": [],
+ "fails": [
+  "S1 sheet 0 대형 조직 (987개) PNG canvas 253468x34420 is past the browser canvas limit (32767 px a side, 268M px), so the file comes out blank",
+  "S1 sheet 2 구성 시험 error TypeError: Cannot read properties of undefined (reading 'includes')\n    at file:///home/user/orgchart/org-chart-local.html:3736:19\n    at Array.forEach (<anonymous>)\n    at _autoLayoutCore (file:///home/user/orgchart/org-chart-local.html:3734:11)\n    at autoLayout (file:///home/user/orgchart/org-cha"
+ ],
+ "info": {
+  "sheets": [
+   {
+    "i": 0,
+    "name": "대형 조직 (987개)",
+    "ms": 2636,
+    "n": 987,
+    "dom": 987,
+    "lint": {
+     "overlap": 0,
+     "broken": 0,
+     "cross": 0
+    },
+    "panelBad": false,
+    "rows": 987,
+    "txtLines": 7484,
+    "treeMs": 177,
+    "png": [
+     253468,
+     34420
+    ],
+    "pngMs": 454,
+    "print": [
+     [
+      "a4",
+      1,
+      0.0083,
+      0.1
+     ],
+     [
+      "a3",
+      1,
+      0.012,
+      0.1
+     ],
+     [
+      "a4split",
+      5,
+      0.0379,
+      0.3
+     ]
+    ],
+    "lintFold": 0,
+    "lintBig": {
+     "overlap": 0,
+     "broken": 0
+    },
+    "tree": true
+   },
+   {
+    "i": 1,
+    "name": "글자 <시험> & \"극단\"",
+    "ms": 227,
+    "n": 19,
+    "dom": 19,
+    "lint": {
+     "overlap": 0,
+     "broken": 0,
+     "cross": 0
+    },
+    "panelBad": false,
+    "rows": 19,
+    "txtLines": 126,
+    "treeMs": 48,
+    "png": [
+     10484,
+     1260
+    ],
+    "pngMs": 135,
+    "print": [
+     [
+      "a4",
+      1,
+      0.2036,
+      1.7
+     ],
+     [
+      "a3",
+      1,
+      0.2935,
+      2.4
+     ],
+     [
+      "a4split",
+      5,
+      0.85,
+      7
+     ]
+    ],
+    "tree": false
+   },
+   {
+    "i": 2,
+    "name": "구성 시험",
+    "err": "TypeError: Cannot read properties of undefined (reading 'includes')\n    at file:///home/user/orgchart/org-chart-local.html:3736:19\n    at Array.forEach (<anonymous>)\n    at _autoLayoutCore (file:///home/user/orgchart/org-chart-local.html:3734:11)\n    at autoLayout (file:///home/user/orgchart/org-cha",
+    "tree": false
+   },
+   {
+    "i": 3,
+    "name": "가로 배치",
+    "ms": 116,
+    "n": 37,
+    "dom": 37,
+    "lint": {
+     "overlap": 0,
+     "broken": 0,
+     "cross": 0
+    },
+    "panelBad": false,
+    "rows": 37,
+    "txtLines": 166,
+    "treeMs": 6,
+    "png": [
+     12040,
+     3340
+    ],
+    "pngMs": 188,
+    "print": [
+     [
+      "a4",
+      1,
+      0.1769,
+      1.5
+     ],
+     [
+      "a3",
+      1,
+      0.2551,
+      2.1
+     ],
+     [
+      "a4split",
+      11,
+      0.85,
+      7
+     ]
+    ],
+    "tree": true
+   },
+   {
+    "i": 4,
+    "name": "오른쪽에서 배치",
+    "ms": 116,
+    "n": 48,
+    "dom": 48,
+    "lint": {
+     "overlap": 0,
+     "broken": 0,
+     "cross": 0
+    },
+    "panelBad": false,
+    "rows": 48,
+    "txtLines": 201,
+    "treeMs": 10,
+    "png": [
+     15700,
+     3560
+    ],
+    "pngMs": 511,
+    "print": [
+     [
+      "a4",
+      1,
+      0.1353,
+      1.1
+     ],
+     [
+      "a3",
+      1,
+      0.195,
+      1.6
+     ],
+     [
+      "a4split",
+      12,
+      0.778,
+      6.4
+     ]
+    ],
+    "tree": true
+   },
+   {
+    "i": 5,
+    "name": "빈 시트",
+    "ms": 19,
+    "n": 0,
+    "dom": 0,
+    "lint": {
+     "overlap": 0,
+     "broken": 0,
+     "cross": 0
+    },
+    "panelBad": false,
+    "rows": 0,
+    "txtLines": 1,
+    "treeMs": 2,
+    "png": null,
+    "pngMs": 0,
+    "print": [
+     [
+      "a4",
+      1,
+      0,
+      0
+     ],
+     [
+      "a3",
+      1,
+      0,
+      0
+     ],
+     [
+      "a4split",
+      1,
+      0.85,
+      7
+     ]
+    ],
+    "tree": false
+   },
+   {
+    "i": 6,
+    "name": "작은 시트 01 이름이 조금 긴 시트",
+    "ms": 47,
+    "n": 8,
+    "dom": 8,
+    "lint": {
+     "overlap": 0,
+     "broken": 0,
+     "cross": 0
+    },
+    "tree": true
+   },
+   {
+    "i": 7,
+    "name": "작은 시트 02 이름이 조금 긴 시트",
+    "ms": 67,
+    "n": 10,
+    "dom": 10,
+    "lint": {
+     "overlap": 0,
+     "broken": 0,
+     "cross": 0
+    },
+    "tree": true
+   },
+   {
+    "i": 8,
+    "name": "작은 시트 03 이름이 조금 긴 시트",
+    "ms": 36,
+    "n": 7,
+    "dom": 7,
+    "lint": {
+     "overlap": 0,
+     "broken": 0,
+     "cross": 0
+    },
+    "tree": true
+   },
+   {
+    "i": 9,
+    "name": "작은 시트 04 이름이 조금 긴 시트",
+    "ms": 41,
+    "n": 6,
+    "dom": 6,
+    "lint": {
+     "overlap": 0,
+     "broken": 0,
+     "cross": 0
+    },
+    "tree": true
+   },
+   {
+    "i": 10,
+    "name": "작은 시트 05 이름이 조금 긴 시트",
+    "ms": 39,
+    "n": 10,
+    "dom": 10,
+    "lint": {
+     "overlap": 0,
+     "broken": 0,
+     "cross": 0
+    },
+    "tree": true
+   },
+   {
+    "i": 11,
+    "name": "작은 시트 06 이름이 조금 긴 시트",
+    "ms": 40,
+    "n": 4,
+    "dom": 4,
+    "lint": {
+     "overlap": 0,
+     "broken": 0,
+     "cross": 0
+    },
+    "tree": true
+   },
+   {
+    "i": 12,
+    "name": "작은 시트 07 이름이 조금 긴 시트",
+    "ms": 52,
+    "n": 10,
+    "dom": 10,
+    "lint": {
+     "overlap": 0,
+     "broken": 0,
+     "cross": 0
+    },
+    "tree": true
+   },
+   {
+    "i": 13,
+    "name": "작은 시트 08 이름이 조금 긴 시트",
+    "ms": 40,
+    "n": 7,
+    "dom": 7,
+    "lint": {
+     "overlap": 0,
+     "broken": 0,
+     "cross": 0
+    },
+    "tree": true
+   },
+   {
+    "i": 14,
+    "name": "작은 시트 09 이름이 조금 긴 시트",
+    "ms": 37,
+    "n": 6,
+    "dom": 6,
+    "lint": {
+     "overlap": 0,
+     "broken": 0,
+     "cross": 0
+    },
+    "tree": true
+   },
+   {
+    "i": 15,
+    "name": "작은 시트 10 이름이 조금 긴 시트",
+    "ms": 33,
+    "n": 7,
+    "dom": 7,
+    "lint": {
+     "overlap": 0,
+     "broken": 0,
+     "cross": 0
+    },
+    "tree": true
+   },
+   {
+    "i": 16,
+    "name": "작은 시트 11 이름이 조금 긴 시트",
+    "ms": 45,
+    "n": 7,
+    "dom": 7,
+    "lint": {
+     "overlap": 0,
+     "broken": 0,
+     "cross": 0
+    },
+    "tree": true
+   },
+   {
+    "i": 17,
+    "name": "작은 시트 12 이름이 조금 긴 시트",
+    "ms": 32,
+    "n": 6,
+    "dom": 6,
+    "lint": {
+     "overlap": 0,
+     "broken": 0,
+     "cross": 0
+    },
+    "tree": true
+   }
+  ],
+  "t": {
+   "load": 6959
+  },
+  "srch": "1/18",
+  "markup": 0,
+  "round": "same",
+  "csv": {
+   "before": [
+    19,
+    92
+   ],
+   "after": [
+    19,
+    92
+   ],
+   "len": 7966
+  },
+  "undo": {
+   "steps": 25,
+   "undos": 26,
+   "back": true,
+   "redos": 26,
+   "fwd": true
+  },
+  "markup2": 0
+ },
+ "RESULT": "RED 2"
+}

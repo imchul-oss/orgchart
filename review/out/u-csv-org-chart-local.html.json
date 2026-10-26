@@ -1,0 +1,27 @@
+{
+ "errors": [],
+ "fails": [],
+ "info": {
+  "header": "id,en,ko,type,x,y,color,mc,kl,kn,ad,ac,aside,sum,tc,tk",
+  "c5": {
+   "b1": [],
+   "b2": {
+    "mc": 2,
+    "kl": "col",
+    "kn": 3,
+    "ad": "B",
+    "ac": 3,
+    "aside": true
+   },
+   "b3": [],
+   "n": 3
+  },
+  "alerts": [
+   "가져오기 완료: 14개 조직, 13개 연결",
+   "가져오기 완료: 14개 조직, 13개 연결",
+   "가져오기 완료: 14개 조직, 13개 연결",
+   "가져오기 완료: 3개 조직, 1개 연결"
+  ]
+ },
+ "RESULT": "GREEN"
+}

@@ -1,0 +1,42 @@
+{
+ "errors": [],
+ "fails": [
+  "T1 list closed after clicking a row",
+  "T1 selection {\"sel\":[],\"cur\":[],\"want\":\"t_03\"}",
+  "T2 list scroll moved 205 -> 0",
+  "click row t_04 failed: TimeoutError: page.click: Timeout 2000ms exceeded.\nCall log:",
+  "T3 selection did not move []"
+ ],
+ "info": {
+  "prep": {
+   "fid": "foodhq",
+   "st": 205,
+   "a": "t_03",
+   "b": "t_04",
+   "n": 20,
+   "sh": 828,
+   "ch": 623
+  },
+  "s1": {
+   "open": false,
+   "sel": [],
+   "cur": [],
+   "st": 0,
+   "folded": true,
+   "flash": true,
+   "cx": 683.1085510253906,
+   "cy": 179.5748291015625,
+   "L": 0,
+   "R": 1366,
+   "T": 50,
+   "B": 712
+  },
+  "s2": [],
+  "close": [
+   true,
+   true,
+   true
+  ]
+ },
+ "RESULT": "RED 5"
+}

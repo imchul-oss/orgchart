@@ -1,0 +1,32 @@
+{
+ "errors": [],
+ "fails": [],
+ "info": {
+  "n1": {
+   "okText": "✓ 배치 이상 없음",
+   "ok": 5.85,
+   "badText": "⚠ 배치 점검 2건",
+   "bad": 5.37
+  },
+  "a20": {
+   "compact": false,
+   "over": 0,
+   "small": [],
+   "n": 14
+  },
+  "ban": [],
+  "mem": 1,
+  "memAll": [
+   1,
+   1,
+   1,
+   1,
+   1,
+   1
+  ],
+  "datHdr": false,
+  "fileH": "📄 파일 연결",
+  "dataFile": false
+ },
+ "RESULT": "GREEN"
+}

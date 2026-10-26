@@ -1,0 +1,74 @@
+{
+ "errors": [],
+ "fails": [],
+ "info": {
+  "d1": {
+   "cb": true,
+   "checked": false,
+   "sec": "card",
+   "cls": false,
+   "bw": 12,
+   "one": {
+    "bg": "none",
+    "pl": 0,
+    "mnLeft": 20.000021855664166,
+    "mc": 1
+   },
+   "multi": {
+    "bg": "none",
+    "pl": 0,
+    "mnLeft": 20.000021855664166,
+    "mc": 3
+   },
+   "opt": false
+  },
+  "d3off": {
+   "bw": 12,
+   "bandOne": false,
+   "bandMulti": false,
+   "oneTextX": 1498,
+   "oneX": 1478
+  },
+  "d2": {
+   "cb": true,
+   "checked": true,
+   "sec": "card",
+   "cls": true,
+   "bw": 12,
+   "one": {
+    "bg": "linear-gradient(rgb(29, 78, 216), rgb(29, 78, 216)), none",
+    "pl": 12,
+    "mnLeft": 32.000006845965395,
+    "mc": 1
+   },
+   "multi": {
+    "bg": "linear-gradient(rgb(29, 78, 216), rgb(29, 78, 216)), none",
+    "pl": 12,
+    "mnLeft": 32.000006845965395,
+    "mc": 3
+   },
+   "opt": true
+  },
+  "d3on": {
+   "bw": 12,
+   "bandOne": true,
+   "bandMulti": true,
+   "oneTextX": 1510,
+   "oneX": 1478
+  },
+  "d4": {
+   "a": [
+    false,
+    false,
+    false
+   ],
+   "b": [
+    true,
+    true,
+    true
+   ],
+   "has": true
+  }
+ },
+ "RESULT": "GREEN"
+}

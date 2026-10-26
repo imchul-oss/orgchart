@@ -1,0 +1,66 @@
+{
+ "errors": [],
+ "fails": [],
+ "info": {
+  "x1": {
+   "rows": [
+    "머리글 제목",
+    "머리글 부제",
+    "멤버 이름",
+    "직무",
+    "직책",
+    "분야"
+   ],
+   "note": false,
+   "opt": "#123456",
+   "css": "#123456",
+   "mf": "rgb(18, 52, 86)"
+  },
+  "x2": 0,
+  "x3": {
+   "tc": true,
+   "tcd": true,
+   "tk": true,
+   "tkd": true,
+   "defInit": true,
+   "saved": {
+    "tc": "#ff0000",
+    "tk": "#00ff00"
+   },
+   "nen": "rgb(255, 0, 0)",
+   "nko": "rgb(0, 255, 0)",
+   "reopen": {
+    "tc": "#ff0000",
+    "tcd": false,
+    "tk": "#00ff00",
+    "tkd": false
+   },
+   "after": {
+    "nen": "rgb(255, 255, 255)",
+    "ref": "rgb(255, 255, 255)",
+    "tk": "#00ff00",
+    "nko": "rgb(0, 255, 0)"
+   }
+  },
+  "x4": {
+   "json": {
+    "tc": "#FF0000",
+    "tk": "#00ff00"
+   },
+   "hdr": "id,en,ko,type,x,y,color,mc,kl,kn,ad,ac,aside,sum,tc,tk",
+   "back": {
+    "tc": "#FF0000",
+    "tk": "#00ff00",
+    "kotk": "#0000FF"
+   }
+  },
+  "x5": {
+   "nen": "rgb(170, 0, 170)",
+   "txt": "KOONLY"
+  },
+  "alerts": [
+   "가져오기 완료: 19개 조직, 18개 연결"
+  ]
+ },
+ "RESULT": "GREEN"
+}

@@ -1,0 +1,12 @@
+{
+ "errors": [],
+ "fails": [],
+ "info": {
+  "T": 3,
+  "T5": 3,
+  "P1": {
+   "pills": 17
+  }
+ },
+ "RESULT": "GREEN"
+}

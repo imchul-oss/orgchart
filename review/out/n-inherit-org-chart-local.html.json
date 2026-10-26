@@ -1,0 +1,13 @@
+{
+ "errors": [],
+ "fails": [],
+ "info": {
+  "i1": "#1d4ed8",
+  "i2": "#1d4ed8",
+  "i3": null,
+  "i4": "#475569",
+  "i4want": "#475569",
+  "i5": null
+ },
+ "RESULT": "GREEN"
+}

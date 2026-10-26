@@ -1,0 +1,9 @@
+{
+ "errors": [],
+ "fails": [],
+ "info": {
+  "cases": 30,
+  "worst": 5
+ },
+ "RESULT": "GREEN"
+}

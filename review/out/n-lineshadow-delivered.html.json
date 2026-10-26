@@ -1,0 +1,27 @@
+{
+ "errors": [],
+ "fails": [],
+ "info": {
+  "L1": {
+   "before": "rgba(0, 0, 0, 0.36) 0px 2px 8px 0px",
+   "card": "rgba(0, 0, 0, 0.36) 0px 2px 8px 0px",
+   "opt": 0.36
+  },
+  "L2": {
+   "sc": 0.52381,
+   "solid": 2.482,
+   "dash": null,
+   "one": 1.8,
+   "sc1": 1
+  },
+  "L3": {
+   "lws": [
+    1.8,
+    1
+   ],
+   "opt": 1.8
+  },
+  "L4": 1.8
+ },
+ "RESULT": "GREEN"
+}

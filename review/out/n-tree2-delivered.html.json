@@ -1,0 +1,53 @@
+{
+ "errors": [],
+ "fails": [
+  "E1 admin row buttons [{\"id\":\"fp\",\"t\":\"셔테아\",\"b\":[]},{\"id\":\"prodhq\",\"t\":\"내퇴둬꼬\",\"b\":[]},{\"id\":\"t_10\",\"t\":\"효트듀\",\"b\":[]}]",
+  "E2 edit window {\"show\":false,\"eid\":null,\"want\":\"nd227\",\"onTop\":false,\"listOpen\":true}",
+  "E3 add child {\"added\":0,\"eid\":null,\"linked\":false,\"show\":false,\"listOpen\":true,\"placed\":false}",
+  "E3 list after save {\"added\":0,\"eid\":null,\"linked\":false,\"show\":false,\"listOpen\":true,\"placed\":false}",
+  "E4 위로 on the first is not disabled",
+  "E4 아래로 did not swap {\"k0\":[\"prodhq\",\"foodhq\"],\"k1\":[\"prodhq\",\"foodhq\"]}",
+  "E4 list order not updated [1,15]",
+  "X1 no 텍스트 button in read-only"
+ ],
+ "info": {
+  "ro": 0,
+  "e2": {
+   "show": false,
+   "eid": null,
+   "want": "nd227",
+   "onTop": false,
+   "listOpen": true
+  },
+  "e3": {
+   "added": 0,
+   "eid": null,
+   "linked": false,
+   "show": false,
+   "listOpen": true,
+   "placed": false
+  },
+  "e4": {
+   "p": "fp",
+   "k0": [
+    "prodhq",
+    "foodhq"
+   ],
+   "upDisabled": null,
+   "k1": [
+    "prodhq",
+    "foodhq"
+   ],
+   "list": [
+    1,
+    15
+   ],
+   "k2": [
+    "prodhq",
+    "foodhq"
+   ]
+  },
+  "txt0": ""
+ },
+ "RESULT": "RED 8"
+}

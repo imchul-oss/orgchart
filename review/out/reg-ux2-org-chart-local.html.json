@@ -1,0 +1,13 @@
+{
+ "errors": [],
+ "fails": [],
+ "info": {
+  "q": {
+   "multi": true,
+   "nm": true,
+   "title": true
+  },
+  "readOnly": true
+ },
+ "RESULT": "GREEN"
+}
