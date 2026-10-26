@@ -3078,7 +3078,7 @@ function _ordTree(){
   S.nodes.forEach(n=>{kids[n.id]=[];pars[n.id]=null;});
   S.conns.forEach(c=>{
     if(sideIds.has(c.f)||sideIds.has(c.t)) return;
-    if(!kids[c.f]||!(c.t in pars)) return;
+    if(!kids[c.f]||!(c.t in pars)||c.f===c.t) return;
     if(!kids[c.f].includes(c.t)) kids[c.f].push(c.t);
     const cl=typeLv(c.t), sl=typeLv(c.f);
     const curl=pars[c.t]!==null?typeLv(pars[c.t]):999;
@@ -3733,6 +3733,7 @@ function _autoLayoutCore(){
   S.nodes.forEach(n=>{kids[n.id]=[];pars[n.id]=null;});
   S.conns.forEach(c=>{
     if(sideIds.has(c.f)||sideIds.has(c.t)) return;
+    if(!kids[c.f]||!(c.t in pars)||c.f===c.t) return;  // 없는 카드, 자기 자신으로 가는 연결선 (배치에서만 건너뜀)
     if(!kids[c.f].includes(c.t)) kids[c.f].push(c.t);
     // 부모 선택: TYPE_LV 거리 최소, 동점 시 더 깊은 노드 우선
     const cl=typeLv(c.t), sl=typeLv(c.f);
@@ -3762,7 +3763,7 @@ function _autoLayoutCore(){
         repaired=false;
         S.conns.forEach(c=>{
           if(sideIds.has(c.f)||sideIds.has(c.t)) return;
-          if(!reachable.has(c.f)||reachable.has(c.t)) return;
+          if(!reachable.has(c.f)||reachable.has(c.t)||!(c.t in pars)) return;
           // c.f는 도달 가능, c.t는 아직 미도달 → 재연결 검토
           const cl=typeLv(c.t),sl=typeLv(c.f);
           const curl=pars[c.t]!==null?typeLv(pars[c.t]):999;
@@ -5242,12 +5243,13 @@ function exportPNG(){
   const _cx0=x0,_cx1=x1;  // 카드 범위 (제목 띠의 기준)
   if(_pl){ x0-=_pl.ext.left; x1+=_pl.ext.right; y1+=_pl.ext.bottom; }  // 차트 밖 자리일 때만 그만큼 여백
   const _hd=_headInfo(); if(_hd) y0-=_hd.band;  // 조직도 이름 · 기준일 띠
-  const W=Math.round((x1-x0+80)*2), H=Math.round((y1-y0+80)*2);
+  const _bw=x1-x0+80, _bh=y1-y0+80, K=Math.min(2,32000/_bw,32000/_bh,Math.sqrt(1.2e8/(_bw*_bh)));
+  const W=Math.max(1,Math.floor(_bw*K)), H=Math.max(1,Math.floor(_bh*K));
   const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
   const ctx=cv.getContext('2d');
   ctx.setTransform(1,0,0,1,0,0);
   ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
-  ctx.setTransform(2,0,0,2,(40-x0)*2,(40-y0)*2);
+  ctx.setTransform(K,0,0,K,(40-x0)*K,(40-y0)*K);
   const font=getComputedStyle(document.body).fontFamily||'sans-serif';
   if(_hd){ ctx.save(); ctx.font='bold 20px '+font; ctx.fillStyle='#222'; ctx.textBaseline='middle'; ctx.textAlign=_hd.align; ctx.fillText(_hd.text,_hd.align==='left'?_cx0:(_hd.align==='right'?_cx1:(_cx0+_cx1)/2),y0+_hd.h/2); ctx.restore(); }
   const fitText=(text,left,y,weight,size,avail)=>{
@@ -5407,8 +5409,9 @@ function exportPNG(){
   const date=dt.getFullYear()+'-'+pad(dt.getMonth()+1)+'-'+pad(dt.getDate());
   const sn=(SHEETS[CUR_SHEET]&&SHEETS[CUR_SHEET].name)||'';
   const name='조직도-'+sn+'-'+date+'.png';
+  if(K<1) alert(`조직도가 커서 PNG 해상도를 낮췄습니다 (배율 ${K.toFixed(2)}, 보통 2).\n글자가 작으면 시트를 나누거나 접은 뒤 다시 내보내 주십시오.`);
   cv.toBlob(b=>{
-    if(!b) return;
+    if(!b){ alert('PNG 파일을 만들지 못했습니다. 조직도가 너무 큽니다. 시트를 나누거나 하위 조직을 접은 뒤 다시 내보내 주십시오.'); return; }
     const a=document.createElement('a');
     a.href=URL.createObjectURL(b); a.download=name; a.click();
     setTimeout(()=>URL.revokeObjectURL(a.href),1500);
