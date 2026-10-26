@@ -1,0 +1,45 @@
+async page => {
+  const AFTER = __OWNER20__;
+  const out = { errors: [], fails: [], info: {} };
+  page.on('pageerror', e => out.errors.push(String(e)));
+  const fail = m => { if (out.fails.length < 40) out.fails.push(m); };
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto('__PAGE__'); await page.waitForTimeout(400);
+  const r = await page.evaluate(async A => { try{localStorage.clear();}catch(e){} window.alert = () => {}; window.confirm = () => true;
+    const wait = ms => new Promise(r => setTimeout(r, ms));
+    loadObject(JSON.parse(JSON.stringify(A)), false); if (CUR_SHEET !== 0) switchSheet(0); ADMIN = true; applyRO(); render();
+    await wait(300);
+    const bar = document.getElementById('topbar');
+    const tbs = [...bar.querySelectorAll('.tb[data-icon]')].filter(e => e.offsetParent !== null);
+    const a20 = { compact: bar.classList.contains('tb-compact'), over: bar.scrollWidth - bar.clientWidth, small: tbs.filter(e => parseFloat(getComputedStyle(e).fontSize) < 11).map(e => e.textContent.trim().slice(0, 10)), n: tbs.length };
+    const texts = [document.title];
+    const grab = root => { texts.push(root.innerText || ''); root.querySelectorAll('[title],[placeholder],[aria-label]').forEach(e => texts.push(e.title || '', e.placeholder || '', e.getAttribute('aria-label') || '')); };
+    document.querySelectorAll('.dd').forEach(d => d.classList.add('open')); grab(document.body); document.querySelectorAll('.dd').forEach(d => d.classList.remove('open'));
+    openOptions(); await wait(100); const optT = document.getElementById('optov').textContent; grab(document.getElementById('optov')); closeOptions();
+    openData(); await wait(100); const datT = document.getElementById('dataov').textContent; grab(document.getElementById('dataov')); closeData();
+    openEdit(S.nodes[0].id); await wait(100); grab(document.getElementById('ov')); closeModal();
+    openFileModal(); await wait(100); const fo = document.getElementById('cloudov'); const fileH = (fo.querySelector('h3') || {}).textContent || ''; grab(fo); closeFileModal();
+    const fb = document.getElementById('file-banner-txt'); if (fb) texts.push(fb.textContent);
+    const all = texts.join('\n');
+    // N1 (UIUX r1): lint badge text, clean and with an overlap, >= 4.5:1 over its button tint on the bar
+    const lum = c => { const f = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2]); };
+    const nums = x => (x.match(/[0-9.]+/g) || []).map(Number);
+    const lb = document.getElementById('lint-badge'), barBg = nums(getComputedStyle(bar).backgroundColor), tb = nums(getComputedStyle(lb).backgroundColor);
+    const ta = tb.length > 3 ? tb[3] : 1, bgc = [0, 1, 2].map(i => tb[i] * ta + barBg[i] * (1 - ta));
+    const ratio = () => { const a = lum(nums(getComputedStyle(lb).color)), b = lum(bgc); return +((Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05)).toFixed(2); };
+    runLint(); const n1 = { okText: lb.textContent.trim(), ok: ratio() };
+    const n0 = S.nodes[1], n9 = S.nodes[2], keep = [n9.x, n9.y]; n9.x = n0.x + 5; n9.y = n0.y + 5; runLint(); n1.badText = lb.textContent.trim(); n1.bad = ratio(); n9.x = keep[0]; n9.y = keep[1]; runLint();
+    const BAN = ['Local', 'Org Chart', 'localStorage', '민트', '스카이', '코랄', '액센트', '서브타이틀', '사이드 여백', '카테고리', '헤더', '캔버스'];
+    const cnt = (t, w) => t.split(w).length - 1;
+    const keyed = k => [...document.querySelectorAll('#optov input[type=color], #dataov input[type=color]')].filter(e => (e.getAttribute('oninput') || '').includes("'" + k + "'")).length;
+    return { n1, a20, ban: BAN.filter(w => all.includes(w)), mem: keyed('txtMn'), memAll: ['txtHdrEn','txtHdrKo','txtMn','txtMf','txtMr2','txtMa'].map(keyed), datHdr: /헤더 영문|헤더 한글/.test(datT), fileH: fileH.trim(), dataFile: /데이터 파일/.test(all) }; }, AFTER);
+  out.info = r;
+  const J = JSON.stringify;
+  if (r.mem !== 1 || r.memAll.some(n => n !== 1) || r.datHdr) fail('A6 text colours in two windows ' + J({ keyed: r.memAll, datHdr: r.datHdr }));
+  if (r.ban.length) fail('A14 words ' + J(r.ban));
+  if (!/파일 연결/.test(r.fileH) || r.dataFile) fail('A15 file window name ' + J({ h: r.fileH, dataFile: r.dataFile }));
+  const T = r.a20; if (T.compact || T.over > 0 || T.small.length || !T.n) fail('A20 admin toolbar at 1920 ' + J(T));
+  if (!(r.n1.ok >= 4.5) || !(r.n1.bad >= 4.5) || !/이상 없음/.test(r.n1.okText) || !/점검/.test(r.n1.badText)) fail('N1 lint badge contrast ' + J(r.n1));
+  out.RESULT = (out.fails.length || out.errors.length) ? 'RED ' + (out.fails.length + out.errors.length) : 'GREEN';
+  return out;
+}

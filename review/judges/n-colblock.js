@@ -1,0 +1,31 @@
+async page => {
+  const DOC = __DOC__;
+  const out = { errors: [], fails: [], info: {} };
+  page.on('pageerror', e => out.errors.push(String(e)));
+  const fail = m => { if (out.fails.length < 30) out.fails.push(m); };
+  await page.setViewportSize({ width: 1600, height: 950 });
+  await page.goto('__PAGE__'); await page.waitForTimeout(400);
+  const r = await page.evaluate(d => { try{localStorage.clear();}catch(e){} window.alert = () => {}; window.confirm = () => true; _adoptData(JSON.parse(JSON.stringify(d)),false); _finishLoad(true); if (CUR_SHEET !== 0) switchSheet(0); collState().clear(); collSave(); ADMIN = true; applyRO(); OPT.wrapN = 0; OPT.rowMode = 'depth';
+    const by = id => S.nodes.find(n => n.id === id);
+    S.nodes.push({ id: 'zz_gc', en: 'ZZ손자', ko: '', type: 'l3', x: 0, y: 0, m: [{ n: 'G', f: '', r: '뗘쪄', s: 'active' }] }); S.conns.push({ id: 'zz_gce', f: 't_14', t: 'zz_gc', d: 0 });
+    const over = () => { const H = collHidden(); const vis = S.nodes.filter(n => !H.has(n.id)); const o = []; for (let i = 0; i < vis.length; i++) for (let j = i + 1; j < vis.length; j++) { const a = vis[i], b = vis[j]; if (a.x < b.x + cardW(b) - 0.5 && b.x < a.x + cardW(a) - 0.5 && a.y < b.y + nh(b) - 0.5 && b.y < a.y + nh(a) - 0.5) o.push(a.id + '|' + b.id); } return o; };
+    const badge = () => (document.getElementById('lint-badge') || {}).textContent || '';
+    const cols = ['t_06', 't_07', 't_08', 't_09', 't_10'].map(by);
+    by('prodhq').kl = 'col'; autoLayout(); render();
+    const colBottom = Math.max(...cols.map(c => c.y + nh(c))); const gc = by('zz_gc');
+    const c1 = { gcY: gc.y, colBottom, over: over(), badge: badge(), colYs: cols.map(c => c.y) };
+    const p1 = {}; S.nodes.forEach(n => p1[n.id] = [n.x, n.y]); autoLayout(); render(); const moved = S.nodes.filter(n => Math.abs(p1[n.id][0] - n.x) > 0.5 || Math.abs(p1[n.id][1] - n.y) > 0.5).map(n => n.id);
+    delete by('prodhq').kl; OPT.wrapN = 2; autoLayout(); render(); OPT.wrapN = 0;
+    const wrapBottom = Math.max(...cols.map(c => c.y + nh(c))); const c2 = { gcY: gc.y, wrapBottom, rows: [...new Set(cols.map(c => c.y))].length, over: over(), badge: badge() };
+    autoLayout(); render(); const minX = Math.min(...S.nodes.map(n => n.x));
+    return { c1, moved, c2, minX, padX: OPT.padX, rowGap: OPT.rowGap }; }, DOC);
+  out.info = r;
+  if (r.c1.gcY < r.c1.colBottom + r.rowGap - 1) fail('C1: grandchild y ' + r.c1.gcY + ' above column bottom ' + r.c1.colBottom + ' + gap');
+  if (r.c1.over.length) fail('C1: overlaps ' + r.c1.over.slice(0, 3).join(' ')); if (!/이상 없음/.test(r.c1.badge)) fail('C1: badge ' + r.c1.badge);
+  if (r.moved.length) fail('C4: second autoLayout moved ' + r.moved.slice(0, 3).join(','));
+  if (r.c2.rows < 2) fail('C2: wrap did not make rows'); if (r.c2.gcY < r.c2.wrapBottom + r.rowGap - 1) fail('C2: grandchild y ' + r.c2.gcY + ' above wrap bottom ' + r.c2.wrapBottom + ' + gap');
+  if (r.c2.over.length) fail('C2: overlaps ' + r.c2.over.slice(0, 3).join(' ')); if (!/이상 없음/.test(r.c2.badge)) fail('C2: badge ' + r.c2.badge);
+  if (Math.abs(r.minX - r.padX) > 0.5) fail('C3: leftmost card x ' + r.minX + ' want padX ' + r.padX);
+  out.RESULT = (out.fails.length || out.errors.length) ? 'RED ' + (out.fails.length + out.errors.length) : 'GREEN';
+  return out;
+}

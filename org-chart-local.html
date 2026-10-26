@@ -507,6 +507,7 @@ body:not(.bodyband) .nb.mcol{padding-left:0;background:var(--card-bg);}
 .sfl-total-lbl{font-size:10px;opacity:.5;}
 .sfl-total-num{font-size:14px;font-weight:800;}
 .sfl-inc{display:inline-flex;align-items:center;gap:2px;font-size:10px;color:#9aa3b2;margin-left:4px;white-space:nowrap;cursor:pointer;}
+.sfl-inc+.sfl-num{margin-left:4px;}
 .sfl-inc input{margin:0;width:12px;height:12px;}
 .sfl-row.sfl-off .sfl-lbl,.sfl-row.sfl-off .sfl-num{opacity:.55;}
 .sfl-ex-btn{background:none;border:1px solid rgba(255,255,255,.15);border-radius:3px;cursor:pointer;color:rgba(255,255,255,.3);font-size:10px;font-weight:700;padding:0px 4px;line-height:16px;margin-left:2px;transition:.12s;}
@@ -608,9 +609,21 @@ body.present #srch-box,body.present #srch-btn{display:none!important;}
 #treeview.tv-open{display:flex!important;}
 .tv-head{flex:none;display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid #eee;font-weight:700;}
 .tv-close{border:0;background:none;cursor:pointer;font-size:15px;color:#555;}
+.tv-hbtns{display:flex;align-items:center;gap:6px;}
+.tv-txtbtn,.tv-copy{border:1px solid #ccc;background:#fff;border-radius:5px;padding:3px 9px;font-size:12px;cursor:pointer;color:#333;}
+.tv-txtbtn[aria-pressed="true"]{background:#2a6a4a;border-color:#2a6a4a;color:#fff;}
+.tv-text{flex:1;display:flex;flex-direction:column;min-height:0;padding:8px 10px;gap:6px;}
+.tv-tbar{display:flex;align-items:center;gap:10px;font-size:12px;}
+.tv-copied{color:#2a6a4a;font-size:12px;}
+.tv-ta{flex:1;min-height:0;width:100%;box-sizing:border-box;font:12px/1.5 Consolas,'Noto Sans KR',monospace;white-space:pre;resize:none;border:1px solid #ddd;border-radius:5px;padding:6px;color:#222;}
+.tv-acts{display:none;margin-left:auto;gap:2px;flex:none;}
+.tv-row:hover .tv-acts,.tv-row:focus-within .tv-acts,.tv-row.tv-sel .tv-acts{display:inline-flex;}
+.tv-act{border:1px solid #d0d6d2;background:#fff;border-radius:4px;width:22px;height:22px;padding:0;font-size:12px;line-height:20px;cursor:pointer;color:#2a5a40;}
+.tv-act:disabled{opacity:.35;cursor:default;}
 .tv-body{flex:1;overflow-y:auto;padding:4px 0;}
 .tv-row,.tv-mem{display:flex;align-items:center;gap:6px;padding:4px 10px;white-space:nowrap;}
 .tv-row:hover{background:#f3f6f4;}
+.tv-row.tv-sel{background:#e3efe8;box-shadow:inset 3px 0 0 #2a6a4a;}
 .tv-tog{width:14px;flex:none;cursor:pointer;color:#666;text-align:center;}
 .tv-title{cursor:pointer;overflow:hidden;text-overflow:ellipsis;font-weight:600;}
 .tv-title:hover{text-decoration:underline;}
@@ -801,7 +814,7 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
 
 <!-- Sheet tabs (엑셀식) -->
 <div id="sheetbar"></div>
-<div id="treeview" style="display:none"><div class="tv-head"><span class="tv-sheet"></span><button type="button" class="tv-close" title="닫기">✕</button></div><div class="tv-body"></div></div>
+<div id="treeview" style="display:none"><div class="tv-head"><span class="tv-sheet"></span><span class="tv-hbtns"><button type="button" class="tv-txtbtn" aria-pressed="false" title="조직도를 들여쓰기 글로 보기">텍스트</button><button type="button" class="tv-close" title="닫기" aria-label="목록 닫기">✕</button></span></div><div class="tv-body"></div><div class="tv-text" style="display:none"><div class="tv-tbar"><label><input type="checkbox" class="tv-txtmem"> 사람 포함</label><button type="button" class="tv-copy">복사</button><span class="tv-copied" aria-live="polite"></span></div><textarea class="tv-ta" readonly aria-label="조직도 글"></textarea></div></div>
 
 <!-- Status bar -->
 <div id="stbar">
@@ -885,21 +898,6 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
         <div class="dat-sec-title">현황 그룹 설정</div>
         <div class="sg-list" id="sg-list"></div>
         <button class="sg-add" onclick="addStatsGroup()">＋ 그룹 추가</button>
-      </div>
-      <!-- 색상 — 헤더 배경 -->
-      <div class="dat-sec">
-        <div class="dat-sec-title">카드 머리글 배경색</div>
-        <div id="dat-hdr-colors"></div>
-      </div>
-      <!-- 색상 — 타입 띠 -->
-      <div class="dat-sec">
-        <div class="dat-sec-title">타입 기본 띠색</div>
-        <div id="dat-band-colors"></div>
-      </div>
-      <!-- 색상 — 카드 본문 -->
-      <div class="dat-sec">
-        <div class="dat-sec-title">카드 본문 색상</div>
-        <div id="dat-ui-colors"></div>
       </div>
     </div>
     <div class="opt-foot">
@@ -1024,6 +1022,15 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
             oninput="OPT.shadowA=+this.value;document.documentElement.style.setProperty('--shadow-a',this.value);document.getElementById('opt-sha-v').textContent=Math.round(this.value*100)+'%';saveOptLS()">
           <span class="opt-val" id="opt-sha-v">11%</span>
         </div>
+      </div>
+      <div class="opt-sec" data-sec="cardcol">
+        <div class="opt-sec-title" role="button" tabindex="0" aria-expanded="true"><span class="opt-arr">▾</span> 카드 색</div>
+        <div class="opt-sub" style="font-size:11px;font-weight:700;color:#6B6B6B;margin:4px 0 2px;">머리글 배경</div>
+        <div id="opt-hdr-colors"></div>
+        <div class="opt-sub" style="font-size:11px;font-weight:700;color:#6B6B6B;margin:8px 0 2px;">계층 띠</div>
+        <div id="opt-band-colors"></div>
+        <div class="opt-sub" style="font-size:11px;font-weight:700;color:#6B6B6B;margin:8px 0 2px;">카드 본문</div>
+        <div id="opt-cardbody-colors"></div>
       </div>
       <div class="opt-sec" data-sec="count">
         <div class="opt-sec-title" role="button" tabindex="0" aria-expanded="true"><span class="opt-arr">▾</span> 인원 수</div>
@@ -1216,10 +1223,9 @@ body.present #treeview,body.present #btn-tree{display:none!important;}
             oninput="OPT.logoSubColor=this.value;applyLogo();document.getElementById('opt-logo-subcol-v').textContent=this.value.toUpperCase();saveOptLS()">
           <span class="opt-val" id="opt-logo-subcol-v" style="font-family:monospace;letter-spacing:0.5px;">#B4B4B4</span>
         </div>
-        <div class="opt-sub" style="font-size:11px;font-weight:700;color:#777;margin:8px 0 2px;">글자</div>
+        <div class="opt-sub" style="font-size:11px;font-weight:700;color:#6B6B6B;margin:8px 0 2px;">글자</div>
         <div id="opt-txt-colors"></div>
         <div id="opt-ui-colors"></div>
-        <p style="font-size:11px;color:#999;">카드 머리글·띠 색상은 <b>◈ 데이터</b> 패널에 있습니다.</p>
       </div>
     </div>
     <div class="opt-foot">
@@ -1258,6 +1264,16 @@ const PW_LS      = 'ssb-org-chart-pw__' + _LS_NS;         // 관리자 해시 �
 const FSA_OK = ('showOpenFilePicker' in window);
 
 let FILE_HANDLE=null, FILE_CONNECTED=false, FILE_NAME='', FILE_MTIME=0;
+// 파일 고르기 창: 같은 id로 열어 브라우저가 마지막 폴더를 기억하게 하고, 이번에 연결했던 파일이 있으면 그 폴더에서 연다.
+// 회사 뷰어는 IndexedDB가 열리지 않아 연결(파일 핸들)을 다음 방문까지 못 들고 가므로, 마지막 파일 이름만 localStorage에 남긴다 (철님 10-26)
+const FP_ID='orgchart-data', LAST_FILE_LS='orgchart-last-file';
+let _fpLast=null, _idbFail='';
+function _lastFile(){ try{ return localStorage.getItem(LAST_FILE_LS)||''; }catch(_){ return ''; } }
+async function _picker(fn,o){
+  const base=Object.assign({id:FP_ID},o), start=FILE_HANDLE||_fpLast;
+  if(start){ try{ return await fn(Object.assign({startIn:start},base)); }catch(e){ if(!e||e.name==='AbortError') throw e; } }  // 지난 파일이 옮겨졌거나 지워졌으면 폴더 지정 없이 다시 연다
+  return await fn(base);
+}
 let ADMIN=false, ADMIN_REC=null; // {salt, iter, hash} — 데이터 파일에 저장되어 파일과 함께 이동
 let _unlockedHash=null; // 이번 세션의 잠금 해제에 실제로 쓰인 해시 - 파일 로드로 다른 해시가 오면 관리자 강등
 
@@ -4316,39 +4332,6 @@ function openData(){
   renderStatusCatList();
   // 현황 그룹
   renderSgList();
-  document.getElementById('dat-hdr-colors').innerHTML=_datColorRows([
-    {lbl:'TOP',  key:'hdrTop',  cssVar:'--hdr-top',  val:OPT.hdrTop},
-    {lbl:'L1',   key:'hdrL1',   cssVar:'--hdr-l1',   val:OPT.hdrL1},
-    {lbl:'L2',   key:'hdrL2',   cssVar:'--hdr-l2',   val:OPT.hdrL2},
-    {lbl:'L3',   key:'hdrL3',   cssVar:'--hdr-l3',   val:OPT.hdrL3},
-    {lbl:'L4',   key:'hdrL4',   cssVar:'--hdr-l4',   val:OPT.hdrL4},
-    {lbl:'L5',   key:'hdrL5',   cssVar:'--hdr-l5',   val:OPT.hdrL5},
-    {lbl:'TF',   key:'hdrTf',   cssVar:'--hdr-tf',   val:OPT.hdrTf},
-    {lbl:'Side', key:'hdrSide', cssVar:'--hdr-side',  val:OPT.hdrSide},
-  ]);
-  document.getElementById('dat-band-colors').innerHTML=_datColorRows([
-    {lbl:'TOP',  key:'bandTop',  cssVar:'--band-top',  val:OPT.bandTop},
-    {lbl:'L1',   key:'bandL1',   cssVar:'--band-l1',   val:OPT.bandL1},
-    {lbl:'L2',   key:'bandL2',   cssVar:'--band-l2',   val:OPT.bandL2},
-    {lbl:'L3',   key:'bandL3',   cssVar:'--band-l3',   val:OPT.bandL3},
-    {lbl:'L4',   key:'bandL4',   cssVar:'--band-l4',   val:OPT.bandL4},
-    {lbl:'L5',   key:'bandL5',   cssVar:'--band-l5',   val:OPT.bandL5},
-    {lbl:'TF',   key:'bandTf',   cssVar:'--band-tf',   val:OPT.bandTf},
-    {lbl:'Side', key:'bandSide', cssVar:'--band-side',  val:OPT.bandSide},
-  ]);
-  document.getElementById('dat-ui-colors').innerHTML=_datColorRows([
-    {lbl:'카드 배경',   key:'cardBg',    cssVar:'--card-bg',    val:OPT.cardBg},
-    {lbl:'짝수행 배경', key:'rowEven',   cssVar:'--row-even',   val:OPT.rowEven},
-    {lbl:'행 구분선',   key:'rowBorder', cssVar:'--row-border', val:OPT.rowBorder},
-  ]);
-  const _dtc=document.getElementById('dat-txt-colors'); if(_dtc) _dtc.innerHTML=_datColorRows([
-    {lbl:'헤더 영문',  key:'txtHdrEn', cssVar:'--txt-hdr-en', val:OPT.txtHdrEn},
-    {lbl:'헤더 한글',  key:'txtHdrKo', cssVar:'--txt-hdr-ko', val:OPT.txtHdrKo},
-    {lbl:'멤버 이름',  key:'txtMn',    cssVar:'--txt-mn',     val:OPT.txtMn},
-    {lbl:'직무',       key:'txtMf',    cssVar:'--txt-mf',     val:OPT.txtMf},
-    {lbl:'직책',       key:'txtMr2',   cssVar:'--txt-mr2',    val:OPT.txtMr2},
-    {lbl:'분야',       key:'txtMa',    cssVar:'--txt-ma',     val:OPT.txtMa},
-  ]);
   document.getElementById('dataov').classList.add('show');
 }
 function closeData(){ document.getElementById('dataov').classList.remove('show'); saveOptLS(); }
@@ -4423,7 +4406,7 @@ function renderSgList(){
   el.innerHTML=OPT.statsGroups.map((g,i)=>`
     <div class="sg-row" draggable="true" ondragstart="if(event.target.tagName==='INPUT')event.preventDefault();else dgStart('sg',${i},event)" ondragover="dgOver(event)" ondragleave="dgLeave(event)" ondrop="dgDrop('sg',${i},event)">
       <span class="drag-hnd">≡</span>
-      <input class="sg-name" value="${esc(g.name)}" oninput="OPT.statsGroups[${i}].name=this.value;updateSt();saveOptLS()">
+      <input class="sg-name" value="${esc(g.name)}" aria-label="현황 그룹 ${i+1} 이름" oninput="OPT.statsGroups[${i}].name=this.value;updateSt();saveOptLS()">
       <div class="sg-checks">${OPT.statusItems.map(x=>`
         <label class="sg-check">
           <input type="checkbox" ${g.statuses.includes(x.key)?'checked':''}
@@ -4439,7 +4422,7 @@ function renderSgList(){
           <span style="opacity:.7">정원</span>
         </label>
       </div>
-      <button class="sg-del" onclick="removeSg(${i})">✕</button>
+      <button class="sg-del" aria-label="현황 그룹 ${i+1} 지우기" title="그룹 지우기" onclick="removeSg(${i})">✕</button>
     </div>`).join('');
 }
 function sgToggle(gi,key,on){
@@ -4486,7 +4469,7 @@ function _optColorRows(rows){ // [{lbl, key, cssVar, val}]
       ${mkHexInp(r.val,`applyColor('${r.key}','${r.cssVar}',this.value);this.closest('.opt-color-row').querySelector('.opt-color-dot').style.background=this.value`)}
     </div>`).join('');
 }
-var OPTSEC_DEF={preset:1,layout:1,card:1,count:1,font:0,line:0,logo:0};
+var OPTSEC_DEF={preset:1,layout:1,card:1,cardcol:0,count:1,font:0,line:0,logo:0};
 var _optSecMem=null; // 세션 내 섹션 상태 - localStorage가 막힌 환경에서도 접기/펼치기가 동작하도록 메모리에 든다
 function _optSecLoad(){
   if(_optSecMem) return _optSecMem;
@@ -4560,6 +4543,16 @@ function openOptions(){
     {lbl:'실선 색상', key:'connSolid', cssVar:'--conn-solid', val:OPT.connSolid},
     {lbl:'점선 색상', key:'connDash',  cssVar:'--conn-dash',  val:OPT.connDash},
   ]);
+  // 카드 색 (머리글 배경, 계층 띠, 본문)
+  {const lv=[['TOP','Top'],['L1','L1'],['L2','L2'],['L3','L3'],['L4','L4'],['L5','L5'],['TF','Tf'],['Side','Side']];
+   const v=k=>k.replace(/([A-Z])/g,'-$1').toLowerCase();
+   document.getElementById('opt-hdr-colors').innerHTML=_optColorRows(lv.map(([l,k])=>({lbl:l, key:'hdr'+k, cssVar:'--hdr'+v(k), val:OPT['hdr'+k]})));
+   document.getElementById('opt-band-colors').innerHTML=_optColorRows(lv.map(([l,k])=>({lbl:l, key:'band'+k, cssVar:'--band'+v(k), val:OPT['band'+k]})));
+   document.getElementById('opt-cardbody-colors').innerHTML=_optColorRows([
+    {lbl:'카드 배경',   key:'cardBg',    cssVar:'--card-bg',    val:OPT.cardBg},
+    {lbl:'짝수행 배경', key:'rowEven',   cssVar:'--row-even',   val:OPT.rowEven},
+    {lbl:'행 구분선',   key:'rowBorder', cssVar:'--row-border', val:OPT.rowBorder},
+   ]);}
   // 글자 색상
   {const tcEl=document.getElementById('opt-txt-colors'); if(tcEl) tcEl.innerHTML=_optColorRows([
     {lbl:'머리글 제목', key:'txtHdrEn', cssVar:'--txt-hdr-en', val:OPT.txtHdrEn},
@@ -4643,7 +4636,7 @@ function openFileModal(){
   const st=document.getElementById('cm-status');
   if(st) st.innerHTML=FILE_CONNECTED
     ?`<span style="color:#40D2A7">● 연결됨: ${esc(FILE_NAME)}</span>`
-    :(FSA_OK?'<span style="color:#999">○ 미연결 (브라우저 저장소만 사용 중)</span>'
+    :(FSA_OK?'<span style="color:#6B6B6B">○ 미연결 (브라우저 저장소만 사용 중)</span>'+(_idbFail&&_lastFile()?`<br><span style="color:#8A5A00">이 뷰어는 파일 연결을 기억하지 못합니다(브라우저 저장소 오류). 지난번 파일: <b>${esc(_lastFile())}</b> - '파일 고르기'로 다시 연결해 주십시오.</span>`:'')
             :'<span style="color:#CC3333">이 브라우저는 파일 연결을 지원하지 않습니다. 아래 단추로 JSON 파일을 내려받고 불러올 수 있습니다.</span>');
   document.querySelectorAll('#cloudmodal .cm-fsa').forEach(b=>{ b.style.display=FSA_OK?'':'none'; });
   document.querySelectorAll('#cloudmodal .cm-nofsa').forEach(b=>{ b.style.display=FSA_OK?'none':''; });
@@ -4660,7 +4653,8 @@ async function _connectHandle(h,{load=true}={}){
   try{
     if(load) await loadFromFile();
     else { const f=await h.getFile(); FILE_NAME=f.name; FILE_MTIME=f.lastModified; }
-    try{ await _idb.set('handle',h); }catch(_){}
+    try{ await _idb.set('handle',h); _idbFail=''; }catch(ie){ _idbFail=String(ie&&ie.message||ie); }
+    _fpLast=h; try{ localStorage.setItem(LAST_FILE_LS,FILE_NAME||h.name||''); }catch(_){}
   }catch(e){
     FILE_HANDLE=prev.h; FILE_CONNECTED=prev.c; FILE_NAME=prev.n; FILE_MTIME=prev.m;
     _updateFileBtn();
@@ -4671,7 +4665,7 @@ async function _connectHandle(h,{load=true}={}){
 async function pickFile(){
   if(!FSA_OK){ alert('이 브라우저는 파일 연결을 지원하지 않습니다. Chrome/Edge를 사용하세요.'); return; }
   try{
-    const [h]=await window.showOpenFilePicker({
+    const [h]=await _picker(o=>window.showOpenFilePicker(o),{
       types:[{description:'조직도 데이터 (JSON)',accept:{'application/json':['.json']}}]
     });
     await _connectHandle(h);
@@ -4682,7 +4676,7 @@ async function createNewFile(){
   if(!ADMIN){ alert('관리자 모드에서만 가능합니다.'); return; } // 뷰어가 공유 파일을 덮어쓰는 경로 차단
   if(!FSA_OK){ alert('이 브라우저는 파일 연결을 지원하지 않습니다. Chrome/Edge를 사용하세요.'); return; }
   try{
-    const h=await window.showSaveFilePicker({
+    const h=await _picker(o=>window.showSaveFilePicker(o),{
       suggestedName:'org-data.json',
       types:[{description:'조직도 데이터 (JSON)',accept:{'application/json':['.json']}}]
     });
@@ -4707,7 +4701,7 @@ function _showBanner(name){
 async function reconnectFile(){
   const b=document.getElementById('file-banner');
   try{
-    if(!FILE_HANDLE) return;
+    if(!FILE_HANDLE){ await pickFile(); if(FILE_CONNECTED) b.classList.remove('show'); return; }
     const p=await FILE_HANDLE.requestPermission({mode:'read'});
     if(p!=='granted') return;
     FILE_CONNECTED=true;
@@ -6061,12 +6055,12 @@ function _statPanelHtml(){
     const all=_sflScope==='all';
     html+=`<div class="sfl-scopes"><button class="sfl-scope${all?'':' on'}" data-scope="cur" onclick="_sflSetScope('cur')">현재 시트</button><button class="sfl-scope${all?' on':''}" data-scope="all" onclick="_sflSetScope('all')">전체 시트</button></div>`;
     const sd=_statSummaryData(_sflScope)||{rows:[],total:0,tot:0};
-    const box=(r,w,on)=>r.gi>=0?`<label class="sfl-inc" title="${w==='cur'?'현원에 포함':'정원에 포함'}"><input type="checkbox" data-inc="${w}"${on?' checked':''} onchange="sgSetInc(${r.gi},'${w}',this.checked)">${w==='cur'?'현원':'정원'}</label>`:'';
+    const box=(r,w,on)=>r.gi>=0?`<label class="sfl-inc" title="${w==='cur'?'현원에 포함':'정원에 포함'}"><input type="checkbox" data-inc="${w}"${on?' checked':''} aria-label="${esc(r.name)} ${w==='cur'?'현원에 포함':'정원에 포함'}" onchange="sgSetInc(${r.gi},'${w}',this.checked)">${w==='cur'?'현원':'정원'}</label>`:'';
     sd.rows.forEach(r=>{ html+=`<div class="sfl-row${r.inCur?'':' sfl-off'}">
         <div class="sfl-dot" style="background:${r.col}"></div>
         <span class="sfl-lbl"${r.gi<0?' style="opacity:.6"':''}>${esc(r.name)}</span>
-        <span class="sfl-num">${r.cnt}</span>
         ${box(r,'cur',r.inCur)}${box(r,'tot',r.inTot)}
+        <span class="sfl-num">${r.cnt}</span>
       </div>`; });
     html+=`<div class="sfl-foot"><div class="sfl-total"><span class="sfl-total-lbl">현원</span><span class="sfl-total-num">${sd.total}</span></div>`;
     html+=`<div class="sfl-total"><span class="sfl-total-lbl">정원</span><span class="sfl-total-num">${sd.tot}</span></div></div>`;
@@ -6408,11 +6402,15 @@ function applyLogo(){
           _showBanner(nm);
         }
       }
-    }catch(e){ console.warn('file boot:',e); }
+    }catch(e){ console.warn('file boot:',e); _idbFail=String(e&&e.message||e); }
   }
   if(!fileLoaded) drawLocal();
   _updateFileBtn();
   applyLogo();
+  if(FSA_OK&&!FILE_HANDLE&&!FILE_CONNECTED&&_lastFile()){
+    if(!_idbFail) _idbFail='연결 기록 없음';
+    _showBanner(_lastFile()); document.getElementById('file-banner-txt').textContent=`📄 지난번 파일 '${_lastFile()}' 다시 연결`;
+  }
 })();
 
 // ═══ Collapse / expand sub-organisations (view state only)
@@ -6544,7 +6542,7 @@ document.getElementById('srch-btn').addEventListener('click',srchOpen);
 document.getElementById('srch-input').addEventListener('input',function(){ SRCH.idx=0; srchApply(true); });
 
 // ═══ Tree (folder-style list) view
-var TV={open:false,fold:new Set(),mem:new Set()};
+var TV={open:false,fold:new Set(),mem:new Set(),sel:null,text:false};
 function tvPos(){
   var tv=document.getElementById('treeview'), tb=document.getElementById('topbar');
   if(tv&&tb) tv.classList.toggle('tv-notb',tb.classList.contains('tb-hidden'));
@@ -6617,10 +6615,16 @@ function tvOrder(){
 }
 function tvBuild(){
   var tv=document.getElementById('treeview'); if(!tv) return;
+  if(TV.text){ var ta=tv.querySelector('.tv-ta'); if(ta) ta.value=tvText(tv.querySelector('.tv-txtmem').checked); }
   tvPos();
   var sh=SHEETS[CUR_SHEET]; tv.querySelector('.tv-sheet').textContent=sh?sh.name:'';
-  var body=tv.querySelector('.tv-body'); body.innerHTML='';
+  var body=tv.querySelector('.tv-body'), keepTop=body.scrollTop; body.innerHTML='';
   var list=tvOrder();
+  var sib={};
+  if(ADMIN){ var ot=_ordTree(); S.nodes.forEach(function(p){
+    var ks=ot.ordKids(p.id), bs=ot.ordBes(p.id);
+    ks.forEach(function(k,i){ sib[k]={p:p.id,kind:'k',i:i,n:ks.length}; });
+    bs.forEach(function(k,i){ if(!sib[k]) sib[k]={p:p.id,kind:'b',i:i,n:bs.length}; }); }); }
   var hasKid=function(i){ return list[i+1]&&list[i+1].kind==='row'&&list[i+1].depth>list[i].depth; };
   // visibility: hidden if any ancestor folded
   var stack=[]; // [{depth,folded}]
@@ -6630,7 +6634,8 @@ function tvBuild(){
     while(stack.length&&stack[stack.length-1].depth>=it.depth) stack.pop();
     var hidden=stack.some(function(s){return s.folded;});
     var folded=TV.fold.has(it.id)&&hasKid(i);
-    var row=document.createElement('div'); row.className='tv-row';
+    var row=document.createElement('div'); row.className='tv-row'+(TV.sel===nd.id?' tv-sel':'');
+    if(TV.sel===nd.id) row.setAttribute('aria-current','true');
     row.setAttribute('data-id',nd.id); row.setAttribute('data-depth',it.depth);
     row.style.paddingLeft=(10+it.depth*18)+'px';
     if(hidden) row.style.display='none';
@@ -6639,6 +6644,12 @@ function tvBuild(){
     var ti=document.createElement('span'); ti.className='tv-title'; ti.textContent=nodeTitle(nd); row.appendChild(ti);
     var cl=cntLabel(nd);
     if(cl){ var c=document.createElement('span'); c.className='tv-cnt'; c.textContent=cl; row.appendChild(c); }
+    if(ADMIN){ var tt=nodeTitle(nd), sb=sib[nd.id], acts=document.createElement('span'); acts.className='tv-acts';
+      [['edit','✎',tt+' 고치기'],['add','+',tt+' 아래에 하위 조직 추가'],['up','▲',tt+' 위로'],['down','▼',tt+' 아래로']].forEach(function(a){
+        var b=document.createElement('button'); b.type='button'; b.className='tv-act'; b.setAttribute('data-act',a[0]); b.textContent=a[1]; b.title=a[2]; b.setAttribute('aria-label',a[2]);
+        if(a[0]==='up') b.disabled=!sb||sb.i===0; if(a[0]==='down') b.disabled=!sb||sb.i>=sb.n-1;
+        acts.appendChild(b); });
+      row.appendChild(acts); }
     body.appendChild(row);
     stack.push({depth:it.depth,folded:folded});
     if((nd.m||[]).length){
@@ -6653,6 +6664,42 @@ function tvBuild(){
       });
     }
   });
+  body.scrollTop=keepTop;
+}
+// 같은 부모 아래 순서를 한 칸 옮긴다. 편집 창의 '하위 조직 순서'와 같은 길(_ordApply + 자동 배치)이라 되돌리기 한 걸음이다
+function tvMove(id,dir){
+  var t=_ordTree(), P=null, kind=null;
+  S.nodes.some(function(p){ if(t.ordKids(p.id).indexOf(id)>=0){ P=p; kind='k'; return true; } if(t.ordBes(p.id).indexOf(id)>=0){ P=p; kind='b'; return true; } return false; });
+  if(!P) return;
+  var ks=t.ordKids(P.id).slice(), bs=t.ordBes(P.id).slice(), arr=kind==='k'?ks:bs, i=arr.indexOf(id), j=i+dir;
+  if(j<0||j>=arr.length) return;
+  arr[i]=arr[j]; arr[j]=id;
+  _ordApply(P,ks,bs); autoLayout();
+}
+// 시트를 들여쓰기 글로 (조직 한 줄, 깊이마다 공백 두 칸). 사람 포함이면 조직 아래에 '- 이름 · 직책 · 직무 [상태]'
+function tvText(withMem){
+  var sh=SHEETS[CUR_SHEET], out=[sh?sh.name:''];
+  tvOrder().forEach(function(it){
+    if(it.kind==='head'){ out.push(''); out.push('['+it.text+']'); return; }
+    var nd=S.nodes.find(function(n){return n.id===it.id;}); if(!nd) return;
+    var pad=new Array(it.depth+1).join('  '), cl=cntLabel(nd);
+    out.push(pad+nodeTitle(nd)+(nd.en&&nd.ko&&nodeTitle(nd)!==nd.ko?' '+nd.ko:'')+(cl?' ('+cl+')':''));
+    if(withMem) (nd.m||[]).forEach(function(m){ if(!m.n&&!m.r) return;
+      var st=_stMarkText(m); out.push(pad+'  - '+[m.n,m.r,jobText(m)].filter(Boolean).join(' · ')+(st?' ['+st+']':'')); });
+  });
+  return out.join('\n');
+}
+function tvTextShow(on){
+  var tv=document.getElementById('treeview'); if(!tv) return;
+  TV.text=!!on; var bt=tv.querySelector('.tv-txtbtn'); if(bt) bt.setAttribute('aria-pressed',TV.text?'true':'false');
+  tv.querySelector('.tv-body').style.display=TV.text?'none':''; tv.querySelector('.tv-text').style.display=TV.text?'':'none';
+  if(TV.text){ tv.querySelector('.tv-ta').value=tvText(tv.querySelector('.tv-txtmem').checked); tv.querySelector('.tv-copied').textContent=''; }
+}
+async function tvCopy(){
+  var tv=document.getElementById('treeview'), ta=tv.querySelector('.tv-ta'), msg=tv.querySelector('.tv-copied'), ok=false;
+  try{ if(navigator.clipboard&&navigator.clipboard.writeText){ await navigator.clipboard.writeText(ta.value); ok=true; } }catch(_){}
+  if(!ok){ try{ ta.focus(); ta.select(); ok=document.execCommand('copy'); }catch(_){} }
+  msg.textContent=ok?'복사했습니다':'복사하지 못했습니다. 글을 직접 골라 복사해 주십시오.';
 }
 function tvRefresh(reset){
   if(!TV.open) return;
@@ -6660,7 +6707,7 @@ function tvRefresh(reset){
   tvBuild();
 }
 function tvOpen(){
-  TV.open=true; TV.fold.clear(); TV.mem.clear();
+  TV.open=true; TV.fold.clear(); TV.mem.clear(); TV.sel=null; tvTextShow(false);
   document.getElementById('treeview').classList.add('tv-open');
   tvBuild();
 }
@@ -6670,10 +6717,13 @@ function tvClose(){
 }
 function tvGo(id){
   var nd=S.nodes.find(function(n){return n.id===id;}); if(!nd) return;
-  tvClose();
+  TV.sel=id;
+  var tv=document.getElementById('treeview');
+  if(tv) tv.querySelectorAll('.tv-row').forEach(function(r){ var on=r.getAttribute('data-id')===id; r.classList.toggle('tv-sel',on); if(on) r.setAttribute('aria-current','true'); else r.removeAttribute('aria-current'); });
   if(collRevealFor(id)){ drawTfZone(); drawNodes(); drawConns(); }
   var w=document.getElementById('wrap');
-  w.scrollLeft=Math.max(0,(nd.x+cardW(nd)/2)*S.scale-w.clientWidth/2);
+  var cover=0; if(TV.open&&tv){ cover=Math.max(0,Math.min(w.clientWidth-80,tv.getBoundingClientRect().right-w.getBoundingClientRect().left)); }
+  w.scrollLeft=Math.max(0,(nd.x+cardW(nd)/2)*S.scale-(cover+(w.clientWidth-cover)/2));
   if(nh(nd)*S.scale>w.clientHeight*0.6) w.scrollTop=Math.max(0,nd.y*S.scale-40);
   else w.scrollTop=Math.max(0,(nd.y+nh(nd)/2)*S.scale-w.clientHeight/2);
   var el=document.getElementById('n'+id);
@@ -6682,8 +6732,15 @@ function tvGo(id){
 document.getElementById('btn-tree').addEventListener('click',function(){ if(TV.open) tvClose(); else tvOpen(); });
 document.querySelector('#treeview .tv-close').addEventListener('click',tvClose);
 document.getElementById('treeview').addEventListener('click',function(e){
-  var t=e.target, row=t.closest?t.closest('.tv-row'):null; if(!row) return;
+  var t=e.target;
+  if(t.closest&&t.closest('.tv-txtbtn')){ tvTextShow(!TV.text); return; }
+  if(t.closest&&t.closest('.tv-copy')){ tvCopy(); return; }
+  var row=t.closest?t.closest('.tv-row'):null; if(!row) return;
   var id=row.getAttribute('data-id');
+  var ab=t.closest('.tv-act');
+  if(ab){ if(!ADMIN||ab.disabled) return; var act=ab.getAttribute('data-act'); TV.sel=id;
+    if(act==='edit') openEdit(id); else if(act==='add') addChild(id); else if(act==='up') tvMove(id,-1); else if(act==='down') tvMove(id,1);
+    return; }
   if(t.classList.contains('tv-tog')){
     if(TV.fold.has(id)) TV.fold.delete(id); else TV.fold.add(id);
     tvBuild();
@@ -6692,6 +6749,7 @@ document.getElementById('treeview').addEventListener('click',function(e){
     tvBuild();
   } else if(t.classList.contains('tv-title')){ tvGo(id); }
 });
+document.querySelector('#treeview .tv-txtmem').addEventListener('change',function(){ if(TV.text) tvTextShow(true); });
 document.addEventListener('keydown',function(e){
   if(e.key!=='Escape'||!TV.open) return;
   var dlg=['pwov','cloudov','dataov','optov','ov'].some(function(i){var o=document.getElementById(i);return o&&o.classList.contains('show');});

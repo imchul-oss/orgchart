@@ -1,0 +1,637 @@
+{
+ "n-align": {
+  "data": {
+   "__OWNER20__": "own20"
+  },
+  "kind": "verdict",
+  "ref": "__CAND__",
+  "vp": null
+ },
+ "n-bodyband": {
+  "data": {
+   "__OWNER__": "own_stat2"
+  },
+  "kind": "verdict",
+  "ref": "__CAND__",
+  "vp": null
+ },
+ "n-caps": {
+  "data": {
+   "__DOC__": "dfinal"
+  },
+  "kind": "verdict",
+  "ref": "__CAND__",
+  "vp": null
+ },
+ "n-catfrac": {
+  "data": {
+   "__OWNER20__": "own20"
+  },
+  "kind": "verdict",
+  "ref": "__CAND__",
+  "vp": null
+ },
+ "n-cntname": {
+  "data": {
+   "__OWNER__": "own_stat2"
+  },
+  "kind": "verdict",
+  "ref": "__CAND__",
+  "vp": null
+ },
+ "n-colblock": {
+  "data": {
+   "__DOC__": "dfinal"
+  },
+  "kind": "verdict",
+  "ref": "__CAND__",
+  "vp": null
+ },
+ "n-colors": {
+  "data": {
+   "__OWNER20__": "own20"
+  },
+  "kind": "verdict",
+  "ref": "__CAND__",
+  "vp": null
+ },
+ "n-empty": {
+  "data": {
+   "__OWNER__": "own_stat2"
+  },
+  "kind": "verdict",
+  "ref": "__CAND__",
+  "vp": null
+ },
+ "n-filepick": {
+  "data": {
+   "__OWNER20__": "own20"
+  },
+  "kind": "verdict",
+  "ref": "__CAND__",
+  "vp": null
+ },
+ "n-gap2": {
+  "data": {
+   "__DOC__": "dfinal",
+   "__OWNER__": "own_stat2"
+  },
+  "kind": "verdict",
+  "ref": "__CAND__",
+  "vp": null
+ },
+ "n-grad": {
+  "data": {
+   "__DOC__": "dfinal"
+  },
+  "kind": "verdict",
+  "ref": "__CAND__",
+  "vp": null
+ },
+ "n-inherit": {
+  "data": {
+   "__DOC__": "dfinal"
+  },
+  "kind": "verdict",
+  "ref": "__CAND__",
+  "vp": null
+ },
+ "n-ink": {
+  "data": {
+   "__OWNER20__": "own20"
+  },
+  "kind": "verdict",
+  "ref": "__CAND__",
+  "vp": null
+ },
+ "n-lineshadow": {
+  "data": {
+   "__OWNER20__": "own20"
+  },
+  "kind": "verdict",
+  "ref": "__CAND__",
+  "vp": null
+ },
+ "n-localrows": {
+  "data": {
+   "__DOC__": "dfinal",
+   "__OWNER__": "own_stat2"
+  },
+  "kind": "verdict",
+  "ref": "__CAND__",
+  "vp": null
+ },
+ "n-mdrag": {
+  "data": {
+   "__DOC__": "dfinal"
+  },
+  "kind": "verdict",
+  "ref": "__CAND__",
+  "vp": null
+ },
+ "n-names": {
+  "data": {
+   "__OWNER20__": "own20"
+  },
+  "kind": "verdict",
+  "ref": "__CAND__",
+  "vp": null
+ },
+ "n-panel": {
+  "data": {
+   "__OWNER20__": "own20"
+  },
+  "kind": "verdict",
+  "ref": "__CAND__",
+  "vp": null
+ },
+ "n-panel2": {
+  "data": {
+   "__OWNER20__": "own20"
+  },
+  "kind": "verdict",
+  "ref": "__CAND__",
+  "vp": null
+ },
+ "n-pngtxt": {
+  "data": {
+   "__OWNER20__": "own20"
+  },
+  "kind": "verdict",
+  "ref": "__CAND__",
+  "vp": null
+ },
+ "n-preset": {
+  "data": {
+   "__OWNER20__": "own20"
+  },
+  "kind": "verdict",
+  "ref": "__CAND__",
+  "vp": null
+ },
+ "n-print": {
+  "data": {
+   "__OWNER20__": "own20"
+  },
+  "kind": "verdict",
+  "ref": "__CAND__",
+  "vp": null
+ },
+ "n-query": {
+  "data": {
+   "__OWNER20__": "own20"
+  },
+  "kind": "verdict",
+  "ref": "__CAND__",
+  "vp": null
+ },
+ "n-reach": {
+  "data": {
+   "__OWNER20__": "own20"
+  },
+  "kind": "verdict",
+  "ref": "__CAND__",
+  "vp": null
+ },
+ "n-safe": {
+  "data": {
+   "__OWNER20__": "own20"
+  },
+  "kind": "verdict",
+  "ref": "__CAND__",
+  "vp": null
+ },
+ "n-sketch": {
+  "data": {
+   "__DOC__": "dfinal"
+  },
+  "kind": "verdict",
+  "ref": "__CAND__",
+  "vp": null
+ },
+ "n-statsbox": {
+  "data": {
+   "__DOC__": "dfinal",
+   "__OWNER__": "own_stat2"
+  },
+  "kind": "verdict",
+  "ref": "__CAND__",
+  "vp": null
+ },
+ "n-tidy": {
+  "data": {
+   "__DOC__": "dfinal",
+   "__OWNER__": "own_stat2"
+  },
+  "kind": "verdict",
+  "ref": "__CAND__",
+  "vp": null
+ },
+ "n-tree1": {
+  "data": {
+   "__OWNER20__": "own20"
+  },
+  "kind": "verdict",
+  "ref": "__CAND__",
+  "vp": null
+ },
+ "n-tree2": {
+  "data": {
+   "__OWNER20__": "own20"
+  },
+  "kind": "verdict",
+  "ref": "__CAND__",
+  "vp": null
+ },
+ "n-xstats": {
+  "data": {
+   "__OWNER__": "own_stat2"
+  },
+  "kind": "verdict",
+  "ref": "__CAND__",
+  "vp": null
+ },
+ "reg-beside": {
+  "data": {
+   "__DOC__": "d10"
+  },
+  "kind": "verdict",
+  "ref": "r01-orgchart-beside-ref-html.html",
+  "vp": [
+   1600,
+   1000
+  ]
+ },
+ "reg-fit": {
+  "data": {
+   "__DOC__": "d10"
+  },
+  "kind": "verdict",
+  "ref": "r02-orgchart-fit-ref-html.html",
+  "vp": [
+   1600,
+   1000
+  ]
+ },
+ "reg-fixconn": {
+  "data": {
+   "__DOC__": "d10"
+  },
+  "kind": "verdict",
+  "ref": "r03-orgchart-fixconn-ref-main-html.html",
+  "vp": [
+   1600,
+   1000
+  ]
+ },
+ "reg-fixsmall": {
+  "data": {
+   "__DOC__": "d10"
+  },
+  "kind": "verdict",
+  "ref": "r04-orgchart-fixsmall-ref-fixconn-html.html",
+  "vp": [
+   1600,
+   1000
+  ]
+ },
+ "reg-polish": {
+  "data": {
+   "__DOC__": "d10"
+  },
+  "kind": "verdict",
+  "ref": "r05-orgchart-polish-ref-html.html",
+  "vp": [
+   1600,
+   1000
+  ]
+ },
+ "reg-reg-r-cmp": {
+  "data": {
+   "__DOC__": "d10"
+  },
+  "kind": "same",
+  "ref": null,
+  "vp": [
+   1600,
+   1000
+  ]
+ },
+ "reg-reg-r-exp": {
+  "data": {
+   "__DOC__": "d10"
+  },
+  "kind": "same",
+  "ref": null,
+  "vp": [
+   1600,
+   1000
+  ]
+ },
+ "reg-reg-r-lay": {
+  "data": {
+   "__DOC__": "d10"
+  },
+  "kind": "verdict",
+  "ref": "r06-orgchart-layout-ref-minor-g1-html.html",
+  "vp": [
+   1600,
+   1000
+  ]
+ },
+ "reg-reg-r-lint": {
+  "data": {
+   "__DOC__": "d10"
+  },
+  "kind": "same",
+  "ref": "r07-orgchart-tog-ref-lint-html.html",
+  "vp": [
+   1600,
+   1000
+  ]
+ },
+ "reg-reg-r-min-align": {
+  "data": {
+   "__DOC__": "d10"
+  },
+  "kind": "same",
+  "ref": null,
+  "vp": [
+   1600,
+   1000
+  ]
+ },
+ "reg-reg-run-g1": {
+  "data": {
+   "__DOC__": "d10"
+  },
+  "kind": "verdict",
+  "ref": "r08-orgchart-trunk-ref-layout-g3-html.html",
+  "vp": [
+   1600,
+   1000
+  ]
+ },
+ "reg-rot": {
+  "data": {
+   "__DOC__": "d10"
+  },
+  "kind": "verdict",
+  "ref": "r09-orgchart-rot-ref-html.html",
+  "vp": [
+   1600,
+   1000
+  ]
+ },
+ "reg-run-g2": {
+  "data": {
+   "__DOC__": "d10"
+  },
+  "kind": "verdict",
+  "ref": "r10-orgchart-aside-ref-trunk-g2-html.html",
+  "vp": [
+   1600,
+   1000
+  ]
+ },
+ "reg-tb": {
+  "data": {
+   "__DOC__": "d10"
+  },
+  "kind": "verdict",
+  "ref": null,
+  "vp": [
+   1600,
+   1000
+  ]
+ },
+ "reg-tf2": {
+  "data": {
+   "__DOC__": "d10"
+  },
+  "kind": "verdict",
+  "ref": "r11-orgchart-tf-ref-html.html",
+  "vp": [
+   1600,
+   1000
+  ]
+ },
+ "reg-tree": {
+  "data": {
+   "__DOC__": "d10"
+  },
+  "kind": "verdict",
+  "ref": "r12-orgchart-tree-ref-html.html",
+  "vp": [
+   1600,
+   1000
+  ]
+ },
+ "reg-ux1": {
+  "data": {
+   "__DOC__": "d10"
+  },
+  "kind": "verdict",
+  "ref": "r13-orgchart-ux1-ref-merged-html.html",
+  "vp": [
+   1600,
+   1000
+  ]
+ },
+ "reg-ux2": {
+  "data": {
+   "__DOC__": "d10"
+  },
+  "kind": "verdict",
+  "ref": "r14-orgchart-ux2-ref-ux1-html.html",
+  "vp": [
+   1600,
+   1000
+  ]
+ },
+ "reg-ux3": {
+  "data": {
+   "__DOC__": "d10"
+  },
+  "kind": "verdict",
+  "ref": "r15-orgchart-ux3-ref-ux2-html.html",
+  "vp": [
+   1600,
+   1000
+  ]
+ },
+ "reg-ux4": {
+  "data": {
+   "__DOC__": "d10"
+  },
+  "kind": "verdict",
+  "ref": "r16-orgchart-ux4-ref-ux3m-html.html",
+  "vp": [
+   1600,
+   1000
+  ]
+ },
+ "reg-ux5": {
+  "data": {
+   "__DOC__": "d10"
+  },
+  "kind": "verdict",
+  "ref": "r17-orgchart-ux5-ref-ux4-html.html",
+  "vp": [
+   1600,
+   1000
+  ]
+ },
+ "u-aside3": {
+  "data": {
+   "__DOC__": "d10"
+  },
+  "kind": "verdict",
+  "ref": "r21-orgchart-aside3-ref-html.html",
+  "vp": null
+ },
+ "u-boot": {
+  "data": {},
+  "kind": "verdict",
+  "ref": "r28-orgchart-boot-base-html.html",
+  "vp": null
+ },
+ "u-cat": {
+  "data": {
+   "__DOC__": "d10"
+  },
+  "kind": "verdict",
+  "ref": "r20-orgchart-cc-ref-html.html",
+  "vp": null
+ },
+ "u-cc": {
+  "data": {
+   "__DOC__": "d10"
+  },
+  "kind": "verdict",
+  "ref": "r20-orgchart-cc-ref-html.html",
+  "vp": null
+ },
+ "u-cc2": {
+  "data": {
+   "__DOC__": "d10"
+  },
+  "kind": "verdict",
+  "ref": "r22-orgchart-cc2-ref-html.html",
+  "vp": null
+ },
+ "u-cmpcc": {
+  "data": {
+   "__DOC__": "dfinal"
+  },
+  "kind": "verdict",
+  "ref": "r31-orgchart-cmpcc-base-html.html",
+  "vp": null
+ },
+ "u-coll": {
+  "data": {
+   "__DOC__": "dfinal",
+   "__OWNER__": "own_stat2"
+  },
+  "kind": "verdict",
+  "ref": "r30-orgchart-coll-base-html.html",
+  "vp": null
+ },
+ "u-cols": {
+  "data": {
+   "__DOC__": "d10"
+  },
+  "kind": "verdict",
+  "ref": "r18-orgchart-cols-ref-html.html",
+  "vp": null
+ },
+ "u-csv": {
+  "data": {
+   "__DOC__": "dfinal"
+  },
+  "kind": "verdict",
+  "ref": "r26-orgchart-csv-base-html.html",
+  "vp": null
+ },
+ "u-gap": {
+  "data": {
+   "__DOC__": "dfinal",
+   "__OWNER__": "own_gap"
+  },
+  "kind": "verdict",
+  "ref": null,
+  "vp": null
+ },
+ "u-opt": {
+  "data": {},
+  "kind": "verdict",
+  "ref": "r32-orgchart-opt-ref-html.html",
+  "vp": null
+ },
+ "u-ord": {
+  "data": {
+   "__DOC__": "d10"
+  },
+  "kind": "verdict",
+  "ref": "r23-orgchart-ord-ref-html.html",
+  "vp": null
+ },
+ "u-stat": {
+  "data": {
+   "__DOC__": "dfinal"
+  },
+  "kind": "verdict",
+  "ref": "r24-orgchart-stat-base-html.html",
+  "vp": null
+ },
+ "u-stat2n": {
+  "data": {
+   "__DOC__": "dfinal",
+   "__OWNER__": "own_stat2"
+  },
+  "kind": "verdict",
+  "ref": "r25-orgchart-ux-base-html.html",
+  "vp": null
+ },
+ "u-title": {
+  "data": {
+   "__DOC__": "dfinal"
+  },
+  "kind": "verdict",
+  "ref": "r27-orgchart-title-base-html.html",
+  "vp": null
+ },
+ "u-tog": {
+  "data": {
+   "__DOC__": "d10"
+  },
+  "kind": "verdict",
+  "ref": "r19-orgchart-tog-ref-html.html",
+  "vp": null
+ },
+ "u-txt": {
+  "data": {
+   "__DOC__": "dfinal"
+  },
+  "kind": "verdict",
+  "ref": "r29-orgchart-txt-base-html.html",
+  "vp": null
+ },
+ "u-ux": {
+  "data": {},
+  "kind": "verdict",
+  "ref": "r25-orgchart-ux-base-html.html",
+  "vp": null
+ },
+ "x-stress": {
+  "data": {
+   "__XDOC__": "extreme"
+  },
+  "kind": "stress",
+  "ref": null,
+  "vp": [
+   1920,
+   1080
+  ]
+ }
+}
