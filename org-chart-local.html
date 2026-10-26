@@ -1253,6 +1253,16 @@ const PW_LS      = 'ssb-org-chart-pw__' + _LS_NS;         // 관리자 해시 �
 const FSA_OK = ('showOpenFilePicker' in window);
 
 let FILE_HANDLE=null, FILE_CONNECTED=false, FILE_NAME='', FILE_MTIME=0;
+// 파일 고르기 창: 같은 id로 열어 브라우저가 마지막 폴더를 기억하게 하고, 이번에 연결했던 파일이 있으면 그 폴더에서 연다.
+// 회사 뷰어는 IndexedDB가 열리지 않아 연결(파일 핸들)을 다음 방문까지 못 들고 가므로, 마지막 파일 이름만 localStorage에 남긴다 (철님 10-26)
+const FP_ID='orgchart-data', LAST_FILE_LS='orgchart-last-file';
+let _fpLast=null, _idbFail='';
+function _lastFile(){ try{ return localStorage.getItem(LAST_FILE_LS)||''; }catch(_){ return ''; } }
+async function _picker(fn,o){
+  const base=Object.assign({id:FP_ID},o), start=FILE_HANDLE||_fpLast;
+  if(start){ try{ return await fn(Object.assign({startIn:start},base)); }catch(e){ if(!e||e.name==='AbortError') throw e; } }  // 지난 파일이 옮겨졌거나 지워졌으면 폴더 지정 없이 다시 연다
+  return await fn(base);
+}
 let ADMIN=false, ADMIN_REC=null; // {salt, iter, hash} — 데이터 파일에 저장되어 파일과 함께 이동
 let _unlockedHash=null; // 이번 세션의 잠금 해제에 실제로 쓰인 해시 - 파일 로드로 다른 해시가 오면 관리자 강등
 
@@ -4615,7 +4625,7 @@ function openFileModal(){
   const st=document.getElementById('cm-status');
   if(st) st.innerHTML=FILE_CONNECTED
     ?`<span style="color:#40D2A7">● 연결됨: ${esc(FILE_NAME)}</span>`
-    :(FSA_OK?'<span style="color:#999">○ 미연결 (브라우저 저장소만 사용 중)</span>'
+    :(FSA_OK?'<span style="color:#6B6B6B">○ 미연결 (브라우저 저장소만 사용 중)</span>'+(_idbFail&&_lastFile()?`<br><span style="color:#8A5A00">이 뷰어는 파일 연결을 기억하지 못합니다(브라우저 저장소 오류). 지난번 파일: <b>${esc(_lastFile())}</b> - '파일 고르기'로 다시 연결해 주십시오.</span>`:'')
             :'<span style="color:#CC3333">이 브라우저는 파일 연결을 지원하지 않습니다. 아래 단추로 JSON 파일을 내려받고 불러올 수 있습니다.</span>');
   document.querySelectorAll('#cloudmodal .cm-fsa').forEach(b=>{ b.style.display=FSA_OK?'':'none'; });
   document.querySelectorAll('#cloudmodal .cm-nofsa').forEach(b=>{ b.style.display=FSA_OK?'none':''; });
@@ -4632,7 +4642,8 @@ async function _connectHandle(h,{load=true}={}){
   try{
     if(load) await loadFromFile();
     else { const f=await h.getFile(); FILE_NAME=f.name; FILE_MTIME=f.lastModified; }
-    try{ await _idb.set('handle',h); }catch(_){}
+    try{ await _idb.set('handle',h); _idbFail=''; }catch(ie){ _idbFail=String(ie&&ie.message||ie); }
+    _fpLast=h; try{ localStorage.setItem(LAST_FILE_LS,FILE_NAME||h.name||''); }catch(_){}
   }catch(e){
     FILE_HANDLE=prev.h; FILE_CONNECTED=prev.c; FILE_NAME=prev.n; FILE_MTIME=prev.m;
     _updateFileBtn();
@@ -4643,7 +4654,7 @@ async function _connectHandle(h,{load=true}={}){
 async function pickFile(){
   if(!FSA_OK){ alert('이 브라우저는 파일 연결을 지원하지 않습니다. Chrome/Edge를 사용하세요.'); return; }
   try{
-    const [h]=await window.showOpenFilePicker({
+    const [h]=await _picker(o=>window.showOpenFilePicker(o),{
       types:[{description:'조직도 데이터 (JSON)',accept:{'application/json':['.json']}}]
     });
     await _connectHandle(h);
@@ -4654,7 +4665,7 @@ async function createNewFile(){
   if(!ADMIN){ alert('관리자 모드에서만 가능합니다.'); return; } // 뷰어가 공유 파일을 덮어쓰는 경로 차단
   if(!FSA_OK){ alert('이 브라우저는 파일 연결을 지원하지 않습니다. Chrome/Edge를 사용하세요.'); return; }
   try{
-    const h=await window.showSaveFilePicker({
+    const h=await _picker(o=>window.showSaveFilePicker(o),{
       suggestedName:'org-data.json',
       types:[{description:'조직도 데이터 (JSON)',accept:{'application/json':['.json']}}]
     });
@@ -4679,7 +4690,7 @@ function _showBanner(name){
 async function reconnectFile(){
   const b=document.getElementById('file-banner');
   try{
-    if(!FILE_HANDLE) return;
+    if(!FILE_HANDLE){ await pickFile(); if(FILE_CONNECTED) b.classList.remove('show'); return; }
     const p=await FILE_HANDLE.requestPermission({mode:'read'});
     if(p!=='granted') return;
     FILE_CONNECTED=true;
@@ -6380,11 +6391,15 @@ function applyLogo(){
           _showBanner(nm);
         }
       }
-    }catch(e){ console.warn('file boot:',e); }
+    }catch(e){ console.warn('file boot:',e); _idbFail=String(e&&e.message||e); }
   }
   if(!fileLoaded) drawLocal();
   _updateFileBtn();
   applyLogo();
+  if(FSA_OK&&!FILE_HANDLE&&!FILE_CONNECTED&&_lastFile()){
+    if(!_idbFail) _idbFail='연결 기록 없음';
+    _showBanner(_lastFile()); document.getElementById('file-banner-txt').textContent=`📄 지난번 파일 '${_lastFile()}' 다시 연결`;
+  }
 })();
 
 // ═══ Collapse / expand sub-organisations (view state only)
