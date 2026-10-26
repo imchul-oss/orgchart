@@ -1,0 +1,23 @@
+{
+ "errors": [],
+ "fails": [
+  "P1: titles [\"옵션 묶음\",\"배치\",\"카드\",\"인원 수\",\"글꼴\",\"선·그림 영역\",\"제목\",\"로고·색상\"]",
+  "P1: data-sec [\"preset\",\"layout\",\"card\",\"count\",\"font\",\"line\",\"title\",\"logo\"]",
+  "P2: #opt-hdr-colors in null, want cardcol",
+  "P2: #opt-band-colors in null, want cardcol",
+  "P2: #opt-cardbody-colors in null, want cardcol"
+ ],
+ "info": {
+  "titles": [
+   "옵션 묶음",
+   "배치",
+   "카드",
+   "인원 수",
+   "글꼴",
+   "선·그림 영역",
+   "제목",
+   "로고·색상"
+  ]
+ },
+ "RESULT": "RED 5"
+}

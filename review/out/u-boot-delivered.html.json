@@ -1,28 +1,24 @@
 {
  "errors": [],
- "fails": [
-  "I1: no card drawn within 6 s",
-  "I2: first card at -1 ms, want <= 1000",
-  "I3: first card at -1 ms, want <= 1000"
- ],
+ "fails": [],
  "info": {
-  "I1_first_ms": -1,
-  "I2_first_ms": -1,
-  "I3_first_ms": -1,
-  "I4_first_ms": -1,
+  "I1_first_ms": 280,
+  "I2_first_ms": 184,
+  "I3_first_ms": 305,
+  "I4_first_ms": 143,
   "I4": {
    "ms": [
     2,
-    1,
+    2,
     1,
     1
    ],
    "got": 5,
    "after": true
   },
-  "I5_first_ms": -1,
-  "I6_first_ms": 225,
-  "E_first_ms": -1
+  "I5_first_ms": 291,
+  "I6_first_ms": 188,
+  "E_first_ms": 115
  },
- "RESULT": "RED 3"
+ "RESULT": "GREEN"
 }

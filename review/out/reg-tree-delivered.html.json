@@ -1,0 +1,25 @@
+{
+ "errors": [],
+ "fails": [
+  "G: list closed after choosing a card",
+  "G: list closed after choosing a card"
+ ],
+ "info": {
+  "G0": {
+   "h": 260,
+   "area": 894,
+   "cx": 1406,
+   "l": 0,
+   "r": 1600
+  },
+  "readOnly": true,
+  "G1": {
+   "h": 260,
+   "area": 894,
+   "cx": 1406,
+   "l": 0,
+   "r": 1600
+  }
+ },
+ "RESULT": "RED"
+}

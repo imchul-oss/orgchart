@@ -1,0 +1,60 @@
+{
+ "sheet0 summary": {
+  "drawMs": 844,
+  "waitMs": 600,
+  "canvas": [
+   32000,
+   1143
+  ],
+  "blobBytes": 3541292,
+  "encodeMs": 859,
+  "blank": false,
+  "scaleK": 1,
+  "messages": [
+   "조직도가 커서 PNG 해상도를 낮췄습니다 (배율 0.25, 보통 2).\n글자가 작으면 시트를 나누거나 접은 뒤 다시 내보내 주십시오."
+  ]
+ },
+ "sheet0 team": {
+  "drawMs": 1233,
+  "waitMs": 900,
+  "canvas": [
+   29142,
+   4117
+  ],
+  "blobBytes": 5213379,
+  "encodeMs": 1207,
+  "blank": false,
+  "scaleK": 1.1,
+  "messages": [
+   "조직도가 커서 PNG 해상도를 낮췄습니다 (배율 0.23, 보통 2).\n글자가 작으면 시트를 나누거나 접은 뒤 다시 내보내 주십시오."
+  ]
+ },
+ "sheet2 summary": {
+  "drawMs": 582,
+  "waitMs": 700,
+  "canvas": [
+   12994,
+   9234
+  ],
+  "blobBytes": 4186480,
+  "encodeMs": 955,
+  "blank": false,
+  "scaleK": 2,
+  "messages": [
+   "조직도가 커서 PNG 해상도를 낮췄습니다 (배율 1.96, 보통 2).\n글자가 작으면 시트를 나누거나 접은 뒤 다시 내보내 주십시오."
+  ]
+ },
+ "sheet1 summary": {
+  "drawMs": 131,
+  "waitMs": 100,
+  "canvas": [
+   9864,
+   1260
+  ],
+  "blobBytes": 856362,
+  "encodeMs": 142,
+  "blank": false,
+  "scaleK": 2,
+  "messages": []
+ }
+}

@@ -133,3 +133,34 @@ localStorage 백업은 3,008개 카드 파일(1.44M자)까지 9~24ms에 온전�
 2. `review/baseline/*.out` same 판정 4개의 delivered 기준선.
 3. `review/out/<판정>-<페이지>.json` 러너가 남긴 verdict 판정 원본(delivered·후보), `review/out/x-stress-*.json` 스트레스 판정 원본.
 4. `review/out/xc-*.mjs` 자체 스크립트 4개와 그 결과 `review/out/xc-*.json`(후보·delivered). 스크립트는 미리 설치된 Playwright를 절대 경로(`/opt/node-tools/node_modules/playwright/index.mjs`)로 불러오므로 다른 환경에서는 그 줄만 바꾸면 됩니다. 규모 확대용 extreme2·extreme4 데이터는 `python review/gen-extreme.py 2`, `4`로 다시 만들 수 있어 커밋하지 않았습니다.
+
+## 9. 2차 실행 (982cdb8)
+
+982cdb8(최종 후보: 자동 배치가 없는 카드로 가는 연결선을 건너뜀, 큰 조직도의 PNG 배율을 낮추고 알림. 키트: u-opt에 카드 색 구획, reg-tree 주석 분리, u-boot 더미 시드, 러너가 baseline/·out/ 생성)을 받아 다시 돌렸습니다. 브라우저는 1차와 같은 미리 설치된 Playwright 1.63.0 + Chromium 153입니다.
+
+### 9-1. RESULT 줄
+
+| 런 | 명령 | RESULT 줄 | 걸린 시간 |
+|---|---|---|---|
+| 1 | `node review/run.mjs --page review/delivered.html --only u-opt,reg-tree,u-boot --jobs 1` | `RESULT FAIL 2 (u-opt,reg-tree) 1/3 on delivered.html` | 24초 |
+| 2 | `node review/run.mjs --jobs 2` | RESULT 줄 없음. 23개 판정(모두 GREEN) 뒤 `Error: ENOENT: no such file or directory, open '.../review/judges/n-robust.js'`로 러너 중단 | 22초 |
+| 2-보완 | `node review/run.mjs --only <n-robust를 뺀 70개> --jobs 2` | `RESULT OK 70/70 on org-chart-local.html` (GREEN 66, same 4) | 273초 |
+| 3 | `node review/run.mjs --stress --jobs 1` | `RESULT OK 1/1 on org-chart-local.html` (x-stress GREEN) | 204초 |
+
+### 9-2. GREEN이 아닌 판정
+
+1. **u-opt(delivered, RED 5)와 reg-tree(delivered, RED)**: 이제 ERROR 없이 끝까지 평가되지만, 두 판정 모두 10-26 후보의 동작을 요구하도록 고쳐져서 delivered에서는 설계상 RED입니다. u-opt는 `TITLES`에 "카드 색"(`cardcol`) 구획을 넣어 delivered의 옵션 창(8구획)과 맞지 않고(P1 titles·data-sec, P2 `#opt-hdr-colors in null, want cardcol`), reg-tree는 110행 "G: list closed after choosing a card"(주석: owner wants the list to stay open)로 목록 유지를 요구합니다. 즉 지시의 "delivered에서 GREEN이어야 한다"는 u-boot(GREEN 8초)에만 맞고, 나머지 둘은 1차의 n-align 등과 같은 "신규 단위 수용 판정" 쪽으로 옮겨 간 것입니다. 후보에서의 결과는 2-보완 런 참조.
+2. **n-robust(후보, 실행 불가)**: `units.json`에 등록됐지만 `review/judges/n-robust.js` 파일이 커밋에 없습니다. 러너는 판정 파일을 try 밖에서 읽기 때문에 전체 런이 그 자리에서 죽습니다(2번 런). 판정·러너를 바꾸지 않는 범위라 `--only`로 나머지 70개만 돌렸습니다. 파일을 올리면 다시 전체 런이 됩니다.
+3. **후보(2-보완 런)에서 GREEN·same이 아닌 판정: 없음(확실).** 1차에서 키트 문제였던 u-opt(4초)·reg-tree(11초)·u-boot(8초)를 포함해 70개가 모두 GREEN 또는 same이고, same 4개는 1차에 쓴 delivered 기준선과 그대로 일치합니다. 1차의 결론(후보에 회귀 없음)이 최종 후보에서도 유지됩니다.
+
+### 9-3. 스트레스 문제 1·3의 재확인 (후보, 자체 스크립트 xc-stress·xc-probe·xc-png 재실행)
+
+**문제 1(깨진 연결선 시트 탭 → 빈 화면): 사라짐(확실).** "구성 시험" 탭 클릭 뒤 249ms에 카드 59개가 모두 그려지고 탭 강조도 그 시트로 옮겨지며, 배치 점검 표시가 "⚠ 배치 점검 6건"(끊김 2 = 없는 카드로 가는 연결선 2개, 교차 4)으로 사용자에게 알려 줍니다. 콘솔 오류 0. x-stress도 시트 2를 169ms에 배치했고 xc-stress의 시트 2 관련 6단계(인쇄 추정 8쪽 3.8pt, PNG, CSV 왕복 59개 조직·244명 유지, 120명 카드 편집 창 70ms·120행·저장 80ms, 18개 시트 전환 최대 2.5초는 대형 시트)가 모두 오류 없이 끝났습니다. 없는 id를 걸러낸 사본과 비교하면 배치 결과가 같고(캔버스 6,528 x 4,770, 겹침 0), 유효하지 않은 연결선 데이터는 그대로 보존됩니다(저장 왕복 same).
+
+**문제 3(대형 시트 PNG가 조용히 안 나옴): 사라짐(확실), 단서 둘.** 987개 카드 시트의 PNG가 캔버스 32,000 x 1,143(현황 탭) 또는 29,142 x 4,117(팀 탭)로 만들어져 3.5MB·5.2MB 파일이 나오고, 내보내기 전에 "조직도가 커서 PNG 해상도를 낮췄습니다 (배율 0.25, 보통 2)" 알림이 뜹니다. `toBlob`이 null이면 "PNG 파일을 만들지 못했습니다" 알림도 들어갔습니다(이번 데이터에서는 발생하지 않음). 단서: (1) 배율 0.25면 11px 이름이 약 2.8px라 그림을 열어도 글자는 읽을 수 없고, 알림이 그 점을 "글자가 작으면 시트를 나누거나 접은 뒤"로 안내하므로 사용자가 다음 할 일은 알 수 있습니다. (2) 구성 시험 시트(캔버스 12,994 x 9,234, 배율 1.96)에서도 같은 "해상도를 낮췼습니다" 알림이 뜹니다. 2%만 낮아진 경우라 경고가 과합니다(낮음). 글자·가로·오른쪽에서 시트는 배율 2 그대로, 알림 없음.
+
+그 밖의 1차 스트레스 항목(2 인쇄 46초·343쪽, 4 현황 탭에 따른 배율, 5 편집·되돌리기 1초대, 6 CSV 줄바꿈, 7 화면 맞춤 1.33%)은 이번 커밋의 대상이 아니었고 수치도 그대로입니다(xc-stress 재실행: 인쇄 준비 41.7초, 편집 20번 39.8초, 되돌리기 첫 걸음 1.4초, 글자 시트 CSV 재가져오기 같은 오류).
+
+### 9-4. 걸린 시간
+
+1번 24초, 2번 22초(중단), 2-보완 273초, 3번 204초, xc-stress 315초, xc-probe 52초, xc-png 약 20초.

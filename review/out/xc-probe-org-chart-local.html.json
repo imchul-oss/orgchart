@@ -1,32 +1,32 @@
 {
  "a_tabClick": {
-  "ms": 215,
+  "ms": 249,
   "thrownToClick": null,
   "CUR_SHEET": 2,
-  "activeTab": "대형 조직 (987개)✕",
+  "activeTab": "구성 시험✕",
   "S_nodes": 59,
-  "cardsInDom": 0,
-  "visibleCards": 0,
-  "lintBtn": "✓ 배치 이상 없음",
+  "cardsInDom": 59,
+  "visibleCards": 59,
+  "lintBtn": "⚠ 배치 점검 6건",
   "posOfFirst": [
    [
-    0,
-    0
+    3040,
+    60
    ],
    [
-    0,
-    0
+    80,
+    260
    ],
    [
-    0,
-    0
+    1544,
+    260
    ]
   ],
   "alerts": [],
   "headerCount": ""
  },
  "a2_recover": {
-  "autoLayoutErr": "TypeError: Cannot read properties of undefined (reading 'includes')",
+  "autoLayoutErr": null,
   "renderErr": null,
   "cardsAfterRender": 59,
   "backToSheet0Err": null,
@@ -37,7 +37,7 @@
   "connsBefore": 61,
   "connsAfter": 57,
   "err": null,
-  "ms": 297,
+  "ms": 281,
   "lint": {
    "overlap": 0,
    "broken": 0,
@@ -77,12 +77,12 @@
   "cyclePair": "a<->b kept"
  },
  "b_edit120": {
-  "openMs": 76,
+  "openMs": 80,
   "rows": 120,
   "mbodyScrolls": false,
   "modalH": 0,
   "addRowMs": 1,
-  "saveMs": 97,
+  "saveMs": 75,
   "membersAfter": 120
  },
  "b_print": [
@@ -585,17 +585,15 @@
  },
  "i_preparePrint": {
   "at100": {
-   "prepareMs": 1190,
+   "prepareMs": 893,
    "pages": 5,
    "scale": 1
   },
   "atFit": {
-   "prepareMs": 821,
+   "prepareMs": 747,
    "pages": 5,
    "scale": 0.0133
   }
  },
- "errors": [
-  "pageerror TypeError: Cannot read properties of undefined (reading 'includes')"
- ]
+ "errors": []
 }
