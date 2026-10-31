@@ -1950,9 +1950,11 @@ function bindNode(el,nd) {
   }
 }
 
-function _stMarkText(m){ const def=OPT.statusItems[0]?.key, k=m.s||def; if(k===def) return ''; const it=OPT.statusItems.find(x=>x.key===k); return it?String(it.label||''):''; }
+function _stMarkText(m){ const def=OPT.statusItems[0]?.key, k=m.s||def; if(k===def) return ''; const it=OPT.statusItems.find(x=>x.key===k); return it?String(it.label||''):String(k); }  // 목록에 없는 상태는 키 글자 그대로 (R6, ORG-STRESS 1번)
+const ST_UNKNOWN_COLOR='#4A4A4A';  // 목록에 없는 상태의 띠: 등록 상태 색과 겹치지 않는 짙은 회색 하나 (R6, ORG-STRESS 1번)
 function statusColor(s){
   const item=OPT.statusItems.find(x=>x.key===s);
+  if(!item&&s) return ST_UNKNOWN_COLOR;
   return item ? `var(--st-${item.key})` : (OPT.statusItems[0]?`var(--st-${OPT.statusItems[0].key})`:'#999');
 }
 
