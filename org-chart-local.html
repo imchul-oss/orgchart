@@ -3627,6 +3627,7 @@ document.addEventListener('keydown',e=>{
 });
 // 화면 배율이 바뀔 때마다 선 최소 굵기(--line-min)를 다시 잡는다 (철님 10-23)
 document.addEventListener('DOMContentLoaded',()=>{ const cv=document.getElementById('canvas'); if(!cv||!window.MutationObserver) return; const upd=()=>{ const m=/scale\(([\d.]+)\)/.exec(cv.style.transform||''); const sc=m?+m[1]:1; document.documentElement.style.setProperty('--line-min',(sc<1?(1.3/sc).toFixed(3):'0')+'px'); }; new MutationObserver(upd).observe(cv,{attributes:true,attributeFilter:['style']}); upd(); });
+const FIT_MIN=0.15;  // 화면 배율 하한 (확대·축소 경로와 같은 값)
 function fitScreen(){
   if(!S.nodes.length) return;
   let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
@@ -3639,8 +3640,10 @@ function fitScreen(){
   if(!isFinite(x0)) return;
   const w=document.getElementById('wrap');
   const cvs=document.getElementById('canvas');
-  const sc=Math.min(w.clientWidth/(x1-x0+160), w.clientHeight/(y1-y0+160), 1.4)*.88;
+  const raw=Math.min(w.clientWidth/(x1-x0+160), w.clientHeight/(y1-y0+160), 1.4)*.88;
+  const sc=Math.max(FIT_MIN,raw);  // 맞춤도 다른 확대·축소처럼 15% 아래로 내리지 않는다 (ORG-STRESS 3번)
   S.scale=sc;
+  _fitNote(raw<FIT_MIN);
   cvs.style.marginLeft='';          // always clear stale margin
   cvs.style.transform=`scale(${sc})`;
   const cx=(x0+x1)/2*sc;
@@ -6212,8 +6215,18 @@ function _a11yBind(root){
 })();
 
 // ═══ Status
+// 맞춤 배율이 하한에 걸렸을 때 상태 줄에 한 번 알린다. 하한에서 벗어나면 지운다 (C1, C4)
+function _fitNote(on){
+  const bar=document.getElementById('stbar'); if(!bar) return;
+  let el=document.getElementById('fitnote');
+  if(!on){ if(el) el.remove(); return; }
+  if(!el){ el=document.createElement('span'); el.id='fitnote'; el.style.cssText='color:var(--warn,#B45309);font-weight:600;';
+    const sn=document.getElementById('sn'); if(sn&&sn.nextSibling) bar.insertBefore(el,sn.nextSibling); else bar.appendChild(el); }
+  el.textContent='조직도가 화면보다 커서 가장 작은 배율 15%에서 멈췄습니다. 스크롤해서 보시거나, 카드 아래 − 단추로 하위 조직을 접어 주십시오.';
+}
 function updateSt(){
   const pct=Math.round(S.scale*100);
+  if(S.scale>FIT_MIN+0.001&&document.getElementById('fitnote')) _fitNote(false);
   // 접기 토글은 줌에 반비례해 키워 화면에서 최소 9px를 유지한다 (배율 1~4, 15% 줌에서 9.6px)
   document.documentElement.style.setProperty('--ctog-k',Math.min(4,Math.max(1,1/S.scale)).toFixed(3));
   document.getElementById('zpct').textContent=pct+'%';
