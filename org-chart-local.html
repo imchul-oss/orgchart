@@ -1442,6 +1442,14 @@ function renderSheetTabs(){
   bar.innerHTML=SHEETS.map((sh,i)=>
     `<button class="sht${i===CUR_SHEET?' active':''}" onclick="switchSheet(${i})" ondblclick="renameSheet(${i})" title="${ADMIN?'더블클릭: 이름 변경':''}">${esc(sh.name)}${ADMIN&&SHEETS.length>1?`<span class="sht-x" onclick="delSheet(${i},event)" title="시트 삭제">✕</span>`:''}</button>`
   ).join('')+(ADMIN?`<button class="sht-add" onclick="addSheet()" title="시트 추가">＋</button>`:'');
+  _sheetTabIntoView(bar);
+}
+// 활성 시트 탭이 탭 줄 밖에 있으면 가장 짧은 거리만큼 스크롤한다. 이미 다 보이면 그대로 둔다 (H1, ORG-STRESS 2번)
+function _sheetTabIntoView(bar){
+  const a=bar.querySelector('.sht.active'); if(!a) return;
+  const br=bar.getBoundingClientRect(), ar=a.getBoundingClientRect(); if(!br.width) return;
+  if(ar.left<br.left) bar.scrollLeft-=Math.ceil(br.left-ar.left);
+  else if(ar.right>br.right) bar.scrollLeft+=Math.ceil(ar.right-br.right);
 }
 
 // ═══ State
