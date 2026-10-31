@@ -5228,7 +5228,8 @@ function exportCSV(){
   });
   dl(rows.join('\n'),'org-chart.csv','text/csv;charset=utf-8');
 }
-function q(s){ s=String(s||''); return s.includes(',')? '"'+s.replace(/"/g,'""')+'"' : s; }
+// 쉼표, 큰따옴표, 줄바꿈, 앞뒤 공백이 든 값은 따옴표로 감싸고 안쪽 따옴표는 두 번 쓴다 (RFC 4180, ORG-STRESS 6번)
+function q(s){ s=String(s||''); return /[",\r\n]|^\s|\s$/.test(s)? '"'+s.replace(/"/g,'""')+'"' : s; }
 function dl(data,name,type,bom=true){
   const a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob([bom?'\uFEFF'+data:data],{type}));
@@ -5584,7 +5585,7 @@ function importCSV(inp){
   const reader=new FileReader();
   reader.onload=e=>{
     try{
-      const lines=e.target.result.replace(/\r/g,'').split('\n');
+      const lines=_csvRecords(e.target.result);  // 따옴표 안 줄바꿈은 값의 일부 (ORG-STRESS 6번)
       let sec='',nodes=[],conns=[];
       let hdrSeen=false,colIdx={id:0,en:1,ko:2,type:3,x:4,y:5,color:6};
       lines.forEach(raw=>{
@@ -5679,6 +5680,18 @@ function importJSON(inp){
     inp.value='';
   };
   reader.readAsText(inp.files[0]);
+}
+// CSV 글을 레코드 단위로 나눈다. 따옴표 밖의 줄바꿈(LF, CRLF, CR)만 레코드 경계이고, 따옴표 안의 줄바꿈과 CR은 값으로 남긴다
+function _csvRecords(text){
+  const recs=[]; let cur='', inQ=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(c==='"'){ inQ=!inQ; cur+=c; }
+    else if(!inQ&&(c==='\n'||c==='\r')){ recs.push(cur); cur=''; if(c==='\r'&&text[i+1]==='\n') i++; }
+    else cur+=c;
+  }
+  recs.push(cur);
+  return recs;
 }
 function parseCSVLine(line){
   const cols=[]; let cur='',inQ=false;
